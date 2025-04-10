@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import UsersPage from './pages/Dashboard/Users';
+import Dashboard from "./pages/Dashboard/Dashboard";
 import NotFound from "./pages/NotFound";
 import Welcom from "./pages/Welcom";
 
@@ -19,9 +20,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
 		  <Route path="/users" element={<UsersPage />} />
+		  <Route path="/dashboard" element={<Dashboard />} />
           {/* <Route path="/Welcom" element={<Welcom />} /> */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL  */}
-          {/* <Route path="*" element={<NotFound />} /> */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
