@@ -16,7 +16,7 @@ const LoginForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: "Error",
@@ -25,9 +25,9 @@ const LoginForm = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       toast({
@@ -100,8 +100,8 @@ const LoginForm = () => {
                 </button>
               </div>
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-blue-gradient hover:opacity-90 transition-opacity"
               disabled={isLoading}
             >
@@ -127,23 +127,6 @@ const LoginForm = () => {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-slate-500">or continue with</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 hover:text-slate-900">
-              Google
-            </Button>
-            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 hover:text-slate-900">
-              Microsoft
-            </Button>
-          </div>
-          <div className="text-center text-sm text-slate-500 mt-2">
-            Don't have an account?{" "}
-            <a href="#" className="font-medium text-blue-500 hover:underline">
-              Sign up
-            </a>
           </div>
         </CardFooter>
       </Card>
