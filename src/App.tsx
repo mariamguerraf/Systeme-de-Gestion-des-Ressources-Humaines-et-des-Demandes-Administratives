@@ -4,11 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import UsersPage from './pages/Dashboard/Users';
-import Dashboard from "./pages/Dashboard/Dashboard";
+import UsersPage from './pages/secrétaire/Users';
+import Dashboard from "./pages/secrétaire/Dashboard";
 import NotFound from "./pages/NotFound";
-import Demandes from "./pages/Dashboard/Demandes";
-import Welcom from "./pages/Welcom";
+import Demandes from "./pages/secrétaire/Demandes";
+import ProfilPage from "./pages/enseignant/ProfilPage";
+import AttestationPage from "./pages/enseignant/AttestationPage";
+import CongePage from "./pages/enseignant/CongePage";
+import OrdreMissionPage from "./pages/enseignant/OrdreMissionPage";
+import PageDemandesEnseignant from "./pages/enseignant/PageDemandesEnseignant";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +27,12 @@ const App = () => (
 		  <Route path="/users" element={<UsersPage />} />
 		  <Route path="/dashboard" element={<Dashboard />} />
 		  <Route path="/demandes" element={<Demandes />} />
+		  <Route path="/profil" element={<ProfilPage />} />
+		  <Route path="/attestation" element={<AttestationPage />} />
+		  <Route path="/conge" element={<CongePage />} />
+		  <Route path="/ordremission" element={<OrdreMissionPage />} />
+		  <Route path="/demandes-enseignant" element={<PageDemandesEnseignant />} />
+		  {/* Catch-all route for 404 Not Found */}
 		  {/* ADD ALL CUSTOM ROUTES BELOW THE CATCH-ALL  */}
           {/* <Route path="/Welcom" element={<Welcom />} /> */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL  */}
