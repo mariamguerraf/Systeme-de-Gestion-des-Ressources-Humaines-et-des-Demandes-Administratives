@@ -97,38 +97,11 @@ const AbsencePage = () => {
 				  </div>
 				</div>
 			  </div>
-
-			  {/* Type de congé */}
-			  <div className="space-y-4">
-				<h3 className="text-lg font-semibold text-gray-800">Type de Congé</h3>
-
-				<div>
-				  <label className="block text-sm font-medium text-gray-700 mb-2">
-					Type de congé *
-				  </label>
-				  <select
-					name="typeConge"
-					value={formData.typeConge}
-					onChange={handleInputChange}
-					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-					required
-				  >
-					<option value="">Sélectionner un type</option>
-					<option value="annuel">Congé Annuel</option>
-					<option value="rtt">RTT</option>
-					<option value="maladie">Congé Maladie</option>
-					<option value="maternite">Congé Maternité</option>
-					<option value="paternite">Congé Paternité</option>
-					<option value="formation">Congé Formation</option>
-					<option value="exceptionnel">Congé Exceptionnel</option>
-				  </select>
-				</div>
-			  </div>
 			</div>
 
 			{/* Période de congé */}
 			<div className="mt-6 space-y-4">
-			  <h3 className="text-lg font-semibold text-gray-800">Période de Congé</h3>
+			  <h3 className="text-lg font-semibold text-gray-800">Période d'absence </h3>
 
 			  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<div>
@@ -185,7 +158,7 @@ const AbsencePage = () => {
 				onChange={handleInputChange}
 				rows={4}
 				className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-				placeholder="Veuillez préciser le motif de votre demande de congé..."
+				placeholder="Veuillez préciser le motif de votre demande d'absence..."
 				required
 			  />
 			</div>
@@ -198,7 +171,7 @@ const AbsencePage = () => {
 				  <p className="font-medium mb-1">Procédure de validation</p>
 				  <ul className="list-disc pl-5 space-y-1">
 					<li>Votre demande sera examinée par votre responsable direct</li>
-					<li>Les congés doivent être demandés au moins 15 jours à l'avance</li>
+					<li>Les absences doivent être demandées au moins 15 jours à l'avance</li>
 					<li>Vous recevrez une notification par email concernant l'approbation</li>
 				  </ul>
 				</div>
