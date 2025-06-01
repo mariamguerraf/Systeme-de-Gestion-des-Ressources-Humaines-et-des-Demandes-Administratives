@@ -190,37 +190,6 @@ const AbsencePage = () => {
 			  />
 			</div>
 
-			{/* Informations de remplacement */}
-			<div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-			  <div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">
-				  Remplaçant proposé
-				</label>
-				<input
-				  type="text"
-				  name="remplacant"
-				  value={formData.remplacant}
-				  onChange={handleInputChange}
-				  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-				  placeholder="Nom du remplaçant"
-				/>
-			  </div>
-
-			  <div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">
-				  Contact d'urgence
-				</label>
-				<input
-				  type="text"
-				  name="contactUrgence"
-				  value={formData.contactUrgence}
-				  onChange={handleInputChange}
-				  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-				  placeholder="Téléphone ou email"
-				/>
-			  </div>
-			</div>
-
 			{/* Note d'information */}
 			<div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
 			  <div className="flex items-start space-x-3">
@@ -231,7 +200,6 @@ const AbsencePage = () => {
 					<li>Votre demande sera examinée par votre responsable direct</li>
 					<li>Les congés doivent être demandés au moins 15 jours à l'avance</li>
 					<li>Vous recevrez une notification par email concernant l'approbation</li>
-					<li>En cas d'urgence, contactez directement votre responsable</li>
 				  </ul>
 				</div>
 			  </div>
