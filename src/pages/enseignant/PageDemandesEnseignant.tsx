@@ -41,9 +41,9 @@ const PageDemandesEnseignant = () => {
         case "Ordre de Mission":
           navigate("/enseignant/ordre-mission");
           return;
-        case "Congé":
-          navigate("/enseignant/conge");
-          return;
+        // case "Congé":
+        //   navigate("/enseignant/conge");
+        //   return;
         case "Absence":
           navigate("/enseignant/absence");
           return;
@@ -109,7 +109,7 @@ const PageDemandesEnseignant = () => {
                   <option value="">Sélectionner un type</option>
                   <option value="Attestation de Travail">Attestation de Travail</option>
                   <option value="Ordre de Mission">Ordre de Mission</option>
-                  <option value="Congé">Congé</option>
+                  {/* <option value="Congé">Congé</option> */}
                   <option value="Absence">Absence</option>
                   <option value="Autorisation d'Heures Supplémentaires">Autorisation d'Heures Supplémentaires</option>
                 </select>
