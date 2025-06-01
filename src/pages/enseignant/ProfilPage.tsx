@@ -1,9 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom'; // Ajoute cette ligne
 // ...existing code...
 import { User, Mail, Phone, Calendar, MapPin, FileText } from 'lucide-react';
 
 const ProfilPage = () => {
+	  // Logique de déconnexion
+	const navigate = useNavigate();
+	const handleLogout = () => {
+		navigate('/');
+	};
   return (
 	<div className="min-h-screen bg-gray-50">
 	  {/* Header */}
@@ -12,7 +18,12 @@ const ProfilPage = () => {
 		  <h1 className="text-xl font-semibold">Système de Gestion</h1>
 		  <div className="flex items-center space-x-4">
 			<span>Bienvenue, Enseignant</span>
-			<button className="bg-blue-700 px-3 py-1 rounded">Déconnexion</button>
+			<button
+			  onClick={handleLogout}
+			  className="px-3 py-1 bg-blue-800 rounded-md hover:bg-blue-900"
+			>
+			  Déconnexion
+			</button>
 		  </div>
 		</div>
 

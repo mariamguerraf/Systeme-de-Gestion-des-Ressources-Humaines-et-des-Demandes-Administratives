@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, User, AlertCircle, Clock, FileText } from 'lucide-react';
 
 const CongePage = () => {
@@ -40,7 +41,11 @@ const CongePage = () => {
     e.preventDefault();
     console.log('Demande de congé soumise:', formData);
   };
-
+  // Logique de déconnexion
+  const navigate = useNavigate();
+  const handleLogout = () => {
+	navigate('/');
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -49,7 +54,12 @@ const CongePage = () => {
           <h1 className="text-xl font-semibold">Système de Gestion</h1>
           <div className="flex items-center space-x-4">
             <span>Bienvenue, Enseignant</span>
-            <button className="bg-blue-700 px-3 py-1 rounded">Déconnexion</button>
+			<button
+			  onClick={handleLogout}
+			  className="px-3 py-1 bg-blue-800 rounded-md hover:bg-blue-900"
+			>
+			  Déconnexion
+			</button>
           </div>
         </div>
 
