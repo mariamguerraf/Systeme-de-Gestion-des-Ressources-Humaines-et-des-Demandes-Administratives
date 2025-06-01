@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FileText, Upload, Calendar, User, AlertCircle } from 'lucide-react';
 
 const AttestationPage = () => {
@@ -38,8 +39,8 @@ const AttestationPage = () => {
         {/* Navigation */}
         <nav className="mt-4">
           <div className="flex space-x-6">
-            <a href="#" className="hover:underline">Profil</a>
-            <a href="#" className="border-b-2 border-white pb-1">Demandes</a>
+			<Link to="/enseignant/profil" className="hover:underline">Profil</Link>
+			<Link to="/enseignant/demandes" className="border-b-2 border-white pb-1 hover:underline">Demandes</Link>
           </div>
         </nav>
       </header>

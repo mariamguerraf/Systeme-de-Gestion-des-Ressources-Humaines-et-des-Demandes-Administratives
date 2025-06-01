@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Plus, CheckCircle, XCircle, Clock, UploadCloud, Trash2 } from "lucide-react";
 
 interface Demande {
@@ -22,6 +23,8 @@ const PageDemandesEnseignant = () => {
     dateDemande: "",
   });
 
+  const navigate = useNavigate();
+
   const handleNouvelleDemandeChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     setNouvelleDemande((prev) => ({
       ...prev,
@@ -31,6 +34,26 @@ const PageDemandesEnseignant = () => {
 
   const ajouterNouvelleDemande = () => {
     if (nouvelleDemande.type && nouvelleDemande.dateDemande) {
+      switch (nouvelleDemande.type) {
+        case "Attestation de Travail":
+          navigate("/enseignant/attestation");
+          return;
+        case "Ordre de Mission":
+          navigate("/enseignant/ordre-mission");
+          return;
+        case "Congé":
+          navigate("/enseignant/conge");
+          return;
+        case "Absence":
+          navigate("/enseignant/absence");
+          return;
+        case "Autorisation d'Heures Supplémentaires":
+          navigate("/enseignant/heures-sup");
+          return;
+        default:
+          // Si aucun cas ne correspond, on ajoute la demande normalement
+          break;
+      }
       setDemandes((prev) => [
         ...prev,
         { id: prev.length + 1, type: nouvelleDemande.type, statut: "En attente", dateDemande: nouvelleDemande.dateDemande },
@@ -40,7 +63,7 @@ const PageDemandesEnseignant = () => {
   };
 
   return (
- <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-blue-600 text-white px-6 py-4">
         <div className="flex justify-between items-center">
@@ -54,11 +77,11 @@ const PageDemandesEnseignant = () => {
         {/* Navigation */}
         <nav className="mt-4">
           <div className="flex space-x-6">
-            <a href="#" className="hover:underline">Profil</a>
-            <a href="#" className="border-b-2 border-white pb-1">Demandes</a>
+            <Link to="/enseignant/profil" className="hover:underline">Profil</Link>
+            <Link to="/enseignant/demandes" className="border-b-2 border-white pb-1 hover:underline">Demandes</Link>
           </div>
         </nav>
-		</header>
+      </header>
       {/* Formulaire de nouvelle demande */}
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -88,7 +111,7 @@ const PageDemandesEnseignant = () => {
                   <option value="Ordre de Mission">Ordre de Mission</option>
                   <option value="Congé">Congé</option>
                   <option value="Absence">Absence</option>
-                  <option value="Autorisation d'Heures Supplémentaires">Heures Supplémentaires</option>
+                  <option value="Autorisation d'Heures Supplémentaires">Autorisation d'Heures Supplémentaires</option>
                 </select>
               </div>
 

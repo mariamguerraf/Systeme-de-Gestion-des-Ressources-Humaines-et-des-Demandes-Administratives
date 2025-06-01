@@ -19,13 +19,12 @@ const Welcom = () => {
 
         <div className="z-10 flex flex-col items-center space-y-6 w-full max-w-md animate-fade-in">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-slate-900">Azure Welcom Page</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Welcom Page</h1>
             <p className="text-slate-500">We are happy to se you with us.</p>
           </div>
 
 
           <div className="text-center text-xs text-slate-400 mt-8">
-            © 2025 Azure Company. All rights reserved.
             <div className="flex justify-center space-x-4 mt-2">
               <a href="#" className="hover:text-blue-500 transition-colors">Terms</a>
               <a href="#" className="hover:text-blue-500 transition-colors">Privacy</a>

@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Ajoute cette ligne
+// ...existing code...
 import { User, Mail, Phone, Calendar, MapPin, FileText } from 'lucide-react';
 
 const ProfilPage = () => {
@@ -17,8 +19,8 @@ const ProfilPage = () => {
         {/* Navigation */}
         <nav className="mt-4">
           <div className="flex space-x-6">
-            <a href="#" className="border-b-2 border-white pb-1">Profil</a>
-            <a href="#" className="hover:underline">Demandes</a>
+            <Link to="/enseignant/profil" className="border-b-2 border-white pb-1 hover:underline">Profil</Link>
+           <Link to="/enseignant/demandes" className="hover:underline" >	Demandes </Link>
           </div>
         </nav>
       </header>
@@ -98,7 +100,7 @@ const ProfilPage = () => {
                 </div>
 
                 {/* Actions rapides */}
-                <div className="mt-8">
+                {/* <div className="mt-8">
                   <h4 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <button className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
@@ -109,17 +111,17 @@ const ProfilPage = () => {
                       <Calendar className="w-4 h-4" />
                       <span>Congé</span>
                     </button>
-                  </div>
-                </div>
+                  </div> */}
+                {/* </div> */}
               </div>
             </div>
 
             {/* Bouton de modification */}
-            <div className="mt-8 pt-6 border-t">
+            {/* <div className="mt-8 pt-6 border-t">
               <button className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors">
                 Modifier le Profil
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>

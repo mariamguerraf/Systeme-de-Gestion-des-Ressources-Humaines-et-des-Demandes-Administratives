@@ -32,6 +32,15 @@ const App = () => (
 		  <Route path="/conge" element={<CongePage />} />
 		  <Route path="/ordremission" element={<OrdreMissionPage />} />
 		  <Route path="/demandes-enseignant" element={<PageDemandesEnseignant />} />
+		  {/* button */}
+		  <Route path="/enseignant/profil" element={<ProfilPage />} />
+          <Route path="/enseignant/demandes" element={<PageDemandesEnseignant />} />
+		  <Route path="/enseignant/attestation" element={<AttestationPage />} />
+		  <Route path="/enseignant/conge" element={<CongePage />} />
+		  <Route path="/enseignant/ordre-mission" element={<OrdreMissionPage />} />
+		  <Route path="/enseignant/absence" element={<CongePage />} />
+		  <Route path="/enseignant/heures-sup" element={<CongePage />} />
+	
 		  {/* Catch-all route for 404 Not Found */}
 		  {/* ADD ALL CUSTOM ROUTES BELOW THE CATCH-ALL  */}
           {/* <Route path="/Welcom" element={<Welcom />} /> */}
