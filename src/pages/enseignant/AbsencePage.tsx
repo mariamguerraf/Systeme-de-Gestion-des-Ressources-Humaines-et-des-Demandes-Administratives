@@ -5,30 +5,28 @@ import { Calendar, User, AlertCircle, Clock, FileText } from 'lucide-react';
 
 const AbsencePage = () => {
   const [formData, setFormData] = useState({
-	typeConge: '',
 	dateDebut: '',
 	dateFin: '',
 	nombreJours: 0,
 	motif: '',
-	remplacant: '',
-	contactUrgence: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
 	const { name, value } = e.target;
 	setFormData(prev => ({
-	  ...prev,
-	  [name]: value
+	  ...prev, // Conserve les autres champs du formulaire
+	  [name]: value // Met à jour le champ spécifique du formulaire
 	}));
 
 	// Calcul automatique du nombre de jours
 	if (name === 'dateDebut' || name === 'dateFin') {
-	  const debut = new Date(name === 'dateDebut' ? value : formData.dateDebut);
-	  const fin = new Date(name === 'dateFin' ? value : formData.dateFin);
+	const debut = new Date(name === 'dateDebut' ? value : formData.dateDebut);
+	const fin = new Date(name === 'dateFin' ? value : formData.dateFin);
 
-	  if (debut && fin && fin >= debut) {
-		const diffTime = Math.abs(fin.getTime() - debut.getTime());
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+	if (debut && fin && fin >= debut) {
+		const diffTime = Math.abs(fin.getTime() - debut.getTime()); // Calcul de la différence en millisecondes
+		// Convertir la différence en jours
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; //math.ceil pour arrondir vers le haut et +1 pour inclure le jour de début
 		setFormData(prev => ({
 		  ...prev,
 		  nombreJours: diffDays
