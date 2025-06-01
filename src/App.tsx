@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 import Demandes from "./pages/secrétaire/Demandes";
 import ProfilPage from "./pages/enseignant/ProfilPage";
 import AttestationPage from "./pages/enseignant/AttestationPage";
-import CongePage from "./pages/secrétaire/CongePage";
+import CongePage from "./pages/fonctionnaire administré/CongePage";
 import OrdreMissionPage from "./pages/enseignant/OrdreMissionPage";
 import PageDemandesEnseignant from "./pages/enseignant/PageDemandesEnseignant";
 import Heures_sup from "./pages/enseignant/heures_sup";
