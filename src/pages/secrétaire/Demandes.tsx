@@ -1,5 +1,6 @@
 // src/pages/secretaire/Demandes.tsx
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 interface DemandeProps {
@@ -107,9 +108,9 @@ const DemandesPage = () => {
           <div className="flex items-center">
             <h1 className="text-xl font-bold">Système de Gestion</h1>
             <div className="ml-10 hidden md:flex space-x-4">
-              <a href="/secretaire/dashboard" className="px-3 py-2 rounded-md hover:bg-blue-700">Dashboard</a>
-              <a href="/secretaire/users" className="px-3 py-2 rounded-md hover:bg-blue-700">Utilisateurs</a>
-              <a href="/secretaire/demandes" className="px-3 py-2 rounded-md bg-blue-700">Demandes</a>
+			  <Link to="/secretaire/dashboard" className="px-3 py-2 rounded-md hover:bg-blue-700"> Dashboard </Link>
+			  <Link to="/secretaire/users" className="px-3 py-2 rounded-md hover:bg-blue-700"> Utilisateurs </Link>
+			  <Link to="/secretaire/demandes" className="px-3 py-2 rounded-md bg-blue-700"> Demandes </Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
