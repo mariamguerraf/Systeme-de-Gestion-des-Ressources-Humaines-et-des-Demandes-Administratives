@@ -87,21 +87,6 @@ const Heures_sup = () => {
 
 			{/* Motif et période */}
 			<div className="mt-6 space-y-6">
-			  <div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">
-				  Motif de la demande *
-				</label>
-				<textarea
-				  name="motif"
-				  value={formData.motif}
-				  onChange={handleInputChange}
-				  rows={4}
-				  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-				  placeholder="Veuillez préciser le motif de votre demande d'attestation..."
-				  required
-				/>
-			  </div>
-
 			  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
 				  <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -116,7 +101,6 @@ const Heures_sup = () => {
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 				  />
 				</div>
-
 				<div>
 				  <label className="block text-sm font-medium text-gray-700 mb-2">
 					<Calendar className="w-4 h-4 inline mr-1" />

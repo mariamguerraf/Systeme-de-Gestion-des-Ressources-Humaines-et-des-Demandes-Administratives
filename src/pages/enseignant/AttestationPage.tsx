@@ -85,7 +85,7 @@ const AttestationPage = () => {
               </div>
 
               {/* Type d'attestation */}
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800">Type d'Attestation</h3>
 
                 <div>
@@ -106,11 +106,11 @@ const AttestationPage = () => {
                     <option value="fonction">Attestation de Fonction</option>
                   </select>
                 </div>
-              </div>
-            </div>
+				</div> */}
+				</div>
 
             {/* Motif et période */}
-            <div className="mt-6 space-y-6">
+            {/* <div className="mt-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Motif de la demande *
@@ -172,7 +172,7 @@ const AttestationPage = () => {
             </div>
 
             {/* Upload de documents */}
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Documents Justificatifs</h3>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -185,7 +185,7 @@ const AttestationPage = () => {
                 </button>
                 <p className="text-xs text-gray-500 mt-2">PDF, JPG, PNG jusqu'à 5MB</p>
               </div>
-            </div>
+            </div> */}
 
             {/* Note d'information */}
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
