@@ -38,8 +38,6 @@ const AttestationPage = () => {
         {/* Navigation */}
         <nav className="mt-4">
           <div className="flex space-x-6">
-            <a href="#" className="hover:underline">Dashboard</a>
-            <a href="#" className="hover:underline">Utilisateurs</a>
             <a href="#" className="hover:underline">Profil</a>
             <a href="#" className="border-b-2 border-white pb-1">Demandes</a>
           </div>
