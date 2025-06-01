@@ -13,6 +13,8 @@ import AttestationPage from "./pages/enseignant/AttestationPage";
 import CongePage from "./pages/enseignant/CongePage";
 import OrdreMissionPage from "./pages/enseignant/OrdreMissionPage";
 import PageDemandesEnseignant from "./pages/enseignant/PageDemandesEnseignant";
+import Heures_sup from "./pages/enseignant/heures_sup";
+import AbsencePage from "./pages/enseignant/AbsencePage"; // Assuming you have an AbsencePage component
 
 const queryClient = new QueryClient();
 
@@ -38,13 +40,11 @@ const App = () => (
 		  <Route path="/enseignant/attestation" element={<AttestationPage />} />
 		  <Route path="/enseignant/conge" element={<CongePage />} />
 		  <Route path="/enseignant/ordre-mission" element={<OrdreMissionPage />} />
-		  <Route path="/enseignant/absence" element={<CongePage />} />
-		  <Route path="/enseignant/heures-sup" element={<CongePage />} />
+		  <Route path="/enseignant/heures-sup" element={<Heures_sup />} />
 		  <Route path="/secretaire/dashboard" element={<Dashboard />} />
 		  <Route path="/secretaire/users" element={<UsersPage />} />
 		  <Route path="/secretaire/demandes" element={<Demandes />} />
-
-
+		  <Route path="/enseignant/absence" element={<AbsencePage />} />
 		  {/* Catch-all route for 404 Not Found */}
 		  {/* ADD ALL CUSTOM ROUTES BELOW THE CATCH-ALL  */}
           {/* <Route path="/Welcom" element={<Welcom />} /> */}
