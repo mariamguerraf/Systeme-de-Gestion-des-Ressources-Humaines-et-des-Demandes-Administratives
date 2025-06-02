@@ -123,7 +123,7 @@
 // 					value={formData.dateDebut}
 // 					onChange={handleInputChange}
 // 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-// 					required
+// 					requipink
 // 				  />
 // 				</div>
 
@@ -212,8 +212,8 @@
 // export default AbsencePage;
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, User, AlertCircle, Clock, FileText, X, Send } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, User, AlertCircle, Clock, X, Send } from 'lucide-react';
 
 const AbsencePage = () => {
   const [formData, setFormData] = useState({
@@ -223,7 +223,9 @@ const AbsencePage = () => {
 	motif: '',
   });
 
-  const handleInputChange = (e) => {
+  const navigate = useNavigate();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 	const { name, value } = e.target;
 	setFormData(prev => ({
 	  ...prev,
@@ -246,18 +248,19 @@ const AbsencePage = () => {
 	}
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
 	e.preventDefault();
-	console.log('Demande de congé soumise:', formData);
+	console.log('Demande d\'absence soumise:', formData);
+	// Ajoute ici la logique d'envoi ou de navigation si besoin
   };
 
   const handleLogout = () => {
-	console.log('Déconnexion');
+	navigate('/');
   };
 
   return (
 	<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-	  {/* Header avec dégradé moderne */}
+	  {/* Header */}
 	  <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
 		<div className="flex justify-between items-center">
 		  <div className="flex items-center space-x-3">
@@ -284,15 +287,15 @@ const AbsencePage = () => {
 		  </div>
 		</div>
 
-		{/* Navigation moderne */}
+		{/* Navigation */}
 		<nav className="mt-6">
 		  <div className="flex space-x-1">
-			<button className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm">
-			 <Link to="/enseignant/profil" className="hover:underline"> Profil </Link>
-			</button>
-			<button className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium">
+			<Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">
+			  Profil
+			</Link>
+			<Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-gray-300 backdrop-blur-sm font-medium hover:underline">
 			  Demandes
-			</button>
+			</Link>
 		  </div>
 		</nav>
 	  </header>
@@ -301,9 +304,9 @@ const AbsencePage = () => {
 	  <main className="container mx-auto px-6 py-8">
 		<div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
 		  {/* Header du formulaire */}
-		  <div className="px-8 py-6 bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-200">
+		  <div className="px-8 py-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
 			<div className="flex items-center space-x-4">
-			  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+			  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
 				<Calendar className="w-6 h-6 text-white" />
 			  </div>
 			  <div>
@@ -315,7 +318,7 @@ const AbsencePage = () => {
 			</div>
 		  </div>
 
-		  <div className="p-8">
+		  <form className="p-8" onSubmit={handleSubmit}>
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 			  {/* Informations du demandeur */}
 			  <div className="space-y-6">
@@ -325,8 +328,7 @@ const AbsencePage = () => {
 				  </div>
 				  <h3 className="text-xl font-bold text-gray-800">Informations du Demandeur</h3>
 				</div>
-
-				<div className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200 shadow-sm">
+				<div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
 				  <div className="grid grid-cols-1 gap-4">
 					<div className="flex justify-between items-center py-2 border-b border-gray-200">
 					  <span className="font-semibold text-gray-600">Nom complet:</span>
@@ -347,7 +349,7 @@ const AbsencePage = () => {
 			  {/* Période d'absence */}
 			  <div className="space-y-6">
 				<div className="flex items-center space-x-3 mb-6">
-				  <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+				  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-500 rounded-lg flex items-center justify-center">
 					<Clock className="w-4 h-4 text-white" />
 				  </div>
 				  <h3 className="text-xl font-bold text-gray-800">Période d'Absence</h3>
@@ -364,7 +366,7 @@ const AbsencePage = () => {
 						name="dateDebut"
 						value={formData.dateDebut}
 						onChange={handleInputChange}
-						className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 shadow-sm"
+						className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm"
 						required
 					  />
 					</div>
@@ -378,7 +380,7 @@ const AbsencePage = () => {
 						name="dateFin"
 						value={formData.dateFin}
 						onChange={handleInputChange}
-						className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 shadow-sm"
+						className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm"
 						required
 					  />
 					</div>
@@ -394,10 +396,10 @@ const AbsencePage = () => {
 						name="nombreJours"
 						value={formData.nombreJours}
 						readOnly
-						className="w-full px-4 py-3 bg-gradient-to-r from-gray-50 to-orange-50 border border-gray-300 rounded-xl shadow-sm"
+						className="w-full px-4 py-3 bg-gradient-to-r from-gray-50 to-purple-50 border border-gray-300 rounded-xl shadow-sm"
 					  />
 					  <div className="absolute right-3 top-3">
-						<span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+						<span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
 						  Auto-calculé
 						</span>
 					  </div>
@@ -413,7 +415,7 @@ const AbsencePage = () => {
 					  value={formData.motif}
 					  onChange={handleInputChange}
 					  rows={4}
-					  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 resize-none shadow-sm"
+					  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none shadow-sm"
 					  placeholder="Veuillez préciser le motif de votre demande d'absence..."
 					  required
 					/>
@@ -423,24 +425,24 @@ const AbsencePage = () => {
 			</div>
 
 			{/* Note d'information colorée */}
-			<div className="mt-8 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl p-6 shadow-sm">
+			<div className="mt-8 bg-gradient-to-r from-purple-50 to-gray-50 border border-purple-200 rounded-xl p-6 shadow-sm">
 			  <div className="flex items-start space-x-4">
-				<div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+				<div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-red-500 rounded-full flex items-center justify-center flex-shrink-0">
 				  <AlertCircle className="w-5 h-5 text-white" />
 				</div>
-				<div className="text-orange-800">
+				<div className="text-purple-800">
 				  <h4 className="font-bold text-lg mb-2">Procédure de validation</h4>
 				  <ul className="space-y-2 leading-relaxed">
 					<li className="flex items-start space-x-2">
-					  <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+					  <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
 					  <span>Votre demande sera examinée par votre responsable direct</span>
 					</li>
 					<li className="flex items-start space-x-2">
-					  <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+					  <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
 					  <span>Les absences doivent être demandées au moins <span className="font-semibold">15 jours à l'avance</span></span>
 					</li>
 					<li className="flex items-start space-x-2">
-					  <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+					  <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
 					  <span>Vous recevrez une notification par email concernant l'approbation</span>
 					</li>
 				  </ul>
@@ -450,25 +452,22 @@ const AbsencePage = () => {
 
 			{/* Boutons d'action stylisés */}
 			<div className="mt-10 flex justify-end space-x-4">
-			  <button
-				type="button"
+			  <Link
+				to="/enseignant/demandes"
 				className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium flex items-center space-x-2 shadow-sm"
 			  >
 				<X className="w-4 h-4" />
-				<span>
-					<Link to="/enseignant/Demandes"> Annuler </Link>
-				</span>
-			  </button>
+				<span>Annuler</span>
+			  </Link>
 			  <button
-				type="button"
-				onClick={handleSubmit}
-				className="px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105"
+				type="submit"
+				className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105"
 			  >
 				<Send className="w-4 h-4" />
 				<span>Soumettre la Demande</span>
 			  </button>
 			</div>
-		  </div>
+		  </form>
 		</div>
 	  </main>
 	</div>
