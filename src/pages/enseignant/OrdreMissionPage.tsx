@@ -47,9 +47,11 @@ const OrdreMissionPage = () => {
             <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
               <MapPin className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              Système de Gestion
-            </h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
+            <nav className="ml-8 flex space-x-1">
+              <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">Profil</Link>
+              <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
+            </nav>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
@@ -66,17 +68,6 @@ const OrdreMissionPage = () => {
             </button>
           </div>
         </div>
-        {/* Navigation */}
-        <nav className="mt-6">
-          <div className="flex space-x-1">
-            <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">
-              Profil
-            </Link>
-            <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">
-              Demandes
-            </Link>
-          </div>
-        </nav>
       </header>
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
@@ -250,90 +241,6 @@ const OrdreMissionPage = () => {
 					onChange={handleInputChange}
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 				  />
-				</div>
-			  </div>
-			</div>
-
-			{/* Transport et frais */}
-			<div className="mt-6 space-y-6">
-			  <h3 className="text-lg font-semibold text-gray-800">Transport et Frais</h3>
-
-			  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div>
-				  <label className="block text-sm font-medium text-gray-700 mb-2">
-					Moyen de transport *
-				  </label>
-				  <select
-					name="moyenTransport"
-					value={formData.moyenTransport}
-					onChange={handleInputChange}
-					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-					required
-				  >
-					<option value="">Sélectionner le transport</option>
-					<option value="train">Train</option>
-					<option value="avion">Avion</option>
-					<option value="voiture_service">Voiture de service</option>
-					<option value="voiture_personnelle">Voiture personnelle</option>
-					<option value="transport_commun">Transport en commun</option>
-				  </select>
-				</div>
-
-				<div>
-				  <label className="block text-sm font-medium text-gray-700 mb-2">
-					Frais prévus (€)
-				  </label>
-				  <input
-					type="number"
-					name="fraisPrevus"
-					value={formData.fraisPrevus}
-					onChange={handleInputChange}
-					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-					placeholder="Estimation des frais"
-					min="0"
-					step="0.01"
-				  />
-				</div>
-			  </div>
-
-			  {/* Frais à rembourser */}
-			  <div>
-				<label className="block text-sm font-medium text-gray-700 mb-3">
-				  Frais à rembourser
-				</label>
-				<div className="flex flex-wrap gap-4">
-				  <label className="flex items-center space-x-2">
-					<input
-					  type="checkbox"
-					  name="hebergement"
-					  checked={formData.hebergement}
-					  onChange={handleInputChange}
-					  className="rounded text-blue-600 focus:ring-blue-500"
-					/>
-					<span className="text-sm text-gray-700">Hébergement</span>
-				  </label>
-
-				  <label className="flex items-center space-x-2">
-					<input
-					  type="checkbox"
-					  name="restauration"
-					  checked={formData.restauration}
-					  onChange={handleInputChange}
-					  className="rounded text-blue-600 focus:ring-blue-500"
-					/>
-					<span className="text-sm text-gray-700">Restauration</span>
-				  </label>
-
-				  <label className="flex items-center space-x-2">
-					<input
-					  type="checkbox"
-					  name="transport"
-					  checked={formData.transport}
-					  onChange={handleInputChange}
-					  className="rounded text-blue-600 focus:ring-blue-500"
-					/>
-					<span className="text-sm text-gray-700">Transport</span>
-				  </label>
 				</div>
 			  </div>
 			</div>

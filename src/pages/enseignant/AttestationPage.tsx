@@ -40,6 +40,10 @@ const AttestationPage = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
               Système de Gestion
             </h1>
+            <nav className="ml-8 flex space-x-1">
+              <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">Profil</Link>
+              <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
+            </nav>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
@@ -56,13 +60,6 @@ const AttestationPage = () => {
             </button>
           </div>
         </div>
-        {/* Navigation moderne */}
-        <nav className="mt-6">
-          <div className="flex space-x-1">
-            <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline"> Profil </Link>
-            <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
-          </div>
-        </nav>
       </header>
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">

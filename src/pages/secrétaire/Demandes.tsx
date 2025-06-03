@@ -94,30 +94,30 @@ const DemandesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="text-2xl text-gray-600">Chargement...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Navigation */}
-      <nav className="bg-blue-600 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-xl font-bold">Système de Gestion</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
             <div className="ml-10 hidden md:flex space-x-4">
-			  <Link to="/secretaire/dashboard" className="px-3 py-2 rounded-md hover:bg-blue-700"> Dashboard </Link>
-			  <Link to="/secretaire/users" className="px-3 py-2 rounded-md hover:bg-blue-700"> Utilisateurs </Link>
-			  <Link to="/secretaire/demandes" className="px-3 py-2 rounded-md bg-blue-700"> Demandes </Link>
+              <Link to="/secretaire/dashboard" className="px-4 py-2 rounded-xl bg-white bg-opacity-10 hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm font-medium">Dashboard</Link>
+              <Link to="/secretaire/users" className="px-4 py-2 rounded-xl bg-white bg-opacity-10 hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm font-medium">Utilisateurs</Link>
+              <Link to="/secretaire/demandes" className="px-4 py-2 rounded-xl bg-white bg-opacity-20 border-b-2 border-yellow-300 backdrop-blur-sm font-medium underline">Demandes</Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span>Bienvenue, Secrétaire</span>
+            <span className="font-medium">Bienvenue, Secrétaire</span>
             <button
               onClick={handleLogout}
-              className="px-3 py-1 bg-blue-800 rounded-md hover:bg-blue-900"
+              className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
             >
               Déconnexion
             </button>
@@ -126,11 +126,11 @@ const DemandesPage = () => {
       </nav>
 
       {/* Contenu principal */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <h2 className="text-2xl font-semibold mb-6">Gestion des Demandes</h2>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Gestion des Demandes</h2>
 
         {/* Filtres de recherche */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
               <input
@@ -166,7 +166,7 @@ const DemandesPage = () => {
               </select>
             </div>
             <div>
-              <a href="/secretaire/demandes/new" className="inline-block px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <a href="/secretaire/demandes/new" className="inline-block px-6 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-medium shadow-lg transform hover:scale-105">
                 Nouvelle demande
               </a>
             </div>
@@ -174,10 +174,10 @@ const DemandesPage = () => {
         </div>
 
         {/* Liste des demandes */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objet</th>
@@ -223,15 +223,23 @@ const DemandesPage = () => {
                         {demande.priorite.charAt(0).toUpperCase() + demande.priorite.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
                       <button
                         onClick={() => handleViewDemande(demande.id)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
                       >
                         Voir
                       </button>
-                      <button className="text-green-600 hover:text-green-900 mr-3">Traiter</button>
-                      <button className="text-red-600 hover:text-red-900">Archiver</button>
+                      <button
+                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+                      >
+                        Traiter
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
+                      >
+                        Archiver
+                      </button>
                     </td>
                   </tr>
                 ))}

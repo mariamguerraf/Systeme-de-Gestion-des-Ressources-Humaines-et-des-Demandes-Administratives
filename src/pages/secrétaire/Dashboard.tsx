@@ -68,30 +68,30 @@ const SecretaireDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="text-2xl text-gray-600">Chargement...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Navigation */}
-      <nav className="bg-blue-600 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-xl font-bold">Système de Gestion</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
             <div className="ml-10 hidden md:flex space-x-4">
-			  <Link to="/secretaire/dashboard" className="px-3 py-2 rounded-md bg-blue-700"> Dashboard </Link>
-			  <Link to="/secretaire/users" className="px-3 py-2 rounded-md hover:bg-blue-700">Utilisateurs</Link>
-			  <Link to="/secretaire/demandes" className="px-3 py-2 rounded-md hover:bg-blue-700">Demandes</Link>
+              <Link to="/secretaire/dashboard" className="px-4 py-2 rounded-xl bg-white bg-opacity-20 border-b-2 border-yellow-300 backdrop-blur-sm font-medium underline">Dashboard</Link>
+              <Link to="/secretaire/users" className="px-4 py-2 rounded-xl bg-white bg-opacity-10 hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm font-medium">Utilisateurs</Link>
+              <Link to="/secretaire/demandes" className="px-4 py-2 rounded-xl bg-white bg-opacity-10 hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm font-medium">Demandes</Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span>Bienvenue, Secrétaire</span>
+            <span className="font-medium">Bienvenue, Secrétaire</span>
             <button
               onClick={handleLogout}
-              className="px-3 py-1 bg-blue-800 rounded-md hover:bg-blue-900"
+              className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
             >
               Déconnexion
             </button>
@@ -100,42 +100,42 @@ const SecretaireDashboard = () => {
       </nav>
 
       {/* Contenu principal */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <h2 className="text-2xl font-semibold mb-6">Tableau de bord</h2>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Tableau de bord</h2>
 
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-gray-500">Total Utilisateurs</h3>
-            <p className="text-3xl font-bold">{stats.totalUsers}</p>
+            <p className="text-3xl font-bold text-blue-700">{stats.totalUsers}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-gray-500">Professeurs</h3>
-            <p className="text-3xl font-bold">{stats.professeurs}</p>
+            <p className="text-3xl font-bold text-purple-700">{stats.professeurs}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-gray-500">Fonctionnaires</h3>
-            <p className="text-3xl font-bold">{stats.fonctionnaires}</p>
+            <p className="text-3xl font-bold text-indigo-700">{stats.fonctionnaires}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-gray-500">Administrés</h3>
-            <p className="text-3xl font-bold">{stats.administres}</p>
+            <p className="text-3xl font-bold text-pink-700">{stats.administres}</p>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h3 className="text-lg text-gray-500">Demandes en attente</h3>
+          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-2xl shadow-2xl border border-yellow-200 p-4">
+            <h3 className="text-lg text-yellow-700">Demandes en attente</h3>
             <p className="text-3xl font-bold text-orange-500">{stats.demandesEnAttente}</p>
           </div>
         </div>
 
         {/* Dernières demandes */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold">Demandes récentes</h3>
-            <a href="/secretaire/demandes" className="text-blue-600 hover:underline">Voir toutes</a>
+            <h3 className="text-xl font-semibold text-gray-800">Demandes récentes</h3>
+            <a href="/secretaire/demandes" className="text-blue-600 hover:underline font-medium">Voir toutes</a>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
@@ -157,9 +157,9 @@ const SecretaireDashboard = () => {
                         {demande.statut}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-green-600 hover:text-green-900 mr-3">Accepter</button>
-                      <button className="text-red-600 hover:text-red-900">Refuser</button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
+                      <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400">Accepter</button>
+                      <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400">Refuser</button>
                     </td>
                   </tr>
                 ))}
@@ -169,8 +169,8 @@ const SecretaireDashboard = () => {
         </div>
 
         {/* Recherche d'utilisateur */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold mb-4">Rechercher un utilisateur</h3>
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Rechercher un utilisateur</h3>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
               <input
@@ -188,7 +188,7 @@ const SecretaireDashboard = () => {
               </select>
             </div>
             <div>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105">
                 Rechercher
               </button>
             </div>

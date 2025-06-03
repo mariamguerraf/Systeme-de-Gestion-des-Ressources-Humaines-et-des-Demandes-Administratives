@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, Plus, CheckCircle, XCircle, Clock, UploadCloud, Trash2 } from "lucide-react";
+import { FileText, Plus, CheckCircle, XCircle, Clock, UploadCloud, Trash2, User } from "lucide-react";
 
 interface Demande {
   id: number;
@@ -68,9 +68,18 @@ const PageDemandesEnseignant = () => {
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-semibold">Système de Gestion</h1>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <User className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
+            <nav className="ml-8 flex space-x-1">
+              <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">Profil</Link>
+              <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
+            </nav>
+          </div>
           <div className="flex items-center space-x-4">
-            <span>Bienvenue, Enseignant</span>
+            <span className="font-medium">Bienvenue, Enseignant</span>
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
@@ -79,17 +88,6 @@ const PageDemandesEnseignant = () => {
             </button>
           </div>
         </div>
-        {/* Navigation */}
-        <nav className="mt-6">
-          <div className="flex space-x-1">
-            <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">
-              Profil
-            </Link>
-            <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">
-              Demandes
-            </Link>
-          </div>
-        </nav>
       </header>
       {/* Formulaire de nouvelle demande */}
       <main className="container mx-auto px-6 py-8">

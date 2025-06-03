@@ -32,39 +32,33 @@ const HeuresSup = () => {
 	<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
 	  {/* Header avec dégradé moderne */}
 	  <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
-		<div className="flex justify-between items-center">
-		  <div className="flex items-center space-x-3">
-			<div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-			  <FileText className="w-6 h-6" />
-			</div>
-			<h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-			  Système de Gestion
-			</h1>
-		  </div>
-		  <div className="flex items-center space-x-4">
-			<div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
-			  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-				<User className="w-4 h-4 text-white" />
-			  </div>
-			  <span className="font-medium">Bienvenue, Enseignant</span>
-			</div>
-			<button
-			  onClick={handleLogout}
-			  className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
-			>
-			  Déconnexion
-			</button>
-		  </div>
-		</div>
-
-		{/* Navigation moderne */}
-		<nav className="mt-6">
-		  <div className="flex space-x-1">
-			<Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline"> Profil </Link>
-			<Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
-		  </div>
-		</nav>
-	  </header>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
+            <nav className="ml-8 flex space-x-1">
+              <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">Profil</Link>
+              <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
+            </nav>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-medium">Bienvenue, Enseignant</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </header>
 
 	  {/* Main Content */}
 	  <main className="container mx-auto px-6 py-8">
