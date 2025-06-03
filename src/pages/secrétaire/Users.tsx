@@ -1,7 +1,7 @@
 // src/pages/secretaire/Users.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface UserProps {
   id: number;
@@ -20,6 +20,16 @@ const UsersPage = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Récupérer les paramètres de recherche depuis l'URL
+    const urlSearchTerm = searchParams.get('search') || '';
+    const urlFilterType = searchParams.get('type') || '';
+    
+    setSearchTerm(urlSearchTerm);
+    setFilterType(urlFilterType);
+  }, [searchParams]);
 
   useEffect(() => {
     // Simulation de chargement de données
@@ -80,6 +90,23 @@ const UsersPage = () => {
   const handleLogout = () => {
     // Logique de déconnexion
     navigate('/');
+  };
+
+
+
+  const handlePaginationPrevious = () => {
+    console.log('Page précédente');
+    // Logique de pagination - à implémenter avec state de page actuelle
+  };
+
+  const handlePaginationNext = () => {
+    console.log('Page suivante');
+    // Logique de pagination - à implémenter avec state de page actuelle
+  };
+
+  const handlePageNumber = (pageNumber: number) => {
+    console.log(`Aller à la page ${pageNumber}`);
+    // Logique de pagination - à implémenter avec state de page actuelle
   };
 
   if (loading) {
@@ -159,7 +186,6 @@ const UsersPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Téléphone</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inscription</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -180,10 +206,6 @@ const UsersPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telephone}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.dateInscription}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
-                      <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400">Éditer</button>
-                      <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400">Supprimer</button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -199,10 +221,16 @@ const UsersPage = () => {
           {/* Pagination */}
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <button 
+                onClick={handlePaginationPrevious}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
                 Précédent
               </button>
-              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <button 
+                onClick={handlePaginationNext}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
                 Suivant
               </button>
             </div>
@@ -214,19 +242,34 @@ const UsersPage = () => {
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button 
+                    onClick={handlePaginationPrevious}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
                     &laquo; Précédent
                   </button>
-                  <button className="bg-blue-50 border-blue-500 z-10 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-blue-600 hover:bg-blue-100">
+                  <button 
+                    onClick={() => handlePageNumber(1)}
+                    className="bg-blue-50 border-blue-500 z-10 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-blue-600 hover:bg-blue-100"
+                  >
                     1
                   </button>
-                  <button className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button 
+                    onClick={() => handlePageNumber(2)}
+                    className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
                     2
                   </button>
-                  <button className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button 
+                    onClick={() => handlePageNumber(3)}
+                    className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
                     3
                   </button>
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button 
+                    onClick={handlePaginationNext}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
                     Suivant &raquo;
                   </button>
                 </nav>

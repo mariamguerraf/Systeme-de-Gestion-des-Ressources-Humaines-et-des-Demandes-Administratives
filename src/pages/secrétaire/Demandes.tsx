@@ -21,6 +21,8 @@ const DemandesPage = () => {
   const [filterStatut, setFilterStatut] = useState<string>('');
   const [filterPriorite, setFilterPriorite] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -90,6 +92,42 @@ const DemandesPage = () => {
 
   const handleViewDemande = (id: number) => {
     navigate(`/secretaire/demandes/${id}`);
+  };
+
+  const handleTraiterDemande = (id: number) => {
+    setDemandes(demandes.map(demande =>
+      demande.id === id
+        ? { ...demande, statut: 'en cours' as const }
+        : demande
+    ));
+    console.log(`Demande ${id} mise en cours de traitement`);
+  };
+
+  const handleArchiverDemande = (id: number) => {
+    setDemandes(demandes.map(demande =>
+      demande.id === id
+        ? { ...demande, statut: 'traitée' as const }
+        : demande
+    ));
+    console.log(`Demande ${id} archivée`);
+  };
+
+  // Fonctions de pagination
+  const totalPages = Math.ceil(filteredDemandes.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDemandes = filteredDemandes.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePaginationPrevious = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handlePaginationNext = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
+  const handlePageNumber = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
   };
 
   if (loading) {
@@ -165,11 +203,6 @@ const DemandesPage = () => {
                 <option value="urgente">Urgente</option>
               </select>
             </div>
-            <div>
-              <a href="/secretaire/demandes/new" className="inline-block px-6 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-medium shadow-lg transform hover:scale-105">
-                Nouvelle demande
-              </a>
-            </div>
           </div>
         </div>
 
@@ -190,7 +223,7 @@ const DemandesPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDemandes.map((demande) => (
+                {currentDemandes.map((demande) => (
                   <tr key={demande.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.objet}</td>
@@ -231,11 +264,13 @@ const DemandesPage = () => {
                         Voir
                       </button>
                       <button
+                        onClick={() => handleTraiterDemande(demande.id)}
                         className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
                       >
                         Traiter
                       </button>
                       <button
+                        onClick={() => handleArchiverDemande(demande.id)}
                         className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
                       >
                         Archiver

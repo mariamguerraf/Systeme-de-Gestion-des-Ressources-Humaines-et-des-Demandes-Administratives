@@ -98,6 +98,19 @@ const CadminEnseignants = () => {
     }
   };
 
+  const handleSaveEnseignant = () => {
+    if (modalType === 'create') {
+      console.log('Création d\'un nouvel enseignant');
+      // Ici, on ajouterait la logique pour créer un nouvel enseignant
+      alert('Fonctionnalité de création à implémenter');
+    } else if (modalType === 'edit') {
+      console.log('Modification de l\'enseignant', selectedEnseignant?.id);
+      // Ici, on ajouterait la logique pour modifier l'enseignant existant
+      alert('Fonctionnalité de modification à implémenter');
+    }
+    setShowModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
@@ -334,7 +347,10 @@ const CadminEnseignants = () => {
                   Fermer
                 </button>
                 {modalType !== 'view' && (
-                  <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={handleSaveEnseignant}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
                     {modalType === 'create' ? 'Créer' : 'Sauvegarder'}
                   </button>
                 )}

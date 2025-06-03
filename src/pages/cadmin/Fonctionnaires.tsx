@@ -122,6 +122,19 @@ const CadminFonctionnaires = () => {
     }
   };
 
+  const handleSaveFonctionnaire = () => {
+    if (modalType === 'create') {
+      console.log('Création d\'un nouveau fonctionnaire');
+      // Ici, on ajouterait la logique pour créer un nouveau fonctionnaire
+      alert('Fonctionnalité de création à implémenter');
+    } else if (modalType === 'edit') {
+      console.log('Modification du fonctionnaire', selectedFonctionnaire?.id);
+      // Ici, on ajouterait la logique pour modifier le fonctionnaire existant
+      alert('Fonctionnalité de modification à implémenter');
+    }
+    setShowModal(false);
+  };
+
   const getStatusColor = (statut: string) => {
     switch (statut) {
       case 'Actif': return 'bg-green-100 text-green-800';
@@ -429,7 +442,10 @@ const CadminFonctionnaires = () => {
                   Fermer
                 </button>
                 {(modalType === 'create' || modalType === 'edit') && (
-                  <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                  <button 
+                    onClick={handleSaveFonctionnaire}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
                     {modalType === 'create' ? 'Créer' : 'Sauvegarder'}
                   </button>
                 )}

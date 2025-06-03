@@ -20,6 +20,8 @@ const OrdreMissionFonctionnaire = () => {
     observations: ''
   });
 
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -31,6 +33,28 @@ const OrdreMissionFonctionnaire = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Demande d'ordre de mission soumise:", formData);
+    console.log('Fichiers attachés:', selectedFiles);
+    alert('Demande soumise avec succès !');
+  };
+
+  const handleFileSelect = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.pdf,.jpg,.jpeg,.png';
+    input.onchange = (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
+      if (validFiles.length !== files.length) {
+        alert('Certains fichiers sont trop volumineux (max 5MB)');
+      }
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+    };
+    input.click();
+  };
+
+  const handleCancel = () => {
+    navigate('/fonctionnaire/demandes');
   };
 
   const navigate = useNavigate();
@@ -272,6 +296,7 @@ const OrdreMissionFonctionnaire = () => {
                 <p className="text-gray-700 font-medium mb-2">Glissez-déposez vos fichiers ici ou</p>
                 <button
                   type="button"
+                  onClick={handleFileSelect}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
                 >
                   Parcourir les fichiers

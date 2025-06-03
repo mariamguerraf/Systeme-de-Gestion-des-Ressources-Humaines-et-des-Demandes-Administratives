@@ -63,6 +63,13 @@ const PageDemandesEnseignant = () => {
     }
   };
 
+  const handleSupprimerDemande = (demandeId: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+      setDemandes(demandes.filter(demande => demande.id !== demandeId));
+      alert('Demande supprimée avec succès');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -166,7 +173,9 @@ const PageDemandesEnseignant = () => {
                   </td>
                   <td className="px-4 py-2">{demande.dateDemande}</td>
                   <td className="px-4 py-2 text-center">
-                    <Trash2 className="w-5 h-5 text-red-600" />
+                    <button onClick={() => handleSupprimerDemande(demande.id)}>
+                      <Trash2 className="w-5 h-5 text-red-600 hover:text-red-800 cursor-pointer transition-colors" />
+                    </button>
                   </td>
                 </tr>
               ))}

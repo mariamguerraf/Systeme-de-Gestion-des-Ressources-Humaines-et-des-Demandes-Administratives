@@ -29,6 +29,8 @@ const SecretaireDashboard = () => {
   });
   const [recentesDemandes, setRecentesDemandes] = useState<DemandeProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchType, setSearchType] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,6 +66,39 @@ const SecretaireDashboard = () => {
   const handleLogout = () => {
     // Logique de déconnexion
     navigate('/');
+  };
+
+  const handleAccepterDemande = (demandeId: number) => {
+    setRecentesDemandes(prevDemandes => 
+      prevDemandes.map(demande => 
+        demande.id === demandeId 
+          ? { ...demande, statut: 'Acceptée' }
+          : demande
+      )
+    );
+    // Optionnel: afficher une notification de succès
+    console.log(`Demande ${demandeId} acceptée`);
+  };
+
+  const handleRefuserDemande = (demandeId: number) => {
+    setRecentesDemandes(prevDemandes => 
+      prevDemandes.map(demande => 
+        demande.id === demandeId 
+          ? { ...demande, statut: 'Refusée' }
+          : demande
+      )
+    );
+    // Optionnel: afficher une notification de succès
+    console.log(`Demande ${demandeId} refusée`);
+  };
+
+  const handleRechercher = () => {
+    // Rediriger vers la page des utilisateurs avec les paramètres de recherche
+    const queryParams = new URLSearchParams();
+    if (searchTerm) queryParams.set('search', searchTerm);
+    if (searchType) queryParams.set('type', searchType);
+    
+    navigate(`/secretaire/users?${queryParams.toString()}`);
   };
 
   if (loading) {
@@ -158,8 +193,18 @@ const SecretaireDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
-                      <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400">Accepter</button>
-                      <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400">Refuser</button>
+                      <button 
+                        onClick={() => handleAccepterDemande(demande.id)}
+                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+                      >
+                        Accepter
+                      </button>
+                      <button 
+                        onClick={() => handleRefuserDemande(demande.id)}
+                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
+                      >
+                        Refuser
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -176,11 +221,17 @@ const SecretaireDashboard = () => {
               <input
                 type="text"
                 placeholder="Nom, prénom ou identifiant..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <select className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select 
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="">Tous les types</option>
                 <option value="professeur">Professeur</option>
                 <option value="fonctionnaire">Fonctionnaire</option>
@@ -188,7 +239,10 @@ const SecretaireDashboard = () => {
               </select>
             </div>
             <div>
-              <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105">
+              <button 
+                onClick={handleRechercher}
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
+              >
                 Rechercher
               </button>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Upload, Calendar, User, AlertCircle, Clock, X, Send } from 'lucide-react';
 
 const HeuresSup = () => {
@@ -10,6 +10,9 @@ const HeuresSup = () => {
 	dateFin: '',
 	observations: ''
   });
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
 	const { name, value } = e.target;
@@ -22,10 +25,32 @@ const HeuresSup = () => {
   const handleSubmit = (e) => {
 	e.preventDefault();
 	console.log('Demande d\'heures supplémentaires soumise:', formData);
+	console.log('Fichiers attachés:', selectedFiles);
+	alert('Demande d\'heures supplémentaires soumise avec succès !');
+  };
+
+  const handleFileSelect = () => {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.multiple = true;
+	input.accept = '.pdf,.jpg,.jpeg,.png';
+	input.onchange = (e) => {
+	  const files = Array.from((e.target as HTMLInputElement).files || []);
+	  const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
+	  if (validFiles.length !== files.length) {
+		alert('Certains fichiers sont trop volumineux (max 5MB)');
+	  }
+	  setSelectedFiles(prev => [...prev, ...validFiles]);
+	};
+	input.click();
+  };
+
+  const handleCancel = () => {
+	navigate('/enseignant/demandes');
   };
 
   const handleLogout = () => {
-    // Ajoute ici la logique de déconnexion si besoin
+    navigate('/');
   };
 
   return (
@@ -178,6 +203,7 @@ const HeuresSup = () => {
 				<p className="text-gray-700 font-medium mb-2">Glissez-déposez vos fichiers ici ou</p>
 				<button
 				  type="button"
+				  onClick={handleFileSelect}
 				  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
 				>
 				  Parcourir les fichiers
@@ -206,6 +232,7 @@ const HeuresSup = () => {
 			<div className="mt-10 flex justify-end space-x-4">
 			  <button
 				type="button"
+				onClick={handleCancel}
 				className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium flex items-center space-x-2 shadow-sm"
 			  >
 				<X className="w-4 h-4" />
