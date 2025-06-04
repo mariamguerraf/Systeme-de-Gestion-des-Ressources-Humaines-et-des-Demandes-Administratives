@@ -1,0 +1,77 @@
+
+> vite_react_shadcn_ts@0.0.0 dev
+> vite --port 5173 --host 0.0.0.0
+
+
+  VITE v5.4.10  ready in 224 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://10.0.10.237:5173/
+  ➜  Network: http://172.18.0.1:5173/
+12:30:59 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:31:12 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:31:12 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:34:35 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:34:42 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:35:19 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:35:37 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:36:22 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:42:43 PM [vite] hmr update /src/pages/secrétaire/Dashboard.tsx, /src/index.css
+12:42:50 PM [vite] hmr update /src/pages/secrétaire/Dashboard.tsx, /src/index.css
+12:43:33 PM [vite] hmr update /src/pages/secrétaire/Dashboard.tsx, /src/index.css
+12:43:50 PM [vite] hmr update /src/pages/secrétaire/Dashboard.tsx, /src/index.css
+12:44:09 PM [vite] hmr update /src/pages/secrétaire/Dashboard.tsx, /src/index.css
+12:44:28 PM [vite] hmr update /src/pages/fonctionnaire administré/ProfilPage.tsx, /src/index.css
+12:44:35 PM [vite] hmr update /src/pages/fonctionnaire administré/ProfilPage.tsx, /src/index.css
+12:44:46 PM [vite] hmr update /src/pages/fonctionnaire administré/ProfilPage.tsx, /src/index.css
+12:46:10 PM [vite] Pre-transform error:   [31mx[0m Unexpected token `< (jsx tag start)`. Expected identifier or string
+   ,-[[36;1;4m/workspaces/front_end/src/pages/enseignant/ProfilPage.tsx[0m:3:1]
+ [2m1[0m | import React, { useState, useEffect } from 'react';
+ [2m2[0m | import { useNavigate, Link } from 'react-router-dom';
+ [2m3[0m | import { User, Mail,                      <div className="space-y-4">
+   : [35;1m                                          ^[0m
+ [2m4[0m |                         {loading ? (
+ [2m5[0m |                           <div className="animate-pulse space-y-4">
+ [2m6[0m |                             <div className="h-12 bg-gray-200 rounded-lg"></div>
+   `----
+
+
+Caused by:
+    Syntax Error
+12:49:30 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:50:03 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:50:49 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:51:28 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:51:28 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:55:45 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:55:59 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:56:24 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:56:45 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:57:21 PM [vite] hmr update /src/pages/enseignant/ProfilPage.tsx, /src/index.css
+12:57:44 PM [vite] page reload src/hooks/useDemandes.ts
+12:57:59 PM [vite] page reload src/hooks/useDemandes.ts
+12:58:14 PM [vite] page reload src/hooks/useDemandes.ts
+12:58:27 PM [vite] page reload src/hooks/useDemandes.ts
+12:59:27 PM [vite] hmr update /src/contexts/AuthContext.tsx, /src/index.css
+12:59:40 PM [vite] hmr update /src/contexts/AuthContext.tsx, /src/index.css
+1:00:04 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:04:27 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:04:36 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:09:08 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:12:32 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:12:37 PM [vite] hmr update /src/contexts/AuthContext.tsx, /src/index.css
+1:12:57 PM [vite] hmr update /src/components/ProtectedRoute.tsx, /src/index.css
+1:13:40 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:13:49 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:15:36 PM [vite] page reload src/types/api.ts
+1:16:07 PM [vite] hmr update /src/pages/Index.tsx, /src/index.css
+1:17:14 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:17:20 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:17:53 PM [vite] hmr update /src/pages/Index.tsx, /src/index.css
+1:22:32 PM [vite] hmr update /src/pages/Index.tsx, /src/index.css
+1:22:32 PM [vite] hmr update /src/pages/Index.tsx, /src/index.css
+1:22:47 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:22:57 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:23:18 PM [vite] hmr update /src/components/LoginForm.tsx, /src/index.css
+1:23:35 PM [vite] hmr update /src/contexts/AuthContext.tsx, /src/index.css
+1:24:04 PM [vite] hmr update /src/components/ProtectedRoute.tsx, /src/index.css
