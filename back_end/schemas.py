@@ -109,3 +109,30 @@ class Fonctionnaire(FonctionnaireBase):
 
     class Config:
         from_attributes = True
+
+# Schéma pour créer un enseignant complet (utilisateur + infos enseignant)
+class EnseignantCreateComplete(BaseModel):
+    # Informations utilisateur
+    email: EmailStr
+    nom: str
+    prenom: str
+    telephone: Optional[str] = None
+    adresse: Optional[str] = None
+    cin: Optional[str] = None
+    password: str
+    # Informations spécifiques enseignant
+    specialite: Optional[str] = None
+    grade: Optional[str] = None
+    etablissement: Optional[str] = None
+
+# Schéma pour la réponse complète enseignant
+class EnseignantComplete(BaseModel):
+    id: int
+    user_id: int
+    specialite: Optional[str] = None
+    grade: Optional[str] = None
+    etablissement: Optional[str] = None
+    user: User
+
+    class Config:
+        from_attributes = True

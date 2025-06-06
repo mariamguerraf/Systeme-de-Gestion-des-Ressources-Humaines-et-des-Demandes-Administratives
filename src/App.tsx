@@ -80,6 +80,23 @@ const App = () => (
                 <Demandes />
               </ProtectedRoute>
             } />
+            
+            {/* Routes Secrétaire avec préfixe */}
+            <Route path="/secretaire/dashboard" element={
+              <ProtectedRoute allowedRoles={['secretaire']}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaire/users" element={
+              <ProtectedRoute allowedRoles={['secretaire', 'admin']}>
+                <UsersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaire/demandes" element={
+              <ProtectedRoute allowedRoles={['secretaire', 'admin']}>
+                <Demandes />
+              </ProtectedRoute>
+            } />
 
             {/* Routes Admin */}
             <Route path="/cadmin/dashboard" element={

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MapPin, User, AlertCircle, Calendar, Upload, FileText } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const OrdreMissionFonctionnaire = () => {
   const [formData, setFormData] = useState({
@@ -58,7 +59,10 @@ const OrdreMissionFonctionnaire = () => {
   };
 
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
+    logout();
     navigate('/');
   };
 

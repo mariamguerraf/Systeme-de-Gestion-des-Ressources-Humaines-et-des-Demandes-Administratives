@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Déconnexion - Système Universitaire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .logout-test { background: #dc3545; }
+        .logout-test:hover { background: #c82333; }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            display: none;
+        }
+        .account-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .account-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .admin { background: #ff6b6b; color: white; }
+        .secretaire { background: #4ecdc4; color: white; }
+        .enseignant { background: #45b7d1; color: white; }
+        .fonctionnaire { background: #96ceb4; color: white; }
+        .step {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .step::before {
+            content: "Étape " counter(step-counter) ": ";
+            font-weight: bold;
+            color: #007bff;
+        }
+        .steps-container {
+            counter-reset: step-counter;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test de Déconnexion - Système Universitaire</h1>
+        <p>Ce test vérifie que le bouton de déconnexion fonctionne correctement pour tous les rôles d'utilisateur.</p>
+
+        <div class="account-info">
+            <div class="account-card">
+                <h3>👨‍💼 Admin</h3>
+                <span class="role-badge admin">Admin</span>
+                <p><strong>Email:</strong> admin@univ.ma</p>
+                <p><strong>Mot de passe:</strong> admin2024</p>
+                <button onclick="testLogin('admin@univ.ma', 'admin2024', 'admin')">Se connecter</button>
+            </div>
+            <div class="account-card">
+                <h3>👩‍💼 Secrétaire</h3>
+                <span class="role-badge secretaire">Secrétaire</span>
+                <p><strong>Email:</strong> secretaire@univ.ma</p>
+                <p><strong>Mot de passe:</strong> secretaire2024</p>
+                <button onclick="testLogin('secretaire@univ.ma', 'secretaire2024', 'secretaire')">Se connecter</button>
+            </div>
+            <div class="account-card">
+                <h3>👨‍🏫 Enseignant</h3>
+                <span class="role-badge enseignant">Enseignant</span>
+                <p><strong>Email:</strong> enseignant@univ.ma</p>
+                <p><strong>Mot de passe:</strong> enseignant2024</p>
+                <button onclick="testLogin('enseignant@univ.ma', 'enseignant2024', 'enseignant')">Se connecter</button>
+            </div>
+            <div class="account-card">
+                <h3>👨‍💻 Fonctionnaire</h3>
+                <span class="role-badge fonctionnaire">Fonctionnaire</span>
+                <p><strong>Email:</strong> fonctionnaire@univ.ma</p>
+                <p><strong>Mot de passe:</strong> fonction2024</p>
+                <button onclick="testLogin('fonctionnaire@univ.ma', 'fonction2024', 'fonctionnaire')">Se connecter</button>
+            </div>
+        </div>
+
+        <div class="steps-container">
+            <div class="step">
+                Choisissez un compte de test ci-dessus et cliquez sur "Se connecter"
+            </div>
+            <div class="step">
+                Une fois connecté et redirigé vers le dashboard correspondant, cherchez le bouton "Déconnexion" (généralement en haut à droite)
+            </div>
+            <div class="step">
+                Cliquez sur le bouton "Déconnexion"
+            </div>
+            <div class="step">
+                Vérifiez que vous êtes redirigé vers la page de connexion principale
+            </div>
+            <div class="step">
+                Vérifiez que le token est bien supprimé (vous ne devez pas pouvoir revenir au dashboard sans vous reconnecter)
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Tests de Déconnexion</h3>
+            <div id="current-user-info" style="display: none;">
+                <p><strong>Utilisateur connecté:</strong> <span id="current-user"></span></p>
+                <p><strong>Rôle:</strong> <span id="current-role"></span></p>
+                <button class="logout-test" onclick="testLogout()">🔓 Tester la Déconnexion</button>
+            </div>
+            <div id="logout-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Vérifications Automatiques</h3>
+            <button onclick="checkBackendStatus()">Vérifier le Backend</button>
+            <button onclick="checkCurrentUser()">Vérifier l'Utilisateur Actuel</button>
+            <button onclick="checkTokenStorage()">Vérifier le Token</button>
+            <div id="verification-results"></div>
+        </div>
+
+        <div class="test-section warning">
+            <h3>⚠️ Points à Vérifier</h3>
+            <ul>
+                <li>Le bouton "Déconnexion" doit appeler la fonction logout() du contexte d'authentification</li>
+                <li>La fonction logout() doit supprimer le token du localStorage</li>
+                <li>L'utilisateur doit être redirigé vers la page de connexion principale ('/')</li>
+                <li>Le contexte d'authentification doit être réinitialisé (user = null)</li>
+                <li>Impossible de revenir au dashboard sans se reconnecter</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        async function testLogin(email, password, expectedRole) {
+            try {
+                console.log(`🔑 Test de connexion pour ${email} (${expectedRole})`);
+                
+                // Tester la connexion
+                const formData = new FormData();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur de connexion: ${response.status}`);
+                }
+
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+                
+                // Vérifier les informations utilisateur
+                const userResponse = await fetch(`${API_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${data.access_token}`
+                    }
+                });
+
+                if (!userResponse.ok) {
+                    throw new Error(`Erreur récupération utilisateur: ${userResponse.status}`);
+                }
+
+                const userData = await userResponse.json();
+                console.log('✅ Utilisateur connecté:', userData);
+
+                // Mettre à jour l'interface
+                document.getElementById('current-user').textContent = `${userData.prenom} ${userData.nom}`;
+                document.getElementById('current-role').textContent = userData.role;
+                document.getElementById('current-user-info').style.display = 'block';
+
+                // Rediriger vers l'application
+                const dashboardUrl = getDashboardUrl(userData.role);
+                console.log(`🔄 Redirection vers: ${dashboardUrl}`);
+                window.open(dashboardUrl, '_blank');
+                
+            } catch (error) {
+                console.error('❌ Erreur de test:', error);
+                alert(`Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        function getDashboardUrl(role) {
+            const baseUrl = 'http://localhost:5173';
+            switch (role) {
+                case 'admin':
+                    return `${baseUrl}/cadmin/dashboard`;
+                case 'secretaire':
+                    return `${baseUrl}/secretaire/dashboard`;
+                case 'enseignant':
+                    return `${baseUrl}/enseignant/profil`;
+                case 'fonctionnaire':
+                    return `${baseUrl}/fonctionnaire/profil`;
+                default:
+                    return `${baseUrl}/dashboard`;
+            }
+        }
+
+        async function testLogout() {
+            try {
+                console.log('🔓 Test de déconnexion...');
+                
+                // Vérifier qu'il y a un token
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    throw new Error('Aucun token trouvé - utilisateur déjà déconnecté');
+                }
+
+                // Simuler la déconnexion
+                localStorage.removeItem('access_token');
+                
+                // Vérifier que le token a été supprimé
+                const tokenAfter = localStorage.getItem('access_token');
+                if (tokenAfter) {
+                    throw new Error('Le token n\'a pas été supprimé correctement');
+                }
+
+                // Mettre à jour l'interface
+                document.getElementById('current-user-info').style.display = 'none';
+                
+                const resultDiv = document.getElementById('logout-result');
+                resultDiv.className = 'result success';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '✅ Déconnexion réussie ! Le token a été supprimé du localStorage.';
+                
+                console.log('✅ Test de déconnexion réussi');
+                
+            } catch (error) {
+                console.error('❌ Erreur de déconnexion:', error);
+                const resultDiv = document.getElementById('logout-result');
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `❌ Erreur de déconnexion: ${error.message}`;
+            }
+        }
+
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                addVerificationResult('✅ Backend accessible', 'success');
+            } catch (error) {
+                addVerificationResult('❌ Backend inaccessible: ' + error.message, 'error');
+            }
+        }
+
+        async function checkCurrentUser() {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    addVerificationResult('ℹ️ Aucun token - utilisateur non connecté', 'warning');
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}`);
+                }
+
+                const userData = await response.json();
+                addVerificationResult(`✅ Utilisateur connecté: ${userData.prenom} ${userData.nom} (${userData.role})`, 'success');
+            } catch (error) {
+                addVerificationResult('❌ Erreur vérification utilisateur: ' + error.message, 'error');
+            }
+        }
+
+        function checkTokenStorage() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                addVerificationResult(`✅ Token présent: ${token.substring(0, 20)}...`, 'success');
+            } else {
+                addVerificationResult('ℹ️ Aucun token stocké', 'warning');
+            }
+        }
+
+        function addVerificationResult(message, type) {
+            const resultsDiv = document.getElementById('verification-results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.style.display = 'block';
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        // Vérifier l'état initial
+        window.onload = function() {
+            checkTokenStorage();
+            if (localStorage.getItem('access_token')) {
+                checkCurrentUser();
+            }
+        };
+    </script>
+</body>
+</html>

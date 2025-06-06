@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DemandeProps {
   id: number;
@@ -24,6 +25,7 @@ const DemandesPage = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(10);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     // Simulation de chargement de données
@@ -87,6 +89,7 @@ const DemandesPage = () => {
 
   const handleLogout = () => {
     // Logique de déconnexion
+    logout();
     navigate('/');
   };
 

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Connexion - Identifiants Corrects</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .credential-card {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .test-section {
+            background: #e9ecef;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 2px solid #007bff;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .online { background-color: #28a745; }
+        .offline { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test de Connexion - Configuration Corrigée</h1>
+        
+        <div class="credential-card">
+            <h3>✅ Identifiants Corrects :</h3>
+            <p><strong>Email :</strong> admin@univ.ma</p>
+            <p><strong>Mot de passe :</strong> admin2024</p>
+            <p><strong>Rôle :</strong> Admin</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>🌐 État des Serveurs</h3>
+            <p><span class="status-indicator" id="backend-status"></span><strong>Backend :</strong> <span id="backend-text">Vérification...</span></p>
+            <p><span class="status-indicator" id="frontend-status"></span><strong>Frontend :</strong> <span id="frontend-text">Vérification...</span></p>
+            <button onclick="checkServerStatus()">🔄 Vérifier les Serveurs</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔑 Test de Connexion</h3>
+            <button onclick="testLogin()">🚀 Tester la Connexion Admin</button>
+            <button onclick="testWithWrongCredentials()">❌ Tester avec Mauvais Identifiants</button>
+            <div id="login-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Étapes de Test Manuel</h3>
+            <ol>
+                <li>Cliquez sur "Vérifier les Serveurs" pour s'assurer que tout fonctionne</li>
+                <li>Cliquez sur "Tester la Connexion Admin" pour vérifier l'API</li>
+                <li>Allez sur <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></li>
+                <li>Utilisez les identifiants : <code>admin@univ.ma</code> / <code>admin2024</code></li>
+                <li>Vous devriez être redirigé vers le dashboard admin</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8000';
+        const FRONTEND_URL = 'http://localhost:8080';
+        
+        async function checkServerStatus() {
+            // Test Backend
+            try {
+                const backendResponse = await fetch(`${BACKEND_URL}/health`);
+                if (backendResponse.ok) {
+                    document.getElementById('backend-status').className = 'status-indicator online';
+                    document.getElementById('backend-text').innerHTML = 'En ligne ✅';
+                } else {
+                    throw new Error('Backend non accessible');
+                }
+            } catch (error) {
+                document.getElementById('backend-status').className = 'status-indicator offline';
+                document.getElementById('backend-text').innerHTML = 'Hors ligne ❌';
+            }
+            
+            // Test Frontend
+            try {
+                const frontendResponse = await fetch(FRONTEND_URL);
+                if (frontendResponse.ok) {
+                    document.getElementById('frontend-status').className = 'status-indicator online';
+                    document.getElementById('frontend-text').innerHTML = 'En ligne ✅';
+                } else {
+                    throw new Error('Frontend non accessible');
+                }
+            } catch (error) {
+                document.getElementById('frontend-status').className = 'status-indicator offline';
+                document.getElementById('frontend-text').innerHTML = 'Hors ligne ❌';
+            }
+        }
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Test de connexion en cours...\n';
+            
+            try {
+                // Test avec les bons identifiants
+                const formData = new FormData();
+                formData.append('username', 'admin@univ.ma');
+                formData.append('password', 'admin2024');
+                
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                resultDiv.innerHTML += `📡 Réponse HTTP: ${response.status} ${response.statusText}\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML += `✅ CONNEXION RÉUSSIE!\n`;
+                    resultDiv.innerHTML += `🎟️ Token: ${data.access_token}\n`;
+                    resultDiv.innerHTML += `🔧 Type: ${data.token_type}\n\n`;
+                    
+                    // Test récupération utilisateur
+                    const userResponse = await fetch(`${BACKEND_URL}/auth/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${data.access_token}`
+                        }
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        resultDiv.innerHTML += `👤 Utilisateur récupéré:\n`;
+                        resultDiv.innerHTML += `   📧 Email: ${userData.email}\n`;
+                        resultDiv.innerHTML += `   👨‍💼 Nom: ${userData.prenom} ${userData.nom}\n`;
+                        resultDiv.innerHTML += `   🎭 Rôle: ${userData.role}\n\n`;
+                        resultDiv.innerHTML += `🎯 TOUT FONCTIONNE PARFAITEMENT!\n`;
+                        resultDiv.innerHTML += `➡️ Vous pouvez maintenant utiliser l'application avec ces identifiants.`;
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    resultDiv.innerHTML += `❌ Erreur: ${errorData.detail || 'Erreur inconnue'}\n`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `💥 Erreur de connexion: ${error.message}\n`;
+                resultDiv.innerHTML += `🔧 Vérifiez que le backend tourne sur le port 8000`;
+            }
+        }
+        
+        async function testWithWrongCredentials() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Test avec mauvais identifiants...\n';
+            
+            try {
+                const formData = new FormData();
+                formData.append('username', 'wrong@email.com');
+                formData.append('password', 'wrongpassword');
+                
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                resultDiv.innerHTML += `📡 Réponse HTTP: ${response.status} ${response.statusText}\n`;
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += `❌ PROBLÈME: La connexion a réussi avec de mauvais identifiants!\n`;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    resultDiv.innerHTML += `✅ CORRECT: Connexion refusée comme attendu\n`;
+                    resultDiv.innerHTML += `📝 Message d'erreur: ${errorData.detail || 'Erreur inconnue'}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `💥 Erreur de connexion: ${error.message}`;
+            }
+        }
+        
+        // Vérification automatique au chargement
+        window.addEventListener('load', checkServerStatus);
+    </script>
+</body>
+</html>

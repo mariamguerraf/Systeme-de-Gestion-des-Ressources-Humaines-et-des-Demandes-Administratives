@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, AlertCircle, Clock, FileText } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CongePage = () => {
   const [formData, setFormData] = useState({
@@ -42,8 +43,11 @@ const CongePage = () => {
   };
   // Logique de déconnexion
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
-	navigate('/');
+    logout();
+    navigate('/');
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">

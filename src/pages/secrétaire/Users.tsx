@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface UserProps {
   id: number;
@@ -20,6 +21,7 @@ const UsersPage = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -89,6 +91,7 @@ const UsersPage = () => {
 
   const handleLogout = () => {
     // Logique de déconnexion
+    logout();
     navigate('/');
   };
 

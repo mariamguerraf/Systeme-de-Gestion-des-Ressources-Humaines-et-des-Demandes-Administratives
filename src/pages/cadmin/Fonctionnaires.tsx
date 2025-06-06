@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, Plus, Edit3, Trash2, Eye, Search, Filter, FileText, Calendar } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Fonctionnaire {
   id: number;
@@ -19,8 +20,10 @@ interface Fonctionnaire {
 
 const CadminFonctionnaires = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   
   const handleLogout = () => {
+    logout();
     navigate('/');
   };
 

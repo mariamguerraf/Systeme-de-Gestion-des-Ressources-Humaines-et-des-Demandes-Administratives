@@ -40,8 +40,8 @@ const DashboardRouter: React.FC = () => {
       console.log('✅ Redirection enseignant vers /enseignant/profil');
       return <Navigate to="/enseignant/profil" replace />;
     case 'secretaire':
-      console.log('✅ Redirection secrétaire vers /dashboard');
-      return <Navigate to="/dashboard" replace />;
+      console.log('✅ Redirection secrétaire vers /secretaire/dashboard');
+      return <Navigate to="/secretaire/dashboard" replace />;
     case 'fonctionnaire':
       console.log('✅ Redirection fonctionnaire vers /fonctionnaire/profil');
       return <Navigate to="/fonctionnaire/profil" replace />;

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Formulaire Enseignant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+        <h1 class="text-2xl font-bold mb-6">Test - Formulaire d'Ajout d'Enseignant</h1>
+        
+        <!-- Simulation du formulaire -->
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl mx-auto">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900">Ajouter un Enseignant</h3>
+            </div>
+            
+            <div class="p-6">
+                <form id="enseignantForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Informations personnelles -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-gray-800">📝 Informations personnelles</h4>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>
+                                <input type="text" name="prenom" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Prénom de l'enseignant">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+                                <input type="text" name="nom" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Nom de famille">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">📧 Email *</label>
+                                <input type="email" name="email" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="email@universite.ma">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">📞 Téléphone</label>
+                                <input type="tel" name="telephone"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="0612345678">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">📍 Adresse</label>
+                                <input type="text" name="adresse"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Adresse complète">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🆔 CIN</label>
+                                <input type="text" name="cin"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="EE123456">
+                            </div>
+                        </div>
+
+                        <!-- Informations professionnelles -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-gray-800">🎓 Informations professionnelles</h4>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🔒 Mot de passe *</label>
+                                <input type="password" name="password" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Mot de passe temporaire">
+                                <p class="text-xs text-gray-500 mt-1">L'enseignant pourra changer ce mot de passe</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Spécialité</label>
+                                <select name="specialite" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Sélectionner une spécialité</option>
+                                    <option value="Informatique">Informatique</option>
+                                    <option value="Mathématiques">Mathématiques</option>
+                                    <option value="Physique">Physique</option>
+                                    <option value="Chimie">Chimie</option>
+                                    <option value="Biologie">Biologie</option>
+                                    <option value="Français">Français</option>
+                                    <option value="Histoire">Histoire</option>
+                                    <option value="Anglais">Anglais</option>
+                                    <option value="Économie">Économie</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🏆 Grade</label>
+                                <select name="grade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Sélectionner un grade</option>
+                                    <option value="Professeur">Professeur</option>
+                                    <option value="Professeur Associé">Professeur Associé</option>
+                                    <option value="Professeur Assistant">Professeur Assistant</option>
+                                    <option value="Maître de Conférences">Maître de Conférences</option>
+                                    <option value="Chargé de Cours">Chargé de Cours</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">🏢 Établissement</label>
+                                <input type="text" name="etablissement"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Nom de l'établissement">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Note d'information -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="text-blue-600 text-lg">🛡️</div>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-medium mb-1">Information de sécurité</p>
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>Un compte utilisateur sera automatiquement créé avec le rôle "Enseignant"</li>
+                                    <li>L'enseignant recevra ses identifiants par email</li>
+                                    <li>Il devra changer son mot de passe lors de sa première connexion</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boutons -->
+                    <div class="flex justify-end space-x-4 pt-4 border-t">
+                        <button type="button" 
+                                class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Annuler
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Créer l'Enseignant
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Zone de résultat -->
+        <div id="result" class="mt-6 p-4 bg-gray-50 rounded-lg hidden">
+            <h3 class="font-bold mb-2">Données à envoyer :</h3>
+            <pre id="resultContent" class="text-sm"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('enseignantForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Afficher les données
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultContent.textContent = JSON.stringify(data, null, 2);
+            resultDiv.classList.remove('hidden');
+            
+            console.log('Données du formulaire:', data);
+            
+            // Simuler l'envoi à l'API
+            alert('✅ Formulaire validé ! Données prêtes à être envoyées à l\'API.\n\nVoir les détails dans la console et ci-dessous.');
+        });
+    </script>
+</body>
+</html>

@@ -2,11 +2,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, UserCheck, BarChart3, Settings, Bell } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CadminDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   
   const handleLogout = () => {
+    logout();
     navigate('/');
   };
 

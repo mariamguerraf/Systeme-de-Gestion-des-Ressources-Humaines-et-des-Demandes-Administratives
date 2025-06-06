@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Demande {
   id: number;
@@ -11,7 +12,10 @@ interface Demande {
 
 const DemandesFonctionnaire = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
+    logout();
     navigate('/');
   };
   // Exemples de demandes déjà faites (à remplacer par API plus tard)
