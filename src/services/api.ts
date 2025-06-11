@@ -173,43 +173,54 @@ class ApiService {
 
   // Dashboard statistics methods
   async getDashboardStats() {
-    // For now, we'll simulate dashboard stats since the backend doesn't have dedicated endpoints
-    // In a real implementation, you'd have dedicated endpoints for dashboard statistics
     try {
-      const enseignants = await this.getEnseignants();
-      const testUsers = await this.getTestUsers();
-      const demandes = await this.getDemandes();
-      
-      const enseignantsArray = Array.isArray(enseignants) ? enseignants : [];
-      const testUsersData = testUsers as any;
-      const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
-      const demandesArray = Array.isArray(demandes) ? demandes : [];
-      
-      // Calculate real demandes statistics
-      const demandesEnAttente = demandesArray.filter((d: any) => d.statut === 'EN_ATTENTE').length;
-      const demandesTraitees = demandesArray.filter((d: any) => d.statut === 'APPROUVEE' || d.statut === 'REJETEE').length;
-      
-      return {
-        totalUsers: usersArray.length,
-        enseignants: enseignantsArray.length,
-        fonctionnaires: usersArray.filter((u: any) => u.role === 'fonctionnaire').length,
-        secretaires: usersArray.filter((u: any) => u.role === 'secretaire').length,
-        admins: usersArray.filter((u: any) => u.role === 'admin').length,
-        demandesEnAttente: demandesEnAttente,
-        demandesTraitees: demandesTraitees
-      };
+      // Utiliser le nouvel endpoint dédié aux statistiques
+      const stats = await this.request('/dashboard/stats');
+      return stats;
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      // Return mock data if API calls fail
-      return {
-        totalUsers: 0,
-        enseignants: 0,
-        fonctionnaires: 0,
-        secretaires: 0,
-        admins: 0,
-        demandesEnAttente: 0,
-        demandesTraitees: 0
-      };
+      
+      // Fallback: essayer de calculer manuellement les statistiques
+      try {
+        const enseignants = await this.getEnseignants();
+        const fonctionnaires = await this.getFonctionnaires();
+        const testUsers = await this.getTestUsers();
+        const demandes = await this.getDemandes();
+        
+        const enseignantsArray = Array.isArray(enseignants) ? enseignants : [];
+        const fonctionnairesArray = Array.isArray(fonctionnaires) ? fonctionnaires : [];
+        const testUsersData = testUsers as any;
+        const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
+        const demandesArray = Array.isArray(demandes) ? demandes : [];
+        
+        // Calculate real statistics from multiple endpoints
+        const demandesEnAttente = demandesArray.filter((d: any) => d.statut === 'EN_ATTENTE').length;
+        const demandesTraitees = demandesArray.filter((d: any) => d.statut === 'APPROUVEE' || d.statut === 'REJETEE').length;
+        
+        return {
+          totalUsers: usersArray.length,
+          enseignants: enseignantsArray.length,
+          fonctionnaires: fonctionnairesArray.length,
+          secretaires: usersArray.filter((u: any) => u.role === 'secretaire').length,
+          admins: usersArray.filter((u: any) => u.role === 'admin').length,
+          demandesEnAttente: demandesEnAttente,
+          demandesTraitees: demandesTraitees,
+          totalDemandes: demandesArray.length
+        };
+      } catch (fallbackError) {
+        console.error('Error with fallback stats calculation:', fallbackError);
+        // Return zero values if everything fails
+        return {
+          totalUsers: 0,
+          enseignants: 0,
+          fonctionnaires: 0,
+          secretaires: 0,
+          admins: 0,
+          demandesEnAttente: 0,
+          demandesTraitees: 0,
+          totalDemandes: 0
+        };
+      }
     }
   }
 

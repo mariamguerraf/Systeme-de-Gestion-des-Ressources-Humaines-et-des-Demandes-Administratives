@@ -1132,6 +1132,41 @@ async def delete_demande(
     
     return {"message": f"Demande '{demande_data['titre']}' supprimée avec succès"}
 
+# ===== ENDPOINT POUR LES STATISTIQUES DU DASHBOARD =====
+
+@app.get("/dashboard/stats")
+async def get_dashboard_stats(authorization: str = Header(None)):
+    """Obtenir les statistiques pour le dashboard"""
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    # Vérifier le token (admin ou secrétaire peuvent accéder aux stats)
+    user_role = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4:
+            user_role = parts[3]
+    
+    if user_role not in ["admin", "secretaire"]:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
+    
+    # Calculer les statistiques
+    stats = {
+        "totalUsers": len(TEST_USERS),
+        "enseignants": len(ENSEIGNANTS_DB),
+        "fonctionnaires": len(FONCTIONNAIRES_DB),
+        "secretaires": sum(1 for user in TEST_USERS.values() if user["role"] == "secretaire"),
+        "admins": sum(1 for user in TEST_USERS.values() if user["role"] == "admin"),
+        "demandesEnAttente": sum(1 for demande in DEMANDES_DB.values() if demande["statut"] == "EN_ATTENTE"),
+        "demandesTraitees": sum(1 for demande in DEMANDES_DB.values() if demande["statut"] in ["APPROUVEE", "REJETEE"]),
+        "totalDemandes": len(DEMANDES_DB)
+    }
+    
+    return stats
+
 # Endpoint de debug pour examiner FONCTIONNAIRES_DB
 @app.get("/debug/fonctionnaires-db")
 async def debug_fonctionnaires_db(authorization: str = Header(None)):
