@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MapPin, User, AlertCircle, Calendar, Upload, FileText } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 const OrdreMissionPage = () => {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  
   const [formData, setFormData] = useState({
 	objetMission: '',
 	destination: '',
@@ -21,6 +26,8 @@ const OrdreMissionPage = () => {
   });
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
 	const { name, value, type } = e.target;
@@ -30,11 +37,46 @@ const OrdreMissionPage = () => {
 	}));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
 	e.preventDefault();
-	console.log('Demande d\'ordre de mission soumise:', formData);
-	console.log('Fichiers attachés:', selectedFiles);
-	alert('Demande soumise avec succès !');
+	
+	if (!formData.objetMission || !formData.destination || !formData.dateDepart || !formData.dateRetour) {
+	  setError('Veuillez remplir tous les champs obligatoires');
+	  return;
+	}
+
+	try {
+	  setLoading(true);
+	  setError(null);
+
+	  const fraisInfo = [];
+	  if (formData.hebergement) fraisInfo.push('Hébergement');
+	  if (formData.restauration) fraisInfo.push('Restauration');
+	  if (formData.transport) fraisInfo.push('Transport');
+
+	  const demandeData = {
+		type_demande: 'ORDRE_MISSION',
+		titre: `Ordre de mission - ${formData.objetMission}`,
+		description: `Objet: ${formData.objetMission}\nDestination: ${formData.destination}\nAdresse: ${formData.adresseDestination}\nMotif: ${formData.motif}\nMoyen de transport: ${formData.moyenTransport}\nFrais prévus: ${formData.fraisPrevus}\nFrais inclus: ${fraisInfo.join(', ') || 'Aucun'}\nObservations: ${formData.observations || 'Aucune'}`,
+		date_debut: formData.dateDepart,
+		date_fin: formData.dateRetour
+	  };
+
+	  await apiService.createDemande(demandeData);
+	  
+	  alert('Demande d\'ordre de mission soumise avec succès!');
+	  navigate('/enseignant/demandes');
+	} catch (error) {
+	  console.error('Erreur lors de la soumission:', error);
+	  setError('Erreur lors de la soumission de la demande');
+	} finally {
+	  setLoading(false);
+	}
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   const handleFileSelect = () => {
@@ -57,11 +99,6 @@ const OrdreMissionPage = () => {
 	navigate('/enseignant/demandes');
   };
 
-  // Logique de déconnexion
-  const navigate = useNavigate();
-  const handleLogout = () => {
-    navigate('/');
-  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}

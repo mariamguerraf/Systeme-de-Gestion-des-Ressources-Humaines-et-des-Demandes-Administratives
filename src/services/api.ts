@@ -116,6 +116,103 @@ class ApiService {
     return this.request(`/users/role/${role}`);
   }
 
+  // Enseignants methods
+  async getEnseignants() {
+    return this.request('/users/enseignants');
+  }
+
+  async createEnseignant(enseignantData: any) {
+    return this.request('/users/enseignants', {
+      method: 'POST',
+      body: JSON.stringify(enseignantData),
+    });
+  }
+
+  async updateEnseignant(enseignantId: number, enseignantData: any) {
+    return this.request(`/users/enseignants/${enseignantId}`, {
+      method: 'PUT',
+      body: JSON.stringify(enseignantData),
+    });
+  }
+
+  async deleteEnseignant(enseignantId: number) {
+    return this.request(`/users/enseignants/${enseignantId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Fonctionnaires methods
+  async getFonctionnaires() {
+    return this.request('/users/fonctionnaires');
+  }
+
+  async createFonctionnaire(fonctionnaireData: any) {
+    return this.request('/users/fonctionnaires', {
+      method: 'POST',
+      body: JSON.stringify(fonctionnaireData),
+    });
+  }
+
+  async updateFonctionnaire(fonctionnaireId: number, fonctionnaireData: any) {
+    return this.request(`/users/fonctionnaires/${fonctionnaireId}`, {
+      method: 'PUT',
+      body: JSON.stringify(fonctionnaireData),
+    });
+  }
+
+  async deleteFonctionnaire(fonctionnaireId: number) {
+    return this.request(`/users/fonctionnaires/${fonctionnaireId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Test users method
+  async getTestUsers() {
+    return this.request('/test/users');
+  }
+
+  // Dashboard statistics methods
+  async getDashboardStats() {
+    // For now, we'll simulate dashboard stats since the backend doesn't have dedicated endpoints
+    // In a real implementation, you'd have dedicated endpoints for dashboard statistics
+    try {
+      const enseignants = await this.getEnseignants();
+      const testUsers = await this.getTestUsers();
+      const demandes = await this.getDemandes();
+      
+      const enseignantsArray = Array.isArray(enseignants) ? enseignants : [];
+      const testUsersData = testUsers as any;
+      const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
+      const demandesArray = Array.isArray(demandes) ? demandes : [];
+      
+      // Calculate real demandes statistics
+      const demandesEnAttente = demandesArray.filter((d: any) => d.statut === 'EN_ATTENTE').length;
+      const demandesTraitees = demandesArray.filter((d: any) => d.statut === 'APPROUVEE' || d.statut === 'REJETEE').length;
+      
+      return {
+        totalUsers: usersArray.length,
+        enseignants: enseignantsArray.length,
+        fonctionnaires: usersArray.filter((u: any) => u.role === 'fonctionnaire').length,
+        secretaires: usersArray.filter((u: any) => u.role === 'secretaire').length,
+        admins: usersArray.filter((u: any) => u.role === 'admin').length,
+        demandesEnAttente: demandesEnAttente,
+        demandesTraitees: demandesTraitees
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      // Return mock data if API calls fail
+      return {
+        totalUsers: 0,
+        enseignants: 0,
+        fonctionnaires: 0,
+        secretaires: 0,
+        admins: 0,
+        demandesEnAttente: 0,
+        demandesTraitees: 0
+      };
+    }
+  }
+
   // Demandes methods
   async getDemandes(skip = 0, limit = 100) {
     return this.request(`/demandes/?skip=${skip}&limit=${limit}`);
@@ -126,7 +223,7 @@ class ApiService {
   }
 
   async createDemande(demandeData: any) {
-    return this.request('/demandes/', {
+    return this.request('/demandes', {
       method: 'POST',
       body: JSON.stringify(demandeData),
     });
@@ -145,9 +242,21 @@ class ApiService {
     });
   }
 
+  async updateDemandeStatus(demandeId: number, status: string, commentaire?: string) {
+    return this.request(`/demandes/${demandeId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ statut: status, commentaire_admin: commentaire }),
+    });
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/health');
+  }
+
+  // Utility method to refresh token
+  refreshToken() {
+    this.token = localStorage.getItem('access_token');
   }
 }
 

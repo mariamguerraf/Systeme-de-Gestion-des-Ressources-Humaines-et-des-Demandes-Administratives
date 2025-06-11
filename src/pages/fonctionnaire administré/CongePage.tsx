@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, AlertCircle, Clock, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 const CongePage = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,10 @@ const CongePage = () => {
 	contactUrgence: ''
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
 	const { name, value } = e.target;
 	setFormData(prev => ({
@@ -37,13 +42,37 @@ const CongePage = () => {
 	}
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
 	e.preventDefault();
-	console.log('Demande de congé soumise:', formData);
+	
+	if (!formData.typeConge || !formData.dateDebut || !formData.dateFin || !formData.motif) {
+	  setError('Veuillez remplir tous les champs obligatoires');
+	  return;
+	}
+
+	try {
+	  setLoading(true);
+	  setError(null);
+
+	  const demandeData = {
+		type_demande: 'CONGE',
+		titre: `Demande de ${formData.typeConge}`,
+		description: `Motif: ${formData.motif}\nNombre de jours: ${formData.nombreJours}\nRemplaçant: ${formData.remplacant || 'Non spécifié'}\nContact d'urgence: ${formData.contactUrgence || 'Non spécifié'}`,
+		date_debut: formData.dateDebut,
+		date_fin: formData.dateFin
+	  };
+
+	  await apiService.createDemande(demandeData);
+	  
+	  alert('Demande de congé soumise avec succès!');
+	  navigate('/fonctionnaire/demandes');
+	} catch (error) {
+	  console.error('Erreur lors de la soumission:', error);
+	  setError('Erreur lors de la soumission de la demande');
+	} finally {
+	  setLoading(false);
+	}
   };
-  // Logique de déconnexion
-  const navigate = useNavigate();
-  const { logout } = useAuth();
   
   const handleLogout = () => {
     logout();
@@ -93,6 +122,16 @@ const CongePage = () => {
             <Calendar className="w-6 h-6 text-blue-600" />
             <h2 className="text-2xl font-semibold text-gray-800">Demande de Congé</h2>
           </div>
+          
+          {error && (
+            <div className="mx-6 mt-4 bg-red-50 border border-red-300 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <div className="text-red-700">{error}</div>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="p-6">
             {/* Solde de congés */}
             <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">

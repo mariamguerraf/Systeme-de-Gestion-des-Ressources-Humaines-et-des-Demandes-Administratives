@@ -3,16 +3,26 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface DemandeProps {
   id: number;
-  objet: string;
-  expediteur: string;
-  typeExpediteur: string;
-  dateCreation: string;
-  statut: 'en attente' | 'en cours' | 'traitée';
-  priorite: 'normale' | 'urgente' | 'basse';
-  messageContent: string;
+  user_id: number;
+  type_demande: string;
+  titre: string;
+  description?: string;
+  date_debut?: string;
+  date_fin?: string;
+  statut: 'EN_ATTENTE' | 'APPROUVEE' | 'REJETEE';
+  commentaire_admin?: string;
+  created_at: string;
+  user?: {
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    role: string;
+  };
 }
 
 const DemandesPage = () => {
@@ -20,60 +30,55 @@ const DemandesPage = () => {
   const [filteredDemandes, setFilteredDemandes] = useState<DemandeProps[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatut, setFilterStatut] = useState<string>('');
-  const [filterPriorite, setFilterPriorite] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(10);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
+  // Load demandes on component mount
   useEffect(() => {
-    // Simulation de chargement de données
-    const fetchData = async () => {
+    const fetchDemandes = async () => {
       try {
-        // Dans un cas réel, ces données viendraient d'une API
-        const mockDemandes = [
-          { id: 1, objet: "Demande d'attestation", expediteur: "Jean Martin", typeExpediteur: "professeur", dateCreation: "01/04/2024", statut: "en attente" as const, priorite: "normale" as const, messageContent: "Je souhaiterais obtenir une attestation de service." },
-          { id: 2, objet: "Problème d'accès", expediteur: "Marie Dubois", typeExpediteur: "fonctionnaire", dateCreation: "28/03/2024", statut: "en cours" as const, priorite: "urgente" as const, messageContent: "Je n'arrive pas à accéder à mon espace personnel." },
-          { id: 3, objet: "Question administrative", expediteur: "Pierre Bernard", typeExpediteur: "administre", dateCreation: "25/03/2024", statut: "traitée" as const, priorite: "normale" as const, messageContent: "Comment puis-je obtenir un duplicata de mon dossier?" },
-          { id: 4, objet: "Mise à jour d'information", expediteur: "Sophie Petit", typeExpediteur: "professeur", dateCreation: "23/03/2024", statut: "en attente" as const, priorite: "basse" as const, messageContent: "Je souhaite mettre à jour mes coordonnées." },
-          { id: 5, objet: "Demande de rendez-vous", expediteur: "Julie Richard", typeExpediteur: "fonctionnaire", dateCreation: "20/03/2024", statut: "en cours" as const, priorite: "normale" as const, messageContent: "Je souhaiterais prendre rendez-vous avec le secrétaire général." },
-          { id: 6, objet: "Réclamation", expediteur: "Thomas Moreau", typeExpediteur: "administre", dateCreation: "18/03/2024", statut: "traitée" as const, priorite: "urgente" as const, messageContent: "Je conteste la décision prise concernant mon dossier." },
-          { id: 7, objet: "Demande de document", expediteur: "Laura Simon", typeExpediteur: "professeur", dateCreation: "15/03/2024", statut: "en attente" as const, priorite: "normale" as const, messageContent: "Pouvez-vous me fournir une copie de mon contrat?" },
-          { id: 8, objet: "Question technique", expediteur: "David Laurent", typeExpediteur: "fonctionnaire", dateCreation: "10/03/2024", statut: "traitée" as const, priorite: "basse" as const, messageContent: "Comment puis-je réinitialiser mon mot de passe?" },
-          { id: 9, objet: "Signalement", expediteur: "Emilie Michel", typeExpediteur: "administre", dateCreation: "05/03/2024", statut: "en cours" as const, priorite: "urgente" as const, messageContent: "Je souhaite signaler un problème dans les locaux." },
-          { id: 10, objet: "Information", expediteur: "Lucas Lefebvre", typeExpediteur: "professeur", dateCreation: "01/03/2024", statut: "traitée" as const, priorite: "normale" as const, messageContent: "Quand aura lieu la prochaine réunion?" }
-        ];
-
-        setDemandes(mockDemandes);
-        setFilteredDemandes(mockDemandes);
+        setLoading(true);
+        const data = await apiService.getDemandes();
+        
+        // Transform data to match interface
+        const transformedData = Array.isArray(data) ? data : [];
+        
+        setDemandes(transformedData);
+        setFilteredDemandes(transformedData);
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error('Erreur lors du chargement des demandes:', error);
+        setError('Impossible de charger les demandes');
+        setDemandes([]);
+        setFilteredDemandes([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchDemandes();
   }, []);
 
+  // Filter demandes based on search criteria
   useEffect(() => {
-    // Filtrer les demandes en fonction des critères de recherche
     if (demandes.length > 0) {
       const filtered = demandes.filter(demande => {
         const matchesSearch = searchTerm === '' ||
-          demande.objet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          demande.expediteur.toLowerCase().includes(searchTerm.toLowerCase());
+          demande.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (demande.user?.nom || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (demande.user?.prenom || '').toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatut = filterStatut === '' || demande.statut === filterStatut;
-        const matchesPriorite = filterPriorite === '' || demande.priorite === filterPriorite;
 
-        return matchesSearch && matchesStatut && matchesPriorite;
+        return matchesSearch && matchesStatut;
       });
 
       setFilteredDemandes(filtered);
     }
-  }, [searchTerm, filterStatut, filterPriorite, demandes]);
+  }, [searchTerm, filterStatut, demandes]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -83,12 +88,7 @@ const DemandesPage = () => {
     setFilterStatut(e.target.value);
   };
 
-  const handleFilterPriorite = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilterPriorite(e.target.value);
-  };
-
   const handleLogout = () => {
-    // Logique de déconnexion
     logout();
     navigate('/');
   };
@@ -97,22 +97,34 @@ const DemandesPage = () => {
     navigate(`/secretaire/demandes/${id}`);
   };
 
-  const handleTraiterDemande = (id: number) => {
-    setDemandes(demandes.map(demande =>
-      demande.id === id
-        ? { ...demande, statut: 'en cours' as const }
-        : demande
-    ));
-    console.log(`Demande ${id} mise en cours de traitement`);
+  const handleTraiterDemande = async (id: number) => {
+    try {
+      await apiService.updateDemandeStatus(id, 'APPROUVEE');
+      // Update local state
+      setDemandes(demandes.map(demande =>
+        demande.id === id
+          ? { ...demande, statut: 'APPROUVEE' as const }
+          : demande
+      ));
+      console.log(`Demande ${id} approuvée`);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+    }
   };
 
-  const handleArchiverDemande = (id: number) => {
-    setDemandes(demandes.map(demande =>
-      demande.id === id
-        ? { ...demande, statut: 'traitée' as const }
-        : demande
-    ));
-    console.log(`Demande ${id} archivée`);
+  const handleArchiverDemande = async (id: number) => {
+    try {
+      await apiService.updateDemandeStatus(id, 'REJETEE');
+      // Update local state
+      setDemandes(demandes.map(demande =>
+        demande.id === id
+          ? { ...demande, statut: 'REJETEE' as const }
+          : demande
+      ));
+      console.log(`Demande ${id} rejetée`);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+    }
   };
 
   // Fonctions de pagination
@@ -176,7 +188,7 @@ const DemandesPage = () => {
             <div className="flex-grow">
               <input
                 type="text"
-                placeholder="Rechercher par objet ou expéditeur..."
+                placeholder="Rechercher par titre ou nom d'utilisateur..."
                 value={searchTerm}
                 onChange={handleSearch}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -189,21 +201,9 @@ const DemandesPage = () => {
                 className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Tous les statuts</option>
-                <option value="en attente">En attente</option>
-                <option value="en cours">En cours</option>
-                <option value="traitée">Traitée</option>
-              </select>
-            </div>
-            <div>
-              <select
-                value={filterPriorite}
-                onChange={handleFilterPriorite}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Toutes les priorités</option>
-                <option value="basse">Basse</option>
-                <option value="normale">Normale</option>
-                <option value="urgente">Urgente</option>
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="APPROUVEE">Approuvée</option>
+                <option value="REJETEE">Rejetée</option>
               </select>
             </div>
           </div>
@@ -216,12 +216,11 @@ const DemandesPage = () => {
               <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objet</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expéditeur</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandeur</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorité</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -229,34 +228,32 @@ const DemandesPage = () => {
                 {currentDemandes.map((demande) => (
                   <tr key={demande.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.objet}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.expediteur}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        demande.typeExpediteur === 'professeur' ? 'bg-purple-100 text-purple-800' :
-                        demande.typeExpediteur === 'fonctionnaire' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {demande.typeExpediteur.charAt(0).toUpperCase() + demande.typeExpediteur.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.dateCreation}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        demande.statut === 'en attente' ? 'bg-yellow-100 text-yellow-800' :
-                        demande.statut === 'en cours' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {demande.statut.charAt(0).toUpperCase() + demande.statut.slice(1)}
-                      </span>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.titre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {demande.user ? `${demande.user.prenom} ${demande.user.nom}` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        demande.priorite === 'urgente' ? 'bg-red-100 text-red-800' :
-                        demande.priorite === 'normale' ? 'bg-blue-100 text-blue-800' :
+                        demande.type_demande === 'CONGE' ? 'bg-purple-100 text-purple-800' :
+                        demande.type_demande === 'ABSENCE' ? 'bg-blue-100 text-blue-800' :
+                        demande.type_demande === 'ATTESTATION' ? 'bg-green-100 text-green-800' :
+                        demande.type_demande === 'ORDRE_MISSION' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {demande.priorite.charAt(0).toUpperCase() + demande.priorite.slice(1)}
+                        {demande.type_demande.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(demande.created_at).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
+                        demande.statut === 'APPROUVEE' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {demande.statut === 'EN_ATTENTE' ? 'En attente' :
+                         demande.statut === 'APPROUVEE' ? 'Approuvée' : 'Rejetée'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">

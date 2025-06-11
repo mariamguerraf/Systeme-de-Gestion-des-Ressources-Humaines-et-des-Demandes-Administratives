@@ -1,0 +1,16 @@
+{
+  "8": {
+    "id": 8,
+    "user_id": 8,
+    "specialite": "Mathématiques",
+    "grade": "",
+    "etablissement": "",
+    "user": {
+      "id": 8,
+      "email": "LaylaN@univ.ma",
+      "nom": "sl",
+      "prenom": "layla",
+      "role": "enseignant"
+    }
+  }
+}

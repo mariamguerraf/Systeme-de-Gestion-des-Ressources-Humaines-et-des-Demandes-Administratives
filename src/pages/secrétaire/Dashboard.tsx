@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, Users, FileText, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface StatProps {
   totalUsers: number;
@@ -42,27 +43,43 @@ const SecretaireDashboard = () => {
   };
 
   useEffect(() => {
-    // Simulation de chargement de données
+    // Fetch real data from API
     const fetchData = async () => {
       try {
-        // Dans un cas réel, ces données viendraient d'une API
+        setLoading(true);
+        const dashboardStats = await apiService.getDashboardStats();
+        
         setStats({
-          totalUsers: 145,
-          professeurs: 42,
-          fonctionnaires: 68,
-          administres: 35,
-          demandesEnAttente: 12
+          totalUsers: dashboardStats.totalUsers,
+          professeurs: dashboardStats.enseignants,
+          fonctionnaires: dashboardStats.fonctionnaires,
+          administres: dashboardStats.totalUsers - dashboardStats.enseignants - dashboardStats.fonctionnaires,
+          demandesEnAttente: dashboardStats.demandesEnAttente
         });
 
-        setRecentesDemandes([
-          { id: 1, utilisateur: "Prof. Martin", type: "Congé", date: "05/04/2025", statut: "En attente" },
-          { id: 2, utilisateur: "Mme Dubois", type: "Document", date: "04/04/2025", statut: "En attente" },
-          { id: 3, utilisateur: "M. Bernard", type: "Attestation", date: "03/04/2025", statut: "En attente" },
-          { id: 4, utilisateur: "Prof. Petit", type: "Congé", date: "02/04/2025", statut: "En attente" },
-          { id: 5, utilisateur: "Mme Richard", type: "Document", date: "01/04/2025", statut: "En attente" }
-        ]);
+        // Fetch real demandes data
+        const demandesData = await apiService.getDemandes(0, 5); // Get latest 5 demandes
+        const recentDemandes = Array.isArray(demandesData) ? demandesData.slice(0, 3).map((demande: any) => ({
+          id: demande.id,
+          utilisateur: demande.user ? `${demande.user.prenom} ${demande.user.nom}` : 'Utilisateur inconnu',
+          type: demande.titre,
+          date: new Date(demande.created_at).toLocaleDateString('fr-FR'),
+          statut: demande.statut === 'EN_ATTENTE' ? 'En attente' : 
+                  demande.statut === 'APPROUVEE' ? 'Approuvé' : 'Rejeté'
+        })) : [];
+
+        setRecentesDemandes(recentDemandes);
+
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error('Erreur lors du chargement des données:', error);
+        // Keep default/mock values in case of error
+        setStats({
+          totalUsers: 0,
+          professeurs: 0,
+          fonctionnaires: 0,
+          administres: 0,
+          demandesEnAttente: 0
+        });
       } finally {
         setLoading(false);
       }

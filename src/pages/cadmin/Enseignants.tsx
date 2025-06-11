@@ -1,23 +1,35 @@
 // Gestion des enseignants par le cadmin
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface Enseignant {
   id: number;
+  user_id: number;
   nom: string;
   prenom: string;
   email: string;
-  telephone: string;
-  matiere: string;
-  statut: 'Actif' | 'Inactif';
-  dateEmbauche: string;
+  telephone?: string;
+  adresse?: string;
+  cin?: string;
+  specialite?: string;
+  grade?: string;
+  etablissement?: string;
+  statut: 'Actif' | 'Inactif';  user?: {
+    id: number;
+    email: string;
+    nom: string;
+    prenom: string;
+    role: string;
+    created_at?: string;
+  };
 }
 
 const CadminEnseignants = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   
   const handleLogout = () => {
     logout();
@@ -26,6 +38,8 @@ const CadminEnseignants = () => {
 
   // État pour la liste des enseignants (récupérée depuis l'API)
   const [enseignants, setEnseignants] = useState<Enseignant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -34,49 +48,42 @@ const CadminEnseignants = () => {
   const [selectedEnseignant, setSelectedEnseignant] = useState<Enseignant | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load enseignants on component mount
+  useEffect(() => {
+    loadEnseignants();
+  }, []);
+
   // Fonction pour charger tous les enseignants depuis l'API
   const loadEnseignants = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        console.error('Token manquant');
-        return;
-      }      const response = await fetch('http://localhost:8000/users/enseignants', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      setLoading(true);
+      setError(null);
+      const enseignantsData = await apiService.getEnseignants();
+      
+      // Transform the data to match our interface
+      const transformedData = Array.isArray(enseignantsData) ? enseignantsData.map((ens: any) => ({
+        id: ens.id,
+        user_id: ens.user_id,
+        nom: ens.user?.nom || '',
+        prenom: ens.user?.prenom || '',
+        email: ens.user?.email || '',
+        telephone: ens.user?.telephone || '',
+        adresse: ens.user?.adresse || '',
+        cin: ens.user?.cin || '',
+        specialite: ens.specialite || '',
+        grade: ens.grade || '',
+        etablissement: ens.etablissement || '',
+        statut: 'Actif' as const,
+        user: ens.user
+      })) : [];
 
-      if (response.ok) {
-        const enseignantsData = await response.json();
-        console.log('Enseignants récupérés:', enseignantsData);
-        
-        // Convertir les données de l'API vers le format de l'interface locale
-        const enseignantsFormatted = enseignantsData.map((ens: any) => ({
-          id: ens.user.id,
-          nom: ens.user.nom,
-          prenom: ens.user.prenom,
-          email: ens.user.email,
-          telephone: ens.user.telephone || '',
-          matiere: ens.specialite || '',
-          statut: 'Actif' as const,
-          dateEmbauche: new Date().toISOString().split('T')[0]
-        }));
-        
-        setEnseignants(enseignantsFormatted);
-      } else {
-        console.error('Erreur lors du chargement des enseignants:', response.status);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des enseignants:', error);
+      setEnseignants(transformedData);    } catch (err: any) {
+      console.error('Erreur lors du chargement des enseignants:', err);
+      setError('Erreur lors du chargement des enseignants');
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Charger les enseignants au démarrage du composant
-  React.useEffect(() => {
-    loadEnseignants();
-  }, []);
   
   // État pour le formulaire de création
   const [formData, setFormData] = useState({
@@ -98,7 +105,7 @@ const CadminEnseignants = () => {
       enseignant.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enseignant.matiere.toLowerCase().includes(searchTerm.toLowerCase());
+      (enseignant.specialite || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === '' || enseignant.statut === statusFilter;
     
@@ -136,7 +143,7 @@ const CadminEnseignants = () => {
       adresse: '', // Ces champs ne sont pas disponibles dans l'interface Enseignant
       cin: '',
       password: '', // Laisser vide pour modification
-      specialite: enseignant.matiere,
+      specialite: enseignant.specialite,
       grade: '',
       etablissement: ''
     });
@@ -148,36 +155,17 @@ const CadminEnseignants = () => {
     setSelectedEnseignant(enseignant);
     setShowModal(true);
   };
-
   const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet enseignant ?')) {
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
-        const response = await fetch(`http://localhost:8000/users/enseignants/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          alert(result.message || 'Enseignant supprimé avec succès !');
-          
-          // Retirer l'enseignant de la liste locale
-          setEnseignants(enseignants.filter(e => e.id !== id));
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de supprimer l\'enseignant'}`);
-        }
-      } catch (error) {
+        await apiService.deleteEnseignant(id);
+        alert('Enseignant supprimé avec succès !');
+        
+        // Retirer l'enseignant de la liste locale
+        setEnseignants(enseignants.filter(e => e.id !== id));
+      } catch (error: any) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de supprimer l\'enseignant'}`);
       }
     }
   };
@@ -185,59 +173,36 @@ const CadminEnseignants = () => {
   const handleSaveEnseignant = async () => {
     if (modalType === 'create') {
       setIsLoading(true);
-      try {
-        // Valider les champs requis
+      try {        // Valider les champs requis
         if (!formData.nom || !formData.prenom || !formData.email || !formData.password) {
           alert('Veuillez remplir tous les champs obligatoires');
           return;
-        }
-
-        // Obtenir le token depuis localStorage
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
-        // Faire l'appel API
-        const response = await fetch('http://localhost:8000/users/enseignants', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(formData)
-        });
-
-        if (response.ok) {
-          const nouvelEnseignant = await response.json();
-          alert('Enseignant créé avec succès !');
-          
-          // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
-          const enseignantLocal: Enseignant = {
-            id: nouvelEnseignant.user.id,
-            nom: nouvelEnseignant.user.nom,
-            prenom: nouvelEnseignant.user.prenom,
-            email: nouvelEnseignant.user.email,
-            telephone: nouvelEnseignant.user.telephone || '',
-            matiere: nouvelEnseignant.specialite || '',
-            statut: 'Actif',
-            dateEmbauche: new Date().toISOString().split('T')[0]
-          };
-          
-          setEnseignants([...enseignants, enseignantLocal]);
-          setShowModal(false);
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de créer l\'enseignant'}`);
-        }
-      } catch (error) {
+        }        // Utiliser apiService pour la création
+        const nouvelEnseignant = await apiService.createEnseignant(formData) as any;
+        
+        alert('Enseignant créé avec succès !');
+        
+        // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
+        const enseignantLocal: Enseignant = {
+          id: nouvelEnseignant.id,
+          user_id: nouvelEnseignant.user_id,
+          nom: nouvelEnseignant.user.nom,
+          prenom: nouvelEnseignant.user.prenom,
+          email: nouvelEnseignant.user.email,
+          telephone: nouvelEnseignant.user.telephone || '',
+          specialite: nouvelEnseignant.specialite || '',
+          statut: 'Actif',
+          user: nouvelEnseignant.user
+        };
+        
+        setEnseignants([...enseignants, enseignantLocal]);
+        setShowModal(false);
+      } catch (error: any) {
         console.error('Erreur lors de la création:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de créer l\'enseignant'}`);
       } finally {
         setIsLoading(false);
-      }
-    } else if (modalType === 'edit' && selectedEnseignant) {
+      }} else if (modalType === 'edit' && selectedEnseignant) {
       setIsLoading(true);
       try {
         // Valider les champs requis (mot de passe optionnel en modification)
@@ -246,57 +211,43 @@ const CadminEnseignants = () => {
           return;
         }
 
-        // Obtenir le token depuis localStorage
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
         // Si le mot de passe est vide, garder l'ancien (on peut améliorer cela)
         const dataToSend = {
           ...formData,
-          password: formData.password || 'unchanged' // Placeholder - dans un vrai système, on ne changerait le mot de passe que s'il est fourni
+          password: formData.password || 'unchanged'
         };
 
-        // Faire l'appel API pour la modification
-        const response = await fetch(`http://localhost:8000/users/enseignants/${selectedEnseignant.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(dataToSend)
+        console.log('Tentative de modification de l\'enseignant:', {
+          selectedEnseignantId: selectedEnseignant.id,
+          selectedEnseignant: selectedEnseignant,
+          dataToSend: dataToSend
         });
-
-        if (response.ok) {
-          const enseignantModifie = await response.json();
-          alert('Enseignant modifié avec succès !');
-          
-          // Mettre à jour l'enseignant dans la liste locale
-          const enseignantLocal: Enseignant = {
-            id: enseignantModifie.user.id,
-            nom: enseignantModifie.user.nom,
-            prenom: enseignantModifie.user.prenom,
-            email: enseignantModifie.user.email,
-            telephone: enseignantModifie.user.telephone || '',
-            matiere: enseignantModifie.specialite || '',
-            statut: 'Actif',
-            dateEmbauche: new Date().toISOString().split('T')[0]
-          };
-          
-          // Remplacer l'enseignant modifié dans la liste
-          setEnseignants(enseignants.map(ens => 
-            ens.id === selectedEnseignant.id ? enseignantLocal : ens
-          ));
-          setShowModal(false);
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de modifier l\'enseignant'}`);
-        }
-      } catch (error) {
+          // Utiliser apiService pour la modification
+        const enseignantModifie = await apiService.updateEnseignant(selectedEnseignant.id, dataToSend) as any;
+        
+        alert('Enseignant modifié avec succès !');
+        
+        // Mettre à jour l'enseignant dans la liste locale
+        const enseignantLocal: Enseignant = {
+          id: enseignantModifie.id,
+          user_id: enseignantModifie.user_id,
+          nom: enseignantModifie.user.nom,
+          prenom: enseignantModifie.user.prenom,
+          email: enseignantModifie.user.email,
+          telephone: enseignantModifie.user.telephone || '',
+          specialite: enseignantModifie.specialite || '',
+          statut: 'Actif',
+          user: enseignantModifie.user
+        };
+        
+        // Remplacer l'enseignant modifié dans la liste
+        setEnseignants(enseignants.map(ens => 
+          ens.id === selectedEnseignant.id ? enseignantLocal : ens
+        ));
+        setShowModal(false);
+      } catch (error: any) {
         console.error('Erreur lors de la modification:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de modifier l\'enseignant'}`);
       } finally {
         setIsLoading(false);
       }
@@ -437,7 +388,7 @@ const CadminEnseignants = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {enseignant.matiere}
+                        {enseignant.specialite}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -450,7 +401,7 @@ const CadminEnseignants = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-900">
-                      {new Date(enseignant.dateEmbauche).toLocaleDateString('fr-FR')}
+                      {enseignant.user?.created_at ? new Date(enseignant.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
@@ -740,7 +691,7 @@ const CadminEnseignants = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.matiere}</div>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.specialite}</div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>

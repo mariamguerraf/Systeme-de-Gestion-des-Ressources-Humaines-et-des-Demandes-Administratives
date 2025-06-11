@@ -1,29 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface Demande {
   id: number;
-  type: string;
-  statut: 'En attente' | 'Validée' | 'Rejetée';
-  dateDemande: string;
+  user_id: number;
+  type_demande: string;
+  titre: string;
+  description?: string;
+  date_debut?: string;
+  date_fin?: string;
+  statut: 'EN_ATTENTE' | 'APPROUVEE' | 'REJETEE';
+  commentaire_admin?: string;
+  created_at: string;
+  user?: {
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    role: string;
+  };
 }
 
 const DemandesFonctionnaire = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const [demandes, setDemandes] = useState<Demande[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Load user's demandes on component mount
+  useEffect(() => {
+    const fetchDemandes = async () => {
+      try {
+        setLoading(true);
+        const data = await apiService.getDemandes();
+        
+        // Filter demandes for current user
+        const userDemandes = Array.isArray(data) ? 
+          data.filter((demande: any) => demande.user_id === user?.id) : [];
+        
+        setDemandes(userDemandes);
+      } catch (error) {
+        console.error('Erreur lors du chargement des demandes:', error);
+        setError('Impossible de charger les demandes');
+        setDemandes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchDemandes();
+    }
+  }, [user]);
   
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+  
   // Exemples de demandes déjà faites (à remplacer par API plus tard)
-  const [demandes, setDemandes] = useState<Demande[]>([
-    { id: 1, type: 'Congé', statut: 'En attente', dateDemande: '2025-06-01' },
-    { id: 2, type: 'Ordre de Mission', statut: 'Validée', dateDemande: '2025-05-29' },
-    { id: 3, type: 'Congé', statut: 'Rejetée', dateDemande: '2025-05-25' },
-  ]);
+  // const [demandes, setDemandes] = useState<Demande[]>([
+  //   { id: 1, type: 'Congé', statut: 'En attente', dateDemande: '2025-06-01' },
+  //   { id: 2, type: 'Ordre de Mission', statut: 'Validée', dateDemande: '2025-05-29' },
+  //   { id: 3, type: 'Congé', statut: 'Rejetée', dateDemande: '2025-05-25' },
+  // ]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
@@ -85,35 +129,57 @@ const DemandesFonctionnaire = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {demandes.map((demande) => (
-                    <tr key={demande.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.dateDemande}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {demande.statut === 'En attente' && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            <Clock className="w-4 h-4 mr-1 inline" /> En attente
-                          </span>
-                        )}
-                        {demande.statut === 'Validée' && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            <CheckCircle className="w-4 h-4 mr-1 inline" /> Validée
-                          </span>
-                        )}
-                        {demande.statut === 'Rejetée' && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                            <XCircle className="w-4 h-4 mr-1 inline" /> Rejetée
-                          </span>
-                        )}
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                        Chargement des demandes...
                       </td>
                     </tr>
-                  ))}
+                  ) : error ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-4 text-center text-red-500">
+                        {error}
+                      </td>
+                    </tr>
+                  ) : demandes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                        Aucune demande trouvée.
+                      </td>
+                    </tr>
+                  ) : (
+                    demandes.map((demande) => (
+                      <tr key={demande.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.type_demande.replace('_', ' ')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.titre}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(demande.created_at).toLocaleDateString('fr-FR')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {demande.statut === 'EN_ATTENTE' && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              <Clock className="w-4 h-4 mr-1 inline" /> En attente
+                            </span>
+                          )}
+                          {demande.statut === 'APPROUVEE' && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              <CheckCircle className="w-4 h-4 mr-1 inline" /> Approuvée
+                            </span>
+                          )}
+                          {demande.statut === 'REJETEE' && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              <XCircle className="w-4 h-4 mr-1 inline" /> Rejetée
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

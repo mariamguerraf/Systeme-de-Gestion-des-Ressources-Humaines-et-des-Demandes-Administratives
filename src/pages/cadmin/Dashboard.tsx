@@ -1,23 +1,64 @@
 // Dashboard du cadmin pour gérer enseignants et fonctionnaires
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, UserCheck, BarChart3, Settings, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
+
+interface DashboardStats {
+  totalUsers: number;
+  enseignants: number;
+  fonctionnaires: number;
+  secretaires: number;
+  admins: number;
+  demandesEnAttente: number;
+  demandesTraitees: number;
+}
 
 const CadminDashboard = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    enseignants: 0,
+    fonctionnaires: 0,
+    secretaires: 0,
+    admins: 0,
+    demandesEnAttente: 0,
+    demandesTraitees: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const stats = [
-    { title: 'Enseignants', count: 24, color: 'from-blue-500 to-blue-600', icon: UserCheck },
-    { title: 'Fonctionnaires', count: 18, color: 'from-purple-500 to-purple-600', icon: Users },
-    { title: 'Demandes en attente', count: 7, color: 'from-orange-500 to-orange-600', icon: Bell },
-    { title: 'Demandes traitées', count: 45, color: 'from-green-500 to-green-600', icon: BarChart3 },
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const dashboardStats = await apiService.getDashboardStats();
+        setStats(dashboardStats);
+      } catch (err: any) {
+        console.error('Error fetching dashboard stats:', err);
+        setError('Erreur lors du chargement des statistiques');
+        // Keep default values in case of error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
+  const dashboardCards = [
+    { title: 'Enseignants', count: stats.enseignants, color: 'from-blue-500 to-blue-600', icon: UserCheck },
+    { title: 'Fonctionnaires', count: stats.fonctionnaires, color: 'from-purple-500 to-purple-600', icon: Users },
+    { title: 'Demandes en attente', count: stats.demandesEnAttente, color: 'from-orange-500 to-orange-600', icon: Bell },
+    { title: 'Demandes traitées', count: stats.demandesTraitees, color: 'from-green-500 to-green-600', icon: BarChart3 },
   ];
 
   return (
@@ -49,7 +90,7 @@ const CadminDashboard = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
               </div>
-              <span className="font-medium">Bienvenue, Administrateur</span>
+              <span className="font-medium">Bienvenue, {user?.prenom} {user?.nom}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -68,13 +109,23 @@ const CadminDashboard = () => {
             <div>
               <h2 className="text-2xl font-bold mb-2">Tableau de Bord Administrateur</h2>
               <p className="text-blue-100">Gérez les utilisateurs, supervisez les demandes et contrôlez l'ensemble du système depuis cette interface centralisée.</p>
+              {loading && (
+                <div className="mt-2 text-blue-100">
+                  <span className="text-sm">Chargement des statistiques...</span>
+                </div>
+              )}
+              {error && (
+                <div className="mt-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-50 rounded-lg p-2">
+                  <span className="text-sm text-red-100">{error}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
+          {dashboardCards.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
               <div key={index} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 hover:shadow-2xl transition-shadow">
@@ -82,7 +133,9 @@ const CadminDashboard = () => {
                   <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
                     <IconComponent className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-800">{stat.count}</span>
+                  <span className="text-2xl font-bold text-gray-800">
+                    {loading ? '...' : stat.count}
+                  </span>
                 </div>
                 <h3 className="text-gray-600 font-medium">{stat.title}</h3>
               </div>

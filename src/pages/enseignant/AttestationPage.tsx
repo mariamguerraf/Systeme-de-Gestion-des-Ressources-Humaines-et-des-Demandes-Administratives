@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Upload, Calendar, User, AlertCircle, Send, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 const AttestationPage = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +13,12 @@ const AttestationPage = () => {
     observations: ''
   });
 
-  const handleInputChange = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -19,13 +26,41 @@ const AttestationPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Demande d\'attestation soumise:', formData);
+    
+    if (!formData.typeAttestation || !formData.motif) {
+      setError('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const demandeData = {
+        type_demande: 'ATTESTATION',
+        titre: `Demande d'attestation - ${formData.typeAttestation}`,
+        description: `Motif: ${formData.motif}\nObservations: ${formData.observations || 'Aucune'}`,
+        date_debut: formData.dateDebut || undefined,
+        date_fin: formData.dateFin || undefined
+      };
+
+      await apiService.createDemande(demandeData);
+      
+      alert('Demande d\'attestation soumise avec succès!');
+      navigate('/enseignant/demandes');
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error);
+      setError('Erreur lors de la soumission de la demande');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
-    console.log('Déconnexion');
+    logout();
+    navigate('/');
   };
 
   return (
@@ -119,7 +154,7 @@ const AttestationPage = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Type d'Attestation
+                      Type d'Attestation *
                     </label>
                     <select
                       name="typeAttestation"
@@ -133,6 +168,21 @@ const AttestationPage = () => {
                       <option value="salaire">Attestation de Salaire</option>
                       <option value="emploi">Attestation d'Emploi</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Motif de la demande *
+                    </label>
+                    <textarea
+                      name="motif"
+                      value={formData.motif}
+                      onChange={handleInputChange}
+                      rows={3}
+                      placeholder="Précisez le motif de votre demande d'attestation..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none shadow-sm"
+                      required
+                    ></textarea>
                   </div>
 
                   <div>
@@ -151,6 +201,16 @@ const AttestationPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Error display */}
+            {error && (
+              <div className="mt-6 bg-red-50 border border-red-300 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+                  <span className="text-red-700">{error}</span>
+                </div>
+              </div>
+            )}
 
             {/* Note d'information colorée */}
             <div className="mt-8 bg-gradient-to-r from-purple-50 to-gray-50 border border-purple-200 rounded-xl p-6 shadow-sm">
@@ -179,10 +239,11 @@ const AttestationPage = () => {
               </Link>
               <button
                 onClick={handleSubmit}
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105"
+                disabled={loading}
+                className={`px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Send className="w-4 h-4" />
-                <span>Soumettre la Demande</span>
+                <span>{loading ? 'Envoi en cours...' : 'Soumettre la Demande'}</span>
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface UserProps {
   id: number;
@@ -34,27 +35,34 @@ const UsersPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    // Simulation de chargement de données
+    // Fetch real data from API
     const fetchData = async () => {
       try {
-        // Dans un cas réel, ces données viendraient d'une API
-        const mockUsers = [
-          { id: 1, nom: "Martin", prenom: "Jean", type: "professeur", email: "jean.martin@edu.fr", telephone: "06 12 34 56 78", dateInscription: "01/02/2024" },
-          { id: 2, nom: "Dubois", prenom: "Marie", type: "fonctionnaire", email: "marie.dubois@admin.fr", telephone: "06 23 45 67 89", dateInscription: "15/01/2024" },
-          { id: 3, nom: "Bernard", prenom: "Pierre", type: "administre", email: "pierre.bernard@gmail.com", telephone: "06 34 56 78 90", dateInscription: "20/03/2024" },
-          { id: 4, nom: "Petit", prenom: "Sophie", type: "professeur", email: "sophie.petit@edu.fr", telephone: "06 45 67 89 01", dateInscription: "05/12/2023" },
-          { id: 5, nom: "Richard", prenom: "Julie", type: "fonctionnaire", email: "julie.richard@admin.fr", telephone: "06 56 78 90 12", dateInscription: "10/02/2024" },
-          { id: 6, nom: "Moreau", prenom: "Thomas", type: "administre", email: "thomas.moreau@gmail.com", telephone: "06 67 89 01 23", dateInscription: "25/03/2024" },
-          { id: 7, nom: "Simon", prenom: "Laura", type: "professeur", email: "laura.simon@edu.fr", telephone: "06 78 90 12 34", dateInscription: "03/01/2024" },
-          { id: 8, nom: "Laurent", prenom: "David", type: "fonctionnaire", email: "david.laurent@admin.fr", telephone: "06 89 01 23 45", dateInscription: "18/02/2024" },
-          { id: 9, nom: "Michel", prenom: "Emilie", type: "administre", email: "emilie.michel@gmail.com", telephone: "06 90 12 34 56", dateInscription: "22/03/2024" },
-          { id: 10, nom: "Lefebvre", prenom: "Lucas", type: "professeur", email: "lucas.lefebvre@edu.fr", telephone: "06 01 23 45 67", dateInscription: "07/12/2023" }
-        ];
+        setLoading(true);
+        
+        // Get test users data which includes all users with different roles
+        const testUsersData = await apiService.getTestUsers() as any;
+        const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
+        
+        // Transform API data to match interface
+        const transformedUsers = usersArray.map((user: any) => ({
+          id: user.id || Math.random(),
+          nom: user.nom || 'N/A',
+          prenom: user.prenom || 'N/A', 
+          type: user.role === 'enseignant' ? 'professeur' : 
+                user.role === 'fonctionnaire' ? 'fonctionnaire' : 
+                user.role === 'admin' ? 'administrateur' :
+                user.role === 'secretaire' ? 'secrétaire' : 'administré',
+          email: user.email || '',
+          telephone: user.telephone || 'Non renseigné',
+          dateInscription: new Date().toLocaleDateString('fr-FR')
+        }));
 
-        setUsers(mockUsers);
-        setFilteredUsers(mockUsers);
+        setUsers(transformedUsers);
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error('Erreur lors du chargement des utilisateurs:', error);
+        // Fallback to empty array on error
+        setUsers([]);
       } finally {
         setLoading(false);
       }

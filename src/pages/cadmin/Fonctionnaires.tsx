@@ -1,84 +1,100 @@
 // Gestion des fonctionnaires administrés par le cadmin
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, Plus, Edit3, Trash2, Eye, Search, Filter, FileText, Calendar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface Fonctionnaire {
   id: number;
+  user_id: number;
   nom: string;
   prenom: string;
   email: string;
-  telephone: string;
-  poste: string;
-  departement: string;
-  statut: 'Actif' | 'Inactif' | 'En congé';
-  dateEmbauche: string;
-  soldeConge: number;
-  derniereConnexion: string;
+  telephone?: string;
+  adresse?: string;
+  cin?: string;
+  service?: string;
+  poste?: string;
+  grade?: string;
+  statut: 'Actif' | 'Inactif';
+  user?: {
+    id: number;
+    email: string;
+    nom: string;
+    prenom: string;
+    role: string;
+    created_at?: string;
+  };
 }
 
 const CadminFonctionnaires = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  // Données d'exemple des fonctionnaires
-  const [fonctionnaires, setFonctionnaires] = useState<Fonctionnaire[]>([
-    {
-      id: 1,
-      nom: 'Leroy',
-      prenom: 'Pierre',
-      email: 'pierre.leroy@admin.fr',
-      telephone: '0123456789',
-      poste: 'Agent Administratif',
-      departement: 'Ressources Humaines',
-      statut: 'Actif',
-      dateEmbauche: '2018-03-15',
-      soldeConge: 25,
-      derniereConnexion: '2025-01-15'
-    },
-    {
-      id: 2,
-      nom: 'Moreau',
-      prenom: 'Claire',
-      email: 'claire.moreau@admin.fr',
-      telephone: '0123456790',
-      poste: 'Secrétaire',
-      departement: 'Direction',
-      statut: 'En congé',
-      dateEmbauche: '2020-01-10',
-      soldeConge: 18,
-      derniereConnexion: '2025-01-10'
-    },
-    {
-      id: 3,
-      nom: 'Petit',
-      prenom: 'Laurent',
-      email: 'laurent.petit@admin.fr',
-      telephone: '0123456791',
-      poste: 'Comptable',
-      departement: 'Finance',
-      statut: 'Actif',
-      dateEmbauche: '2019-09-01',
-      soldeConge: 30,
-      derniereConnexion: '2025-01-14'
-    }
-  ]);
+  // État pour la liste des fonctionnaires (récupérée depuis l'API)
+  const [fonctionnaires, setFonctionnaires] = useState<Fonctionnaire[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  // Load fonctionnaires on component mount
+  useEffect(() => {
+    const fetchFonctionnaires = async () => {
+      try {
+        setLoading(true);
+        const data = await apiService.getFonctionnaires();
+        
+        // Transform data to match interface
+        const transformedData = Array.isArray(data) ? data.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          nom: item.user?.nom || item.nom || 'N/A',
+          prenom: item.user?.prenom || item.prenom || 'N/A',
+          email: item.user?.email || item.email || '',
+          telephone: item.user?.telephone || item.telephone || '',
+          service: item.service || '',
+          poste: item.poste || '',
+          grade: item.grade || '',
+          statut: 'Actif' as const,
+          user: item.user
+        })) : [];
+        
+        setFonctionnaires(transformedData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des fonctionnaires:', error);
+        setError('Impossible de charger les fonctionnaires');
+        setFonctionnaires([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFonctionnaires();
+  }, []);  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view' | 'demandes'>('create');
   const [selectedFonctionnaire, setSelectedFonctionnaire] = useState<Fonctionnaire | null>(null);
-
-  // Liste des départements uniques
-  const departments = [...new Set(fonctionnaires.map(f => f.departement))];
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // État pour le formulaire de création/modification
+  const [formData, setFormData] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    telephone: '',
+    adresse: '',
+    cin: '',
+    password: '',
+    service: '',
+    poste: '',
+    grade: ''
+  });
 
   // Filtrage des fonctionnaires
   const filteredFonctionnaires = fonctionnaires.filter(fonctionnaire => {
@@ -86,24 +102,49 @@ const CadminFonctionnaires = () => {
       fonctionnaire.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       fonctionnaire.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       fonctionnaire.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fonctionnaire.poste.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fonctionnaire.departement.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      (fonctionnaire.poste || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (fonctionnaire.service || '').toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === '' || fonctionnaire.statut === statusFilter;
-    const matchesDepartment = departmentFilter === '' || fonctionnaire.departement === departmentFilter;
-    
-    return matchesSearch && matchesStatus && matchesDepartment;
+
+    return matchesSearch && matchesStatus;
   });
 
   const handleCreate = () => {
     setModalType('create');
     setSelectedFonctionnaire(null);
+    // Réinitialiser le formulaire
+    setFormData({
+      nom: '',
+      prenom: '',
+      email: '',
+      telephone: '',
+      adresse: '',
+      cin: '',
+      password: '',
+      service: '',
+      poste: '',
+      grade: ''
+    });
     setShowModal(true);
   };
 
   const handleEdit = (fonctionnaire: Fonctionnaire) => {
     setModalType('edit');
     setSelectedFonctionnaire(fonctionnaire);
+    // Pré-remplir le formulaire avec les données existantes
+    setFormData({
+      nom: fonctionnaire.nom,
+      prenom: fonctionnaire.prenom,
+      email: fonctionnaire.email,
+      telephone: fonctionnaire.telephone || '',
+      adresse: fonctionnaire.adresse || '',
+      cin: fonctionnaire.cin || '',
+      password: '', // Laisser vide pour modification
+      service: fonctionnaire.service || '',
+      poste: fonctionnaire.poste || '',
+      grade: fonctionnaire.grade || ''
+    });
     setShowModal(true);
   };
 
@@ -119,23 +160,109 @@ const CadminFonctionnaires = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce fonctionnaire ?')) {
-      setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
+      try {
+        await apiService.deleteFonctionnaire(id);
+        alert('Fonctionnaire supprimé avec succès !');
+        // Retirer le fonctionnaire de la liste locale
+        setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression du fonctionnaire');
+      }
     }
   };
 
-  const handleSaveFonctionnaire = () => {
+  const handleSaveFonctionnaire = async () => {
     if (modalType === 'create') {
-      console.log('Création d\'un nouveau fonctionnaire');
-      // Ici, on ajouterait la logique pour créer un nouveau fonctionnaire
-      alert('Fonctionnalité de création à implémenter');
-    } else if (modalType === 'edit') {
-      console.log('Modification du fonctionnaire', selectedFonctionnaire?.id);
-      // Ici, on ajouterait la logique pour modifier le fonctionnaire existant
-      alert('Fonctionnalité de modification à implémenter');
+      setIsLoading(true);
+      try {
+        // Valider les champs requis
+        if (!formData.nom || !formData.prenom || !formData.email || !formData.password) {
+          alert('Veuillez remplir tous les champs obligatoires');
+          return;
+        }
+
+        const nouveauFonctionnaire = await apiService.createFonctionnaire(formData) as any;
+        alert('Fonctionnaire créé avec succès !');
+        
+        // Ajouter le nouveau fonctionnaire à la liste (mapping vers l'interface locale)
+        const fonctionnaireLocal: Fonctionnaire = {
+          id: nouveauFonctionnaire.id,
+          user_id: nouveauFonctionnaire.user_id,
+          nom: nouveauFonctionnaire.user.nom,
+          prenom: nouveauFonctionnaire.user.prenom,
+          email: nouveauFonctionnaire.user.email,
+          telephone: nouveauFonctionnaire.user.telephone || '',
+          service: nouveauFonctionnaire.service || '',
+          poste: nouveauFonctionnaire.poste || '',
+          grade: nouveauFonctionnaire.grade || '',
+          statut: 'Actif',
+          user: nouveauFonctionnaire.user
+        };
+        
+        setFonctionnaires([...fonctionnaires, fonctionnaireLocal]);
+        setShowModal(false);
+      } catch (error) {
+        console.error('Erreur lors de la création:', error);
+        alert('Erreur lors de la création du fonctionnaire');
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (modalType === 'edit' && selectedFonctionnaire) {
+      setIsLoading(true);
+      try {
+        // Valider les champs requis (mot de passe optionnel en modification)
+        if (!formData.nom || !formData.prenom || !formData.email) {
+          alert('Veuillez remplir tous les champs obligatoires');
+          return;
+        }
+
+        // Si le mot de passe est vide, on l'exclut de la mise à jour
+        const dataToSend = {
+          ...formData,
+          password: formData.password || 'unchanged'
+        };
+
+        const fonctionnaireModifie = await apiService.updateFonctionnaire(selectedFonctionnaire.id, dataToSend) as any;
+        alert('Fonctionnaire modifié avec succès !');
+        
+        // Mettre à jour le fonctionnaire dans la liste locale
+        const fonctionnaireLocal: Fonctionnaire = {
+          id: fonctionnaireModifie.id,
+          user_id: fonctionnaireModifie.user_id,
+          nom: fonctionnaireModifie.user.nom,
+          prenom: fonctionnaireModifie.user.prenom,
+          email: fonctionnaireModifie.user.email,
+          telephone: fonctionnaireModifie.user.telephone || '',
+          service: fonctionnaireModifie.service || '',
+          poste: fonctionnaireModifie.poste || '',
+          grade: fonctionnaireModifie.grade || '',
+          statut: 'Actif',
+          user: fonctionnaireModifie.user
+        };
+        
+        // Remplacer le fonctionnaire modifié dans la liste
+        setFonctionnaires(fonctionnaires.map(func => 
+          func.id === selectedFonctionnaire.id ? fonctionnaireLocal : func
+        ));
+        setShowModal(false);
+      } catch (error: any) {
+        console.error('Erreur lors de la modification:', error);
+        alert(`Erreur: ${error.message || 'Impossible de modifier le fonctionnaire'}`);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    setShowModal(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const getStatusColor = (statut: string) => {
@@ -234,19 +361,6 @@ const CadminFonctionnaires = () => {
                     <option value="">Tous les statuts</option>
                     <option value="Actif">Actif</option>
                     <option value="Inactif">Inactif</option>
-                    <option value="En congé">En congé</option>
-                  </select>
-                </div>
-                <div className="relative">
-                  <select
-                    value={departmentFilter}
-                    onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="pl-4 pr-8 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="">Tous les départements</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
                   </select>
                 </div>
               </div>
@@ -261,9 +375,8 @@ const CadminFonctionnaires = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Fonctionnaire</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Contact</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Poste</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Département</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Service</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Statut</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Congés</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
@@ -288,25 +401,18 @@ const CadminFonctionnaires = () => {
                       <div className="text-gray-500 text-sm">{fonctionnaire.telephone}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-gray-900 font-medium">{fonctionnaire.poste}</div>
-                      <div className="text-gray-500 text-sm">Depuis {new Date(fonctionnaire.dateEmbauche).getFullYear()}</div>
+                      <div className="text-gray-900 font-medium">{fonctionnaire.poste || 'N/A'}</div>
+                      <div className="text-gray-500 text-sm">{fonctionnaire.grade || 'Aucun grade'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                        {fonctionnaire.departement}
+                        {fonctionnaire.service || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(fonctionnaire.statut)}`}>
                         {fonctionnaire.statut}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-900 font-medium">{fonctionnaire.soldeConge}</span>
-                        <span className="text-gray-500 text-sm">jours</span>
-                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
@@ -393,24 +499,20 @@ const CadminFonctionnaires = () => {
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.poste}</div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.departement}</div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.service || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.grade || 'N/A'}</div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.statut}</div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Solde congés</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.soldeConge} jours</div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date d'embauche</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{new Date(selectedFonctionnaire.dateEmbauche).toLocaleDateString('fr-FR')}</div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Dernière connexion</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{new Date(selectedFonctionnaire.derniereConnexion).toLocaleDateString('fr-FR')}</div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Date de création</label>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.user?.created_at ? new Date(selectedFonctionnaire.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</div>
                       </div>
                     </div>
                   </div>
@@ -426,14 +528,131 @@ const CadminFonctionnaires = () => {
                 )}
 
                 {(modalType === 'create' || modalType === 'edit') && (
-                  <div className="text-gray-600">
-                    <p>Fonctionnalité {modalType} à implémenter avec formulaire complet incluant :</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Informations personnelles (nom, prénom, email, téléphone)</li>
-                      <li>Informations professionnelles (poste, département, date d'embauche)</li>
-                      <li>Gestion des permissions et statut</li>
-                      <li>Configuration du solde de congés</li>
-                    </ul>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
+                        <input
+                          type="text"
+                          name="prenom"
+                          value={formData.prenom}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Prénom du fonctionnaire"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+                        <input
+                          type="text"
+                          name="nom"
+                          value={formData.nom}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Nom du fonctionnaire"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="email@univ.ma"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                        <input
+                          type="tel"
+                          name="telephone"
+                          value={formData.telephone}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="0X XX XX XX XX"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                        <input
+                          type="text"
+                          name="adresse"
+                          value={formData.adresse}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Adresse complète"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">CIN</label>
+                        <input
+                          type="text"
+                          name="cin"
+                          value={formData.cin}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Numéro CIN"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Mot de passe {modalType === 'edit' ? '(laisser vide pour ne pas changer)' : '*'}
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder={modalType === 'edit' ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}
+                          required={modalType === 'create'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
+                        <input
+                          type="text"
+                          name="service"
+                          value={formData.service}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Service/Département"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Poste</label>
+                        <input
+                          type="text"
+                          name="poste"
+                          value={formData.poste}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Poste occupé"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                        <select
+                          name="grade"
+                          value={formData.grade}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                          <option value="">Sélectionner un grade</option>
+                          <option value="Agent">Agent</option>
+                          <option value="Agent Principal">Agent Principal</option>
+                          <option value="Cadre">Cadre</option>
+                          <option value="Cadre Supérieur">Cadre Supérieur</option>
+                          <option value="Chef de Service">Chef de Service</option>
+                          <option value="Directeur">Directeur</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -447,9 +666,20 @@ const CadminFonctionnaires = () => {
                 {(modalType === 'create' || modalType === 'edit') && (
                   <button 
                     onClick={handleSaveFonctionnaire}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    {modalType === 'create' ? 'Créer' : 'Sauvegarder'}
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {modalType === 'create' ? 'Création...' : 'Modification...'}
+                      </>
+                    ) : (
+                      modalType === 'create' ? 'Créer' : 'Sauvegarder'
+                    )}
                   </button>
                 )}
               </div>
