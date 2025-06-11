@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modification Enseignant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            width: 300px;
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Modification Enseignant</h1>
+    
+    <div class="test-section">
+        <h2>1. Connexion Admin</h2>
+        <button onclick="loginAsAdmin()">Se connecter en tant qu'Admin</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Récupérer la liste des enseignants</h2>
+        <button onclick="getEnseignants()">Récupérer enseignants</button>
+        <div id="enseignantsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Modifier un enseignant</h2>
+        <div>
+            <label>ID Enseignant:</label>
+            <input type="number" id="enseignantId" value="6" placeholder="ID de l'enseignant">
+        </div>
+        <div>
+            <label>Nouveau nom:</label>
+            <input type="text" id="newNom" value="El Nouveau" placeholder="Nouveau nom">
+        </div>
+        <div>
+            <label>Nouveau prénom:</label>
+            <input type="text" id="newPrenom" value="Mariam Updated" placeholder="Nouveau prénom">
+        </div>
+        <div>
+            <label>Nouvelle spécialité:</label>
+            <input type="text" id="newSpecialite" value="Informatique" placeholder="Nouvelle spécialité">
+        </div>
+        <button onclick="modifyEnseignant()">Modifier Enseignant</button>
+        <div id="modifyResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Log des requêtes</h2>
+        <button onclick="clearLog()">Effacer Log</button>
+        <div id="requestLog" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let authToken = null;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('requestLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('requestLog').innerHTML = '';
+        }
+
+        async function loginAsAdmin() {
+            try {
+                log('🔑 Tentative de connexion admin...', 'info');
+                
+                const formData = new FormData();
+                formData.append('username', 'admin@univ.ma');
+                formData.append('password', 'adminpass');
+
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    authToken = result.access_token;
+                    log('✅ Connexion admin réussie', 'success');
+                    document.getElementById('loginResult').innerHTML = 
+                        `<div class="success">✅ Connecté avec succès! Token: ${authToken.substring(0, 20)}...</div>`;
+                } else {
+                    log(`❌ Erreur de connexion: ${result.detail}`, 'error');
+                    document.getElementById('loginResult').innerHTML = 
+                        `<div class="error">❌ Erreur: ${result.detail}</div>`;
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                document.getElementById('loginResult').innerHTML = 
+                    `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function getEnseignants() {
+            if (!authToken) {
+                alert('Veuillez vous connecter d\'abord');
+                return;
+            }
+
+            try {
+                log('📋 Récupération des enseignants...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users/enseignants`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ ${result.length} enseignant(s) récupéré(s)`, 'success');
+                    document.getElementById('enseignantsResult').innerHTML = 
+                        `<div class="success">✅ Enseignants trouvés: ${result.length}</div>
+                         <pre>${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    log(`❌ Erreur récupération: ${result.detail}`, 'error');
+                    document.getElementById('enseignantsResult').innerHTML = 
+                        `<div class="error">❌ Erreur: ${result.detail}</div>`;
+                }
+            } catch (error) {
+                log(`❌ Erreur récupération: ${error.message}`, 'error');
+                document.getElementById('enseignantsResult').innerHTML = 
+                    `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function modifyEnseignant() {
+            if (!authToken) {
+                alert('Veuillez vous connecter d\'abord');
+                return;
+            }
+
+            const enseignantId = document.getElementById('enseignantId').value;
+            const newNom = document.getElementById('newNom').value;
+            const newPrenom = document.getElementById('newPrenom').value;
+            const newSpecialite = document.getElementById('newSpecialite').value;
+
+            if (!enseignantId || !newNom || !newPrenom) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            try {
+                log(`🔄 Modification enseignant ID ${enseignantId}...`, 'info');
+                
+                const data = {
+                    nom: newNom,
+                    prenom: newPrenom,
+                    email: 'mariamgrf02@gmail.com', // Garder l'email existant
+                    telephone: '',
+                    adresse: '',
+                    cin: '',
+                    password: 'unchanged',
+                    specialite: newSpecialite,
+                    grade: 'Professeur',
+                    etablissement: 'Université'
+                };
+
+                log(`📤 Données envoyées: ${JSON.stringify(data)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/users/enseignants/${enseignantId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Enseignant modifié avec succès!', 'success');
+                    document.getElementById('modifyResult').innerHTML = 
+                        `<div class="success">✅ Enseignant modifié avec succès!</div>
+                         <pre>${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    log(`❌ Erreur modification: ${result.detail}`, 'error');
+                    document.getElementById('modifyResult').innerHTML = 
+                        `<div class="error">❌ Erreur: ${result.detail}</div>
+                         <pre>Réponse: ${JSON.stringify(result, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                log(`❌ Erreur modification: ${error.message}`, 'error');
+                document.getElementById('modifyResult').innerHTML = 
+                    `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-connexion au chargement de la page
+        window.onload = function() {
+            log('🚀 Page de test chargée', 'info');
+        };
+    </script>
+</body>
+</html>

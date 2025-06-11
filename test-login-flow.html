@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test du flux de connexion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Test du flux de connexion</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Tests API Backend -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Tests API Backend</h2>
+                <div id="backend-tests" class="space-y-4">
+                    <div id="backend-status" class="p-3 rounded bg-gray-100">En attente...</div>
+                </div>
+                <button onclick="testBackend()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Tester le Backend
+                </button>
+            </div>
+
+            <!-- Tests Frontend -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Tests Frontend</h2>
+                <div id="frontend-tests" class="space-y-4">
+                    <div id="frontend-status" class="p-3 rounded bg-gray-100">En attente...</div>
+                </div>
+                <button onclick="testFrontend()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Tester le Frontend
+                </button>
+            </div>
+        </div>
+
+        <!-- Résultats détaillés -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">Résultats détaillés</h2>
+            <div id="detailed-results" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto">
+                # Test du flux de connexion - Attente des tests...\n
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const results = document.getElementById('detailed-results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.textContent += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateStatus(elementId, message, isSuccess = null) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isSuccess === true ? 'p-3 rounded bg-green-100 text-green-800' :
+                               isSuccess === false ? 'p-3 rounded bg-red-100 text-red-800' :
+                               'p-3 rounded bg-blue-100 text-blue-800';
+        }
+
+        async function testBackend() {
+            log('🔄 Début des tests backend...');
+            updateStatus('backend-status', 'Tests en cours...', null);
+
+            try {
+                // Test 1: Vérifier que le serveur répond
+                log('📡 Test 1: Ping du serveur...');
+                const pingResponse = await fetch('http://localhost:8000/auth/me', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer invalid_token' }
+                });
+                log(`✅ Serveur répond (status: ${pingResponse.status})`);
+
+                // Test 2: Login admin
+                log('📡 Test 2: Login admin...');
+                const formData = new FormData();
+                formData.append('username', 'admin@gestion.com');
+                formData.append('password', 'password123');
+
+                const loginResponse = await fetch('http://localhost:8000/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+
+                const loginData = await loginResponse.json();
+                log(`✅ Login réussi, token: ${loginData.access_token.substring(0, 20)}...`);
+
+                // Test 3: Récupérer l'utilisateur
+                log('📡 Test 3: Récupération utilisateur...');
+                const userResponse = await fetch('http://localhost:8000/auth/me', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${loginData.access_token}` }
+                });
+
+                if (!userResponse.ok) {
+                    throw new Error(`User fetch failed: ${userResponse.status}`);
+                }
+
+                const userData = await userResponse.json();
+                log(`✅ Utilisateur récupéré: ${userData.email} (${userData.role})`);
+
+                updateStatus('backend-status', '✅ Tous les tests backend passent', true);
+                return { success: true, token: loginData.access_token, user: userData };
+
+            } catch (error) {
+                log(`❌ Erreur backend: ${error.message}`);
+                updateStatus('backend-status', `❌ Échec: ${error.message}`, false);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testFrontend() {
+            log('🔄 Début des tests frontend...');
+            updateStatus('frontend-status', 'Tests en cours...', null);
+
+            try {
+                // Test 1: Vérifier que la page de connexion charge
+                log('📡 Test 1: Chargement page de connexion...');
+                const indexResponse = await fetch('http://localhost:8080/');
+                if (!indexResponse.ok) {
+                    throw new Error(`Frontend not accessible: ${indexResponse.status}`);
+                }
+                log('✅ Page de connexion accessible');
+
+                // Test 2: Simuler localStorage
+                log('📡 Test 2: Test localStorage...');
+                localStorage.setItem('test_item', 'test_value');
+                const testValue = localStorage.getItem('test_item');
+                if (testValue !== 'test_value') {
+                    throw new Error('localStorage not working');
+                }
+                localStorage.removeItem('test_item');
+                log('✅ localStorage fonctionne');
+
+                // Test 3: Test URL de redirection
+                log('📡 Test 3: Test URL dashboard-router...');
+                const dashboardResponse = await fetch('http://localhost:8080/dashboard-router');
+                if (!dashboardResponse.ok) {
+                    throw new Error(`Dashboard router not accessible: ${dashboardResponse.status}`);
+                }
+                log('✅ Route dashboard-router accessible');
+
+                updateStatus('frontend-status', '✅ Tous les tests frontend passent', true);
+                log('🎉 Tests frontend terminés avec succès !');
+
+                return { success: true };
+
+            } catch (error) {
+                log(`❌ Erreur frontend: ${error.message}`);
+                updateStatus('frontend-status', `❌ Échec: ${error.message}`, false);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Tests automatiques au chargement
+        window.addEventListener('load', async () => {
+            log('🚀 Démarrage des tests automatiques...');
+            
+            // Attendre 2 secondes pour que tout soit prêt
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const backendResult = await testBackend();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const frontendResult = await testFrontend();
+            
+            if (backendResult.success && frontendResult.success) {
+                log('🎉 TOUS LES TESTS PASSENT ! Le système est prêt.');
+            } else {
+                log('⚠️ Certains tests ont échoué. Voir les détails ci-dessus.');
+            }
+        });
+    </script>
+</body>
+</html>
