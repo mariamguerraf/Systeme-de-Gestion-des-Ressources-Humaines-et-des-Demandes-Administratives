@@ -115,10 +115,24 @@
     "poste": "Gestionnaire RH",
     "grade": "Administrateur Principal"
   },
-  "fonctionnaire@univ.ma": {
+  "nour@univ.ma": {
+    "id": 12,
+    "email": "nour@univ.ma",
+    "password": "noura2024",
+    "nom": "nn",
+    "prenom": "noura",
+    "role": "enseignant",
+    "telephone": "",
+    "adresse": "",
+    "cin": "",
+    "specialite": "Physique",
+    "grade": "Professeur",
+    "etablissement": ""
+  },
+  "fonctionnaire11@univ.ma": {
     "id": 4,
-    "email": "fonctionnaire@univ.ma",
-    "password": "unchanged",
+    "email": "fonctionnaire11@univ.ma",
+    "password": "",
     "nom": "Karam",
     "prenom": "Aicha",
     "role": "fonctionnaire",
@@ -129,9 +143,9 @@
     "poste": "Gestionnaire RH",
     "grade": "Administrateur Principal"
   },
-  "LaylaN@univ.ma": {
+  "Layla&&@univ.ma": {
     "id": 8,
-    "email": "LaylaN@univ.ma",
+    "email": "Layla&&@univ.ma",
     "password": "unchanged",
     "nom": "sl",
     "prenom": "layla",
@@ -139,8 +153,22 @@
     "telephone": "",
     "adresse": "",
     "cin": "",
-    "specialite": "Mathématiques",
+    "specialite": "Géographie",
     "grade": "",
     "etablissement": ""
+  },
+  "fatima@univ.ma": {
+    "id": 13,
+    "email": "fatima@univ.ma",
+    "password": "fatima2024",
+    "nom": "el",
+    "prenom": "fatima",
+    "role": "fonctionnaire",
+    "telephone": "06231578784",
+    "adresse": "",
+    "cin": "",
+    "service": "",
+    "poste": "",
+    "grade": "Agent"
   }
 }

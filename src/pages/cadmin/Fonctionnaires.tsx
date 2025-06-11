@@ -219,7 +219,7 @@ const CadminFonctionnaires = () => {
           return;
         }
 
-        // Si le mot de passe est vide, on l'exclut de la mise à jour
+        // Si le mot de passe est vide, on utilise 'unchanged'
         const dataToSend = {
           ...formData,
           password: formData.password || 'unchanged'

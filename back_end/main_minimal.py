@@ -693,12 +693,13 @@ async def create_fonctionnaire(
         raise HTTPException(status_code=401, detail="Token manquant")
     
     token = authorization.replace("Bearer ", "")
-      # Vérifier si c'est un admin
+    
+    # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
-            admin_user = {"role": "admin"}
+            admin_user = True
     
     if not admin_user:
         raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent créer des fonctionnaires")
@@ -752,10 +753,12 @@ async def create_fonctionnaire(
         "service": fonctionnaire_data.service,
         "poste": fonctionnaire_data.poste,
         "grade": fonctionnaire_data.grade,
-        "user": user_data
-    }
+        "user": user_data    }
     
     fonctionnaire_id_counter += 1
+    
+    # Sauvegarder les données dans les fichiers
+    save_all_data()
     
     return fonctionnaire_response
 
@@ -806,34 +809,36 @@ async def update_fonctionnaire(
         raise HTTPException(status_code=401, detail="Token manquant")
     
     token = authorization.replace("Bearer ", "")
-    
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-      # Vérifier si le fonctionnaire existe
+    
+    # Vérifier si le fonctionnaire existe
     if fonctionnaire_id not in FONCTIONNAIRES_DB:
         raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
-    
-    # Récupérer les anciennes données
+      # Récupérer les anciennes données
     old_data = FONCTIONNAIRES_DB[fonctionnaire_id]
-    
-    # Gérer les deux formats de données (dictionnaire ou objet User)
     if isinstance(old_data["user"], dict):
         old_email = old_data["user"]["email"]
+        old_password = old_data["user"].get("password", "")
     else:
         old_email = old_data["user"].email
-    
+        old_password = getattr(old_data["user"], "password", "")
     user_id = old_data["user_id"]
     
     # Vérifier si le nouvel email existe déjà (sauf si c'est le même)
     if fonctionnaire_data.email != old_email and fonctionnaire_data.email in TEST_USERS:
         raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
+    
+    # Gérer le mot de passe : garder l'ancien si "unchanged" ou None
+    password_to_use = old_password
+    if fonctionnaire_data.password and fonctionnaire_data.password != "unchanged":
+        password_to_use = fonctionnaire_data.password
     
     # Mettre à jour TEST_USERS
     if old_email in TEST_USERS:
@@ -842,7 +847,7 @@ async def update_fonctionnaire(
     TEST_USERS[fonctionnaire_data.email] = {
         "id": user_id,
         "email": fonctionnaire_data.email,
-        "password": fonctionnaire_data.password,
+        "password": password_to_use,
         "nom": fonctionnaire_data.nom,
         "prenom": fonctionnaire_data.prenom,
         "role": "fonctionnaire",
@@ -853,14 +858,14 @@ async def update_fonctionnaire(
         "poste": fonctionnaire_data.poste,
         "grade": fonctionnaire_data.grade
     }
-    
-    # Créer l'objet User mis à jour
+      # Créer l'objet User mis à jour
     updated_user = User(
         id=user_id,
         email=fonctionnaire_data.email,
         nom=fonctionnaire_data.nom,
         prenom=fonctionnaire_data.prenom,
-        role="fonctionnaire"    )
+        role="fonctionnaire"
+    )
     
     # Mettre à jour FONCTIONNAIRES_DB
     FONCTIONNAIRES_DB[fonctionnaire_id] = {
@@ -905,34 +910,24 @@ async def delete_fonctionnaire(
             admin_user = {"role": "admin"}
     
     if not admin_user:
-        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
-    # Vérifier si le fonctionnaire existe
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")    # Vérifier si le fonctionnaire existe
     if fonctionnaire_id not in FONCTIONNAIRES_DB:
         raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
-      # Récupérer les données du fonctionnaire avant suppression
-    fonctionnaire_data = FONCTIONNAIRES_DB[fonctionnaire_id]
     
-    # Gérer les deux formats de données (dictionnaire ou objet User)
-    if isinstance(fonctionnaire_data["user"], dict):
-        user_email = fonctionnaire_data["user"]["email"]
-        user_nom = fonctionnaire_data["user"]["nom"]
-        user_prenom = fonctionnaire_data["user"]["prenom"]
-    else:
-        user_email = fonctionnaire_data["user"].email
-        user_nom = fonctionnaire_data["user"].nom
-        user_prenom = fonctionnaire_data["user"].prenom
+    # Récupérer les données du fonctionnaire avant suppression
+    fonctionnaire_data = FONCTIONNAIRES_DB[fonctionnaire_id]
+    user_email = fonctionnaire_data["user"]["email"]
     
     # Supprimer de FONCTIONNAIRES_DB
     del FONCTIONNAIRES_DB[fonctionnaire_id]
-    
-    # Supprimer aussi de TEST_USERS
+      # Supprimer aussi de TEST_USERS
     if user_email in TEST_USERS:
         del TEST_USERS[user_email]
-      # Sauvegarder les données
+    
+    # Sauvegarder les données dans les fichiers
     save_all_data()
     
-    return {"message": f"Fonctionnaire {user_nom} {user_prenom} supprimé avec succès"}
+    return {"message": f"Fonctionnaire {fonctionnaire_data['user']['nom']} {fonctionnaire_data['user']['prenom']} supprimé avec succès"}
 
 # ===== ENDPOINTS POUR LES DEMANDES =====
 
@@ -1136,6 +1131,30 @@ async def delete_demande(
     save_all_data()
     
     return {"message": f"Demande '{demande_data['titre']}' supprimée avec succès"}
+
+# Endpoint de debug pour examiner FONCTIONNAIRES_DB
+@app.get("/debug/fonctionnaires-db")
+async def debug_fonctionnaires_db(authorization: str = Header(None)):
+    # Vérifier l'autorisation admin
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+    
+    token = authorization.replace("Bearer ", "")
+    admin_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] == "admin":
+            admin_user = {"role": "admin"}
+    
+    if not admin_user:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
+    
+    return {
+        "FONCTIONNAIRES_DB_keys": list(FONCTIONNAIRES_DB.keys()),
+        "FONCTIONNAIRES_DB_content": FONCTIONNAIRES_DB,
+        "FONCTIONNAIRES_DB_size": len(FONCTIONNAIRES_DB),
+        "key_types": [type(k).__name__ for k in FONCTIONNAIRES_DB.keys()]
+    }
 
 if __name__ == "__main__":
     import uvicorn
