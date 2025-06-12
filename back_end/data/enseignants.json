@@ -12,5 +12,19 @@
       "prenom": "noura",
       "role": "enseignant"
     }
+  },
+  "14": {
+    "id": 14,
+    "user_id": 14,
+    "specialite": "Mathématiques",
+    "grade": "Professeur",
+    "etablissement": "",
+    "user": {
+      "id": 14,
+      "email": "mariamgrf02@gmail.com",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant"
+    }
   }
 }

@@ -143,20 +143,6 @@
     "poste": "",
     "grade": "Agent"
   },
-  "fonctionnaire@univ.ma": {
-    "id": 4,
-    "email": "fonctionnaire@univ.ma",
-    "password": "1234",
-    "nom": "Karam",
-    "prenom": "Aicha",
-    "role": "fonctionnaire",
-    "telephone": "",
-    "adresse": "",
-    "cin": "",
-    "service": "Ressources Humaines",
-    "poste": "Gestionnaire RH",
-    "grade": "Administrateur Principal"
-  },
   "nour\"@univ.ma": {
     "id": 12,
     "email": "nour\"@univ.ma",
@@ -169,6 +155,34 @@
     "cin": "",
     "specialite": "Physique",
     "grade": "",
+    "etablissement": ""
+  },
+  "fonctionnaire@univ.ma": {
+    "id": 4,
+    "email": "fonctionnaire@univ.ma",
+    "password": "",
+    "nom": "Karam",
+    "prenom": "Aicha",
+    "role": "fonctionnaire",
+    "telephone": "",
+    "adresse": "",
+    "cin": "",
+    "service": "Ressources Humaines",
+    "poste": "Gestionnaire RH",
+    "grade": "Administrateur Principal"
+  },
+  "mariamgrf02@gmail.com": {
+    "id": 14,
+    "email": "mariamgrf02@gmail.com",
+    "password": "1234",
+    "nom": "guerraf",
+    "prenom": "mariam",
+    "role": "enseignant",
+    "telephone": "0777761894",
+    "adresse": "tanger",
+    "cin": "",
+    "specialite": "Mathématiques",
+    "grade": "Professeur",
     "etablissement": ""
   }
 }
