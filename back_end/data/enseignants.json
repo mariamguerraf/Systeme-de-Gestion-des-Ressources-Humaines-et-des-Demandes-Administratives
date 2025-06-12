@@ -7,7 +7,7 @@
     "etablissement": "",
     "user": {
       "id": 12,
-      "email": "nour@univ.ma",
+      "email": "nour\"@univ.ma",
       "nom": "nn",
       "prenom": "noura",
       "role": "enseignant"

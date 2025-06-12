@@ -143,9 +143,23 @@
     "poste": "",
     "grade": "Agent"
   },
-  "nour@univ.ma": {
+  "fonctionnaire@univ.ma": {
+    "id": 4,
+    "email": "fonctionnaire@univ.ma",
+    "password": "1234",
+    "nom": "Karam",
+    "prenom": "Aicha",
+    "role": "fonctionnaire",
+    "telephone": "",
+    "adresse": "",
+    "cin": "",
+    "service": "Ressources Humaines",
+    "poste": "Gestionnaire RH",
+    "grade": "Administrateur Principal"
+  },
+  "nour\"@univ.ma": {
     "id": 12,
-    "email": "nour@univ.ma",
+    "email": "nour\"@univ.ma",
     "password": "unchanged",
     "nom": "nn",
     "prenom": "noura",
@@ -156,19 +170,5 @@
     "specialite": "Physique",
     "grade": "",
     "etablissement": ""
-  },
-  "fonctionnaire@univ.ma": {
-    "id": 4,
-    "email": "fonctionnaire@univ.ma",
-    "password": "",
-    "nom": "Karam",
-    "prenom": "Aicha",
-    "role": "fonctionnaire",
-    "telephone": "",
-    "adresse": "",
-    "cin": "",
-    "service": "Ressources Humaines",
-    "poste": "Gestionnaire RH",
-    "grade": "Cadre Supérieur"
   }
 }

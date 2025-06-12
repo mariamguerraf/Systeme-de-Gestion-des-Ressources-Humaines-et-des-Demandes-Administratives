@@ -81,6 +81,8 @@ const CadminFonctionnaires = () => {
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view' | 'demandes'>('create');
   const [selectedFonctionnaire, setSelectedFonctionnaire] = useState<Fonctionnaire | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userDemandes, setUserDemandes] = useState<any[]>([]);
+  const [demandesLoading, setDemandesLoading] = useState(false);
   
   // État pour le formulaire de création/modification
   const [formData, setFormData] = useState({
@@ -154,10 +156,23 @@ const CadminFonctionnaires = () => {
     setShowModal(true);
   };
 
-  const handleViewDemandes = (fonctionnaire: Fonctionnaire) => {
+  const handleViewDemandes = async (fonctionnaire: Fonctionnaire) => {
     setModalType('demandes');
     setSelectedFonctionnaire(fonctionnaire);
     setShowModal(true);
+    
+    // Charger les demandes du fonctionnaire
+    setDemandesLoading(true);
+    setUserDemandes([]);
+    try {
+      const demandes = await apiService.getUserDemandes(fonctionnaire.user_id);
+      setUserDemandes(Array.isArray(demandes) ? demandes : []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des demandes:', error);
+      setUserDemandes([]);
+    } finally {
+      setDemandesLoading(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -520,10 +535,60 @@ const CadminFonctionnaires = () => {
                 
                 {modalType === 'demandes' && selectedFonctionnaire && (
                   <div className="space-y-4">
-                    <p className="text-gray-600">Historique des demandes de {selectedFonctionnaire.prenom} {selectedFonctionnaire.nom}</p>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-gray-500">Fonctionnalité à implémenter : affichage des demandes de congé et ordres de mission avec statuts et dates.</p>
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <h4 className="text-lg font-semibold text-gray-800">
+                        Historique des demandes de {selectedFonctionnaire.prenom} {selectedFonctionnaire.nom}
+                      </h4>
                     </div>
+                    
+                    {demandesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                        <span className="ml-2 text-gray-600">Chargement des demandes...</span>
+                      </div>
+                    ) : userDemandes.length > 0 ? (
+                      <div className="space-y-3">
+                        {userDemandes.map((demande: any) => (
+                          <div key={demande.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-medium text-gray-900">{demande.titre}</h5>
+                                <p className="text-sm text-gray-600">{demande.type_demande}</p>
+                              </div>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
+                                demande.statut === 'APPROUVEE' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {demande.statut === 'EN_ATTENTE' ? 'En attente' :
+                                 demande.statut === 'APPROUVEE' ? 'Approuvée' : 'Rejetée'}
+                              </span>
+                            </div>
+                            {demande.description && (
+                              <p className="text-sm text-gray-700 mb-2">{demande.description}</p>
+                            )}
+                            <div className="flex justify-between items-center text-xs text-gray-500">
+                              <span>Créée le: {new Date(demande.created_at).toLocaleDateString('fr-FR')}</span>
+                              {demande.date_debut && demande.date_fin && (
+                                <span>Du {new Date(demande.date_debut).toLocaleDateString('fr-FR')} au {new Date(demande.date_fin).toLocaleDateString('fr-FR')}</span>
+                              )}
+                            </div>
+                            {demande.commentaire_admin && (
+                              <div className="mt-2 p-2 bg-gray-50 rounded border-l-4 border-purple-500">
+                                <p className="text-sm font-medium text-gray-700">Commentaire administrateur:</p>
+                                <p className="text-sm text-gray-600">{demande.commentaire_admin}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500">Aucune demande trouvée pour ce fonctionnaire.</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

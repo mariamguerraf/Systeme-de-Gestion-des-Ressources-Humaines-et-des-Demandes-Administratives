@@ -229,6 +229,10 @@ class ApiService {
     return this.request(`/demandes/?skip=${skip}&limit=${limit}`);
   }
 
+  async getUserDemandes(userId: number) {
+    return this.request(`/users/${userId}/demandes`);
+  }
+
   async getDemande(demandeId: number) {
     return this.request(`/demandes/${demandeId}`);
   }

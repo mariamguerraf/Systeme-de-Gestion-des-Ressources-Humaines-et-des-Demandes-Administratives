@@ -1,7 +1,7 @@
 // Gestion des enseignants par le cadmin
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award } from 'lucide-react';
+import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -43,10 +43,11 @@ const CadminEnseignants = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
+  const [showModal, setShowModal] = useState(false);  const [modalType, setModalType] = useState<'create' | 'edit' | 'view' | 'demandes'>('create');
   const [selectedEnseignant, setSelectedEnseignant] = useState<Enseignant | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userDemandes, setUserDemandes] = useState<any[]>([]);
+  const [demandesLoading, setDemandesLoading] = useState(false);
 
   // Load enseignants on component mount
   useEffect(() => {
@@ -149,12 +150,30 @@ const CadminEnseignants = () => {
     });
     setShowModal(true);
   };
-
   const handleView = (enseignant: Enseignant) => {
     setModalType('view');
     setSelectedEnseignant(enseignant);
     setShowModal(true);
   };
+  const handleViewDemandes = async (enseignant: Enseignant) => {
+    setModalType('demandes');
+    setSelectedEnseignant(enseignant);
+    setShowModal(true);
+    
+    // Charger les demandes de l'enseignant
+    setDemandesLoading(true);
+    setUserDemandes([]);
+    try {
+      const demandes = await apiService.getUserDemandes(enseignant.user_id);
+      setUserDemandes(Array.isArray(demandes) ? demandes : []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des demandes:', error);
+      setUserDemandes([]);
+    } finally {
+      setDemandesLoading(false);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet enseignant ?')) {
       try {
@@ -403,14 +422,20 @@ const CadminEnseignants = () => {
                     <td className="px-6 py-4 text-gray-900">
                       {enseignant.user?.created_at ? new Date(enseignant.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center space-x-2">
+                    <td className="px-6 py-4">                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleView(enseignant)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="Voir les détails"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleViewDemandes(enseignant)}
+                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                          title="Voir les demandes"
+                        >
+                          <FileText className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEdit(enseignant)}
@@ -448,11 +473,11 @@ const CadminEnseignants = () => {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">
+              <div className="p-6 border-b border-gray-200">                <h3 className="text-xl font-bold text-gray-900">
                   {modalType === 'create' && 'Ajouter un Enseignant'}
                   {modalType === 'edit' && 'Modifier l\'Enseignant'}
                   {modalType === 'view' && 'Détails de l\'Enseignant'}
+                  {modalType === 'demandes' && 'Demandes de l\'Enseignant'}
                 </h3>
               </div>
               
@@ -692,12 +717,63 @@ const CadminEnseignants = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.specialite}</div>
-                      </div>
-                      <div>
+                      </div>                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.statut}</div>
                       </div>
                     </div>
+                  </div>
+                )}                {/* Historique des demandes */}
+                {modalType === 'demandes' && selectedEnseignant && (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <h4 className="text-lg font-semibold text-gray-800">
+                        Historique des demandes de {selectedEnseignant.prenom} {selectedEnseignant.nom}
+                      </h4>
+                    </div>
+                    
+                    {demandesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                        <span className="ml-2 text-gray-600">Chargement des demandes...</span>
+                      </div>
+                    ) : userDemandes.length > 0 ? (
+                      <div className="space-y-3">
+                        {userDemandes.map((demande: any) => (
+                          <div key={demande.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-medium text-gray-900">{demande.titre}</h5>
+                                <p className="text-sm text-gray-600">{demande.type_demande}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
+                                demande.statut === 'APPROUVEE' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {demande.statut === 'EN_ATTENTE' ? 'En attente' :
+                                 demande.statut === 'APPROUVEE' ? 'Approuvée' : 'Rejetée'}
+                              </span>
+                            </div>
+                            {demande.description && (
+                              <p className="text-sm text-gray-600 mb-2">{demande.description}</p>
+                            )}
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>Créée le: {new Date(demande.created_at).toLocaleDateString('fr-FR')}</span>
+                              {demande.date_debut && demande.date_fin && (
+                                <span>Période: {demande.date_debut} - {demande.date_fin}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500">Aucune demande trouvée pour cet enseignant</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -909,8 +985,7 @@ const CadminEnseignants = () => {
                   </div>
                 )}
               </div>
-              
-              <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
                   onClick={() => setShowModal(false)}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -918,7 +993,7 @@ const CadminEnseignants = () => {
                 >
                   Fermer
                 </button>
-                {modalType !== 'view' && (
+                {modalType !== 'view' && modalType !== 'demandes' && (
                   <button 
                     onClick={handleSaveEnseignant}
                     disabled={isLoading}
