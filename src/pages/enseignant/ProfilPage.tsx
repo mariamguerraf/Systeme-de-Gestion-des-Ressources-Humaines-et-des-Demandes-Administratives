@@ -1,18 +1,196 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, MapPin, ArrowLeftRight } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
+
+interface EnseignantData {
+  id: number;
+  user_id: number;
+  specialite: string;
+  grade: string;
+  etablissement: string;
+  date_recrutement?: string;
+  user?: {
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    telephone?: string;
+    role: string;
+    is_active?: boolean;
+    created_at?: string;
+  };
+}
 
 const ProfilPage = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isFlipped, setIsFlipped] = useState(false);
+  const [enseignantData, setEnseignantData] = useState<EnseignantData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEnseignantData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🔍 [ProfilPage] Début récupération des données');
+        console.log('👤 [ProfilPage] Utilisateur connecté:', user);
+        
+        if (!user?.id) {
+          console.error('❌ [ProfilPage] Utilisateur non connecté');
+          setError('Utilisateur non connecté');
+          return;
+        }
+
+        console.log('🌐 [ProfilPage] Appel API getEnseignants...');
+        
+        // Récupérer les données de l'enseignant connecté
+        const enseignants = await apiService.getEnseignants();
+        console.log('📋 [ProfilPage] Enseignants reçus:', enseignants);
+        
+        const enseignantsList = Array.isArray(enseignants) ? enseignants : [];
+        console.log('📋 [ProfilPage] Liste enseignants:', enseignantsList);
+        
+        const currentEnseignant = enseignantsList.find((ens: any) => {
+          console.log('🔍 [ProfilPage] Comparaison:', { 
+            ens_user_id: ens.user_id, 
+            ens_user_id_nested: ens.user?.id, 
+            current_user_id: user.id 
+          });
+          return ens.user_id === user.id || ens.user?.id === user.id;
+        });
+        
+        console.log('🎯 [ProfilPage] Enseignant trouvé:', currentEnseignant);
+        
+        if (currentEnseignant) {
+          setEnseignantData(currentEnseignant);
+        } else {
+          console.warn('⚠️ [ProfilPage] Enseignant non trouvé pour user_id:', user.id);
+          // Au lieu d'une erreur, utilisons les données de base de l'utilisateur
+          setEnseignantData({
+            id: 0,
+            user_id: user.id,
+            specialite: 'Non renseigné',
+            grade: 'Non renseigné',
+            etablissement: 'Non renseigné',
+            user: {
+              ...user,
+              telephone: user.telephone || 'Non renseigné'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('💥 [ProfilPage] Erreur lors de la récupération des données:', error);
+        setError(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+        
+        // En cas d'erreur, utiliser les données de base de l'utilisateur si disponible
+        if (user) {
+          console.log('🔄 [ProfilPage] Utilisation des données utilisateur de base');
+          setEnseignantData({
+            id: 0,
+            user_id: user.id,
+            specialite: 'Non renseigné',
+            grade: 'Non renseigné',
+            etablissement: 'Non renseigné',
+            user: {
+              ...user,
+              telephone: user.telephone || 'Non renseigné'
+            }
+          });
+          setError(null); // Effacer l'erreur puisqu'on a des données de base
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnseignantData();
+  }, [user]);
 
   const handleLogout = () => {
-	navigate('/');
+    logout();
+    navigate('/');
   };
 
   const handleCardClick = () => {
     setIsFlipped(!isFlipped);
   };
+
+  // Fonction pour formater la date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Non renseigné';
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR');
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Données utilisateur avec fallback
+  const userData = enseignantData?.user || user;
+  const nom = userData?.nom || 'Non renseigné';
+  const prenom = userData?.prenom || 'Non renseigné';
+  const email = userData?.email || 'Non renseigné';
+  const telephone = userData?.telephone || 'Non renseigné';
+  const specialite = enseignantData?.specialite || 'Non renseigné';
+  const grade = enseignantData?.grade || 'Non renseigné';
+  const etablissement = enseignantData?.etablissement || 'Non renseigné';
+  const dateInscription = userData?.created_at ? formatDate(userData.created_at) : 'Non renseigné';
+  const dateRecrutement = enseignantData?.date_recrutement ? formatDate(enseignantData.date_recrutement) : 'Non renseigné';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 flex items-center space-x-4">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <span className="text-lg font-medium text-gray-700">Chargement de votre profil...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Erreur de chargement</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Réessayer
+            </button>
+            <button
+              onClick={() => {
+                console.log('🧪 [ProfilPage] Test de connexion API');
+                apiService.getCurrentUser()
+                  .then(userData => {
+                    console.log('✅ [ProfilPage] Utilisateur reçu:', userData);
+                    alert('Connexion API OK - Voir la console');
+                  })
+                  .catch(err => {
+                    console.error('❌ [ProfilPage] Erreur API:', err);
+                    alert('Erreur API: ' + err.message);
+                  });
+              }}
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+            >
+              Test Connexion API
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
@@ -32,7 +210,7 @@ const ProfilPage = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="font-medium">Bienvenue, Enseignant</span>
+              <span className="font-medium">Bienvenue, {prenom} {nom}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -69,9 +247,9 @@ const ProfilPage = () => {
 
 			  {/* User Name - Always visible */}
 			  <div className="text-center mb-8">
-				<h3 className="text-2xl font-bold text-gray-800">Martin Jean</h3>
-				<p className="text-blue-600 font-semibold">Professeur</p>
-				<p className="text-gray-500">ID: 001</p>
+				<h3 className="text-2xl font-bold text-gray-800">{prenom} {nom}</h3>
+				<p className="text-blue-600 font-semibold">{grade}</p>
+				<p className="text-gray-500">ID: {enseignantData?.id || 'Non disponible'}</p>
 			  </div>		  {/* Content Container */}
 		  <div className="relative h-96">
 				{/* Contact Information - Initial State */}
@@ -87,19 +265,19 @@ const ProfilPage = () => {
 					  <div className="space-y-4">
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Mail className="w-5 h-5 text-blue-500" />
-						  <span className="text-gray-700 font-medium">jean.martin@edu.fr</span>
+						  <span className="text-gray-700 font-medium">{email}</span>
 						</div>
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Phone className="w-5 h-5 text-green-500" />
-						  <span className="text-gray-700 font-medium">06 12 34 56 78</span>
+						  <span className="text-gray-700 font-medium">{telephone}</span>
 						</div>
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Calendar className="w-5 h-5 text-purple-500" />
-						  <span className="text-gray-700 font-medium">Inscrit le: 01/02/2024</span>
+						  <span className="text-gray-700 font-medium">Inscrit le: {dateInscription}</span>
 						</div>
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <MapPin className="w-5 h-5 text-red-500" />
-						  <span className="text-gray-700 font-medium">Département: Informatique</span>
+						  <span className="text-gray-700 font-medium">Établissement: {etablissement}</span>
 						</div>
 					  </div>
 					</div>
@@ -119,19 +297,19 @@ const ProfilPage = () => {
 					  <div className="space-y-4">
 						<div className="p-3 rounded-lg bg-blue-50 border-l-4 border-blue-500">
 						  <label className="block text-sm font-semibold text-blue-600 mb-1">Statut</label>
-						  <p className="text-gray-800 font-medium">Fonctionnaire</p>
+						  <p className="text-gray-800 font-medium">Enseignant</p>
 						</div>
 						<div className="p-3 rounded-lg bg-green-50 border-l-4 border-green-500">
 						  <label className="block text-sm font-semibold text-green-600 mb-1">Grade</label>
-						  <p className="text-gray-800 font-medium">Professeur Agrégé</p>
+						  <p className="text-gray-800 font-medium">{grade}</p>
 						</div>
 						<div className="p-3 rounded-lg bg-purple-50 border-l-4 border-purple-500">
 						  <label className="block text-sm font-semibold text-purple-600 mb-1">Spécialité</label>
-						  <p className="text-gray-800 font-medium">Informatique et Sciences du Numérique</p>
+						  <p className="text-gray-800 font-medium">{specialite}</p>
 						</div>
 						<div className="p-3 rounded-lg bg-indigo-50 border-l-4 border-indigo-500">
 						  <label className="block text-sm font-semibold text-indigo-600 mb-1">Date de recrutement</label>
-						  <p className="text-gray-800 font-medium">15/09/2020</p>
+						  <p className="text-gray-800 font-medium">{dateRecrutement}</p>
 						</div>
 					  </div>
 					</div>

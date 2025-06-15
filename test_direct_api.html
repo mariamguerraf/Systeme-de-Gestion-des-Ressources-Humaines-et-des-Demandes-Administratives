@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Direct API</title>
+</head>
+<body>
+    <h1>Test de Connexion API Direct</h1>
+    <button onclick="testAPI()">Tester l'API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const API_URL = 'http://localhost:8000';
+            
+            resultDiv.innerHTML = '<p>⏳ Test en cours...</p>';
+            
+            try {
+                console.log('🔍 Test de connexion vers:', API_URL + '/health');
+                
+                const response = await fetch(API_URL + '/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <h3 style="color: green;">✅ SUCCÈS</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Data:</strong> ${JSON.stringify(data)}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: orange;">⚠️ RÉPONSE NON-OK</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ ERREUR</h3>
+                    <p><strong>Type:</strong> ${error.constructor.name}</p>
+                    <p><strong>Message:</strong> ${error.message}</p>
+                    <p><strong>Cause probable:</strong> Backend non démarré ou problème CORS</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

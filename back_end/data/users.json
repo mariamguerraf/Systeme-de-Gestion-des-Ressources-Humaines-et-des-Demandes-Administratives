@@ -143,20 +143,6 @@
     "poste": "",
     "grade": "Agent"
   },
-  "nour\"@univ.ma": {
-    "id": 12,
-    "email": "nour\"@univ.ma",
-    "password": "unchanged",
-    "nom": "nn",
-    "prenom": "noura",
-    "role": "enseignant",
-    "telephone": "",
-    "adresse": "",
-    "cin": "",
-    "specialite": "Physique",
-    "grade": "",
-    "etablissement": ""
-  },
   "fonctionnaire@univ.ma": {
     "id": 4,
     "email": "fonctionnaire@univ.ma",
@@ -178,11 +164,11 @@
     "nom": "guerraf",
     "prenom": "mariam",
     "role": "enseignant",
-    "telephone": "0777761894",
+    "telephone": "0566552454",
     "adresse": "tanger",
-    "cin": "",
+    "cin": "E1234",
     "specialite": "Mathématiques",
-    "grade": "Professeur",
+    "grade": "Professeur Assistant",
     "etablissement": ""
   }
 }

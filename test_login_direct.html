@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-box { border: 1px solid #ccc; padding: 20px; margin: 10px 0; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .loading { background-color: #fff3cd; }
+        button { padding: 10px 20px; margin: 5px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Login Direct</h1>
+    
+    <div class="test-box">
+        <h3>Formulaire de Test</h3>
+        <input type="email" id="email" placeholder="Email" value="admin@example.com">
+        <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+        <br>
+        <button onclick="testLogin()">🔑 Tester Login</button>
+        <button onclick="testHealth()">❤️ Tester Health</button>
+        <button onclick="clearResults()">🧹 Effacer</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const API_URLS = [
+            'http://localhost:8000',
+            'http://127.0.0.1:8000'
+        ];
+
+        function addResult(title, content, type = 'loading') {
+            const div = document.createElement('div');
+            div.className = `test-box ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            document.getElementById('results').appendChild(div);
+            return div;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testHealth() {
+            clearResults();
+            
+            for (const baseUrl of API_URLS) {
+                const resultDiv = addResult(`🩺 Test Health - ${baseUrl}`, 'Test en cours...', 'loading');
+                
+                try {
+                    console.log(`Testing health endpoint: ${baseUrl}/health`);
+                    
+                    const response = await fetch(`${baseUrl}/health`);
+                    const data = await response.json();
+                    
+                    resultDiv.className = 'test-box success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Health Check Réussi - ${baseUrl}</h3>
+                        <pre>Status: ${response.status}
+Data: ${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    break; // Arrêter après le premier succès
+                } catch (error) {
+                    resultDiv.className = 'test-box error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Health Check Échoué - ${baseUrl}</h3>
+                        <pre>Erreur: ${error.message}
+Type: ${error.constructor.name}</pre>
+                    `;
+                }
+            }
+        }
+
+        async function testLogin() {
+            clearResults();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                addResult('❌ Erreur', 'Veuillez remplir email et mot de passe', 'error');
+                return;
+            }
+
+            for (const baseUrl of API_URLS) {
+                const resultDiv = addResult(`🔑 Test Login - ${baseUrl}`, 'Connexion en cours...', 'loading');
+                
+                try {
+                    console.log(`Testing login endpoint: ${baseUrl}/auth/login`);
+                    console.log(`Credentials: ${email} / ${password}`);
+                    
+                    const response = await fetch(`${baseUrl}/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    console.log(`Response status: ${response.status}`);
+                    console.log(`Response ok: ${response.ok}`);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        resultDiv.className = 'test-box success';
+                        resultDiv.innerHTML = `
+                            <h3>✅ Login Réussi - ${baseUrl}</h3>
+                            <pre>Status: ${response.status}
+Token: ${data.access_token ? data.access_token.substring(0, 50) + '...' : 'Non reçu'}
+Type: ${data.token_type || 'Non spécifié'}</pre>
+                        `;
+                        break; // Arrêter après le premier succès
+                    } else {
+                        const errorData = await response.json().catch(() => ({ detail: 'Erreur inconnue' }));
+                        resultDiv.className = 'test-box error';
+                        resultDiv.innerHTML = `
+                            <h3>❌ Login Échoué - ${baseUrl}</h3>
+                            <pre>Status: ${response.status}
+Erreur: ${errorData.detail || 'Erreur inconnue'}</pre>
+                        `;
+                    }
+                } catch (error) {
+                    resultDiv.className = 'test-box error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Connexion Échouée - ${baseUrl}</h3>
+                        <pre>Erreur: ${error.message}
+Type: ${error.constructor.name}
+
+🔍 Diagnostic:
+${error.message.includes('Failed to fetch') ? '- Backend probablement non démarré' : ''}
+${error.message.includes('CORS') ? '- Problème de CORS' : ''}
+${error.message.includes('refused') ? '- Connexion refusée (port fermé)' : ''}</pre>
+                    `;
+                }
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

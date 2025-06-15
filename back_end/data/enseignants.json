@@ -1,23 +1,9 @@
 {
-  "12": {
-    "id": 12,
-    "user_id": 12,
-    "specialite": "Physique",
-    "grade": "",
-    "etablissement": "",
-    "user": {
-      "id": 12,
-      "email": "nour\"@univ.ma",
-      "nom": "nn",
-      "prenom": "noura",
-      "role": "enseignant"
-    }
-  },
   "14": {
     "id": 14,
     "user_id": 14,
     "specialite": "Mathématiques",
-    "grade": "Professeur",
+    "grade": "Professeur Assistant",
     "etablissement": "",
     "user": {
       "id": 14,

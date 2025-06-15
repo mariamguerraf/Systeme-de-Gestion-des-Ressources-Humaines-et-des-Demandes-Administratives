@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Port Frontend</title>
+</head>
+<body>
+    <h1>Test de Port Frontend</h1>
+    <div id="info"></div>
+    <button onclick="testAPIFromHere()">Tester API depuis cette page</button>
+    <div id="result"></div>
+
+    <script>
+        // Afficher les informations de la page actuelle
+        document.getElementById('info').innerHTML = `
+            <p><strong>URL actuelle:</strong> ${window.location.href}</p>
+            <p><strong>Origin:</strong> ${window.location.origin}</p>
+            <p><strong>Port:</strong> ${window.location.port || 'default'}</p>
+        `;
+
+        async function testAPIFromHere() {
+            const resultDiv = document.getElementById('result');
+            const API_URL = 'http://localhost:8000';
+            
+            resultDiv.innerHTML = '<p>🔍 Test en cours...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3 style="color: green;">✅ SUCCÈS!</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Response:</strong> ${JSON.stringify(data)}</p>
+                    <p><strong>Origin de cette page:</strong> ${window.location.origin}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ ÉCHEC</h3>
+                    <p><strong>Erreur:</strong> ${error.message}</p>
+                    <p><strong>Type:</strong> ${error.constructor.name}</p>
+                    <p><strong>Origin de cette page:</strong> ${window.location.origin}</p>
+                    <p><strong>Cause probable:</strong> ${error.message.includes('CORS') ? 'Problème CORS' : 'Backend non accessible'}</p>
+                `;
+                console.error('Erreur complète:', error);
+            }
+        }
+    </script>
+</body>
+</html>

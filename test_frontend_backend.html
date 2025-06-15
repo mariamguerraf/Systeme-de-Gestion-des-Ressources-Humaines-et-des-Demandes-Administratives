@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion Frontend-Backend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Connexion Frontend-Backend</h1>
+    
+    <div class="test info">
+        <h3>Configuration</h3>
+        <p><strong>Backend URL:</strong> <span id="backend-url"></span></p>
+        <p><strong>Frontend URL:</strong> <span id="frontend-url"></span></p>
+    </div>
+
+    <button onclick="testHealth()">Test Health Check</button>
+    <button onclick="testCORS()">Test CORS</button>
+    <button onclick="testLogin()">Test Login Admin</button>
+    <button onclick="runAllTests()">Tous les Tests</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8000';
+        const FRONTEND_URL = window.location.origin;
+        
+        document.getElementById('backend-url').textContent = BACKEND_URL;
+        document.getElementById('frontend-url').textContent = FRONTEND_URL;
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<h3>${title}</h3><p>${content}</p>`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                addResult('✅ Health Check', `Status: ${response.status} - ${JSON.stringify(data)}`, 'success');
+            } catch (error) {
+                addResult('❌ Health Check', `Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/test`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': FRONTEND_URL,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                addResult('✅ CORS Test', `Status: ${response.status}<br>Headers: ${JSON.stringify(corsHeaders, null, 2)}`, 'success');
+            } catch (error) {
+                addResult('❌ CORS Test', `Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@example.com',
+                        password: 'admin123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ Login Test', `Connexion réussie! Token reçu: ${data.access_token.substring(0, 20)}...`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    addResult('⚠️ Login Test', `Status: ${response.status} - ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Login Test', `Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testLogin();
+        }
+    </script>
+</body>
+</html>
