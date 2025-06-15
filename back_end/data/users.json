@@ -143,20 +143,6 @@
     "poste": "",
     "grade": "Agent"
   },
-  "nour\"@univ.ma": {
-    "id": 12,
-    "email": "nour\"@univ.ma",
-    "password": "unchanged",
-    "nom": "nn",
-    "prenom": "noura",
-    "role": "enseignant",
-    "telephone": "",
-    "adresse": "",
-    "cin": "",
-    "specialite": "Physique",
-    "grade": "",
-    "etablissement": ""
-  },
   "fonctionnaire@univ.ma": {
     "id": 4,
     "email": "fonctionnaire@univ.ma",
@@ -184,5 +170,19 @@
     "specialite": "Mathématiques",
     "grade": "Professeur",
     "etablissement": ""
+  },
+  "abdocooder@gmail.com": {
+    "id": 15,
+    "email": "abdocooder@gmail.com",
+    "password": "123123123",
+    "nom": "ABDELKADER",
+    "prenom": "BENAJIBA",
+    "role": "enseignant",
+    "telephone": "+212682546206",
+    "adresse": "Av Mamoune Derb Zmizam Zkt 01 N04",
+    "cin": "5555555",
+    "specialite": "Informatique",
+    "grade": "Professeur",
+    "etablissement": "kkkkkk"
   }
 }

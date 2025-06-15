@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://studious-funicular-wrrrrrwq4j9wfgw9v-8000.app.github.dev';
 
 class ApiService {
   private baseURL: string;
@@ -14,7 +14,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -41,15 +41,18 @@ class ApiService {
 
   // Auth methods
   async login(email: string, password: string) {
-    const formData = new FormData();
-    formData.append('username', email);
-    formData.append('password', password);
+    const params = new URLSearchParams();
+    params.append('username', email);
+    params.append('password', password);
 
     try {
       console.log('[API DEBUG] Tentative de connexion sur:', `${this.baseURL}/auth/login`);
       const response = await fetch(`${this.baseURL}/auth/login`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params,
       });
 
       if (!response.ok) {
@@ -179,24 +182,24 @@ class ApiService {
       return stats;
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      
+
       // Fallback: essayer de calculer manuellement les statistiques
       try {
         const enseignants = await this.getEnseignants();
         const fonctionnaires = await this.getFonctionnaires();
         const testUsers = await this.getTestUsers();
         const demandes = await this.getDemandes();
-        
+
         const enseignantsArray = Array.isArray(enseignants) ? enseignants : [];
         const fonctionnairesArray = Array.isArray(fonctionnaires) ? fonctionnaires : [];
         const testUsersData = testUsers as any;
         const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
         const demandesArray = Array.isArray(demandes) ? demandes : [];
-        
+
         // Calculate real statistics from multiple endpoints
         const demandesEnAttente = demandesArray.filter((d: any) => d.statut === 'EN_ATTENTE').length;
         const demandesTraitees = demandesArray.filter((d: any) => d.statut === 'APPROUVEE' || d.statut === 'REJETEE').length;
-        
+
         return {
           totalUsers: usersArray.length,
           enseignants: enseignantsArray.length,
