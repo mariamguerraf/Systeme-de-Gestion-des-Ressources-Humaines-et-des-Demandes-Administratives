@@ -1,6 +1,4 @@
-import { getApiBaseUrl } from '../utils/config';
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'https://congenial-halibut-4qgp7jg67v35q-8080.app.github.dev/';
 
 class ApiService {
   private baseURL: string;
@@ -11,18 +9,11 @@ class ApiService {
     this.token = localStorage.getItem('access_token');
   }
 
-  private buildUrl(endpoint: string): string {
-    // Assure qu'il n'y a qu'une seule barre oblique entre baseURL et endpoint
-    const cleanBaseUrl = this.baseURL.replace(/\/$/, '');
-    const cleanEndpoint = endpoint.replace(/^\//, '');
-    return `${cleanBaseUrl}/${cleanEndpoint}`;
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = this.buildUrl(endpoint);
+    const url = `${this.baseURL}${endpoint}`;
 
     const config: RequestInit = {
       headers: {
@@ -55,8 +46,8 @@ class ApiService {
     params.append('password', password);
 
     try {
-      console.log('[API DEBUG] Tentative de connexion sur:', this.buildUrl('auth/login'));
-      const response = await fetch(this.buildUrl('auth/login'), {
+      console.log('[API DEBUG] Tentative de connexion sur:', `${this.baseURL}/auth/login`);
+      const response = await fetch(`${this.baseURL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
