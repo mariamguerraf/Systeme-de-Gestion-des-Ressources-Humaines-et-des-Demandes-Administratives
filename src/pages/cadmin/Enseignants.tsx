@@ -30,7 +30,7 @@ interface Enseignant {
 const CadminEnseignants = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -60,7 +60,7 @@ const CadminEnseignants = () => {
       setLoading(true);
       setError(null);
       const enseignantsData = await apiService.getEnseignants();
-      
+
       // Transform the data to match our interface
       const transformedData = Array.isArray(enseignantsData) ? enseignantsData.map((ens: any) => ({
         id: ens.id,
@@ -85,7 +85,7 @@ const CadminEnseignants = () => {
       setLoading(false);
     }
   };
-  
+
   // État pour le formulaire de création
   const [formData, setFormData] = useState({
     nom: '',
@@ -102,14 +102,14 @@ const CadminEnseignants = () => {
 
   // Filtrage des enseignants
   const filteredEnseignants = enseignants.filter(enseignant => {
-    const matchesSearch = 
+    const matchesSearch =
       enseignant.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (enseignant.specialite || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === '' || enseignant.statut === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -131,22 +131,21 @@ const CadminEnseignants = () => {
     });
     setShowModal(true);
   };
-
   const handleEdit = (enseignant: Enseignant) => {
     setModalType('edit');
     setSelectedEnseignant(enseignant);
-    // Pré-remplir le formulaire avec les données existantes
+    // Pré-remplir le formulaire avec TOUTES les données disponibles
     setFormData({
-      nom: enseignant.nom,
-      prenom: enseignant.prenom,
-      email: enseignant.email,
-      telephone: enseignant.telephone,
-      adresse: '', // Ces champs ne sont pas disponibles dans l'interface Enseignant
-      cin: '',
+      nom: enseignant.nom || enseignant.user?.nom || '',
+      prenom: enseignant.prenom || enseignant.user?.prenom || '',
+      email: enseignant.email || enseignant.user?.email || '',
+      telephone: enseignant.telephone || enseignant.user?.telephone || '',
+      adresse: enseignant.adresse || enseignant.user?.adresse || '',
+      cin: enseignant.cin || enseignant.user?.cin || '',
       password: '', // Laisser vide pour modification
-      specialite: enseignant.specialite,
-      grade: '',
-      etablissement: ''
+      specialite: enseignant.specialite || '',
+      grade: enseignant.grade || '',
+      etablissement: enseignant.etablissement || ''
     });
     setShowModal(true);
   };
@@ -159,7 +158,7 @@ const CadminEnseignants = () => {
     setModalType('demandes');
     setSelectedEnseignant(enseignant);
     setShowModal(true);
-    
+
     // Charger les demandes de l'enseignant
     setDemandesLoading(true);
     setUserDemandes([]);
@@ -179,7 +178,7 @@ const CadminEnseignants = () => {
       try {
         await apiService.deleteEnseignant(id);
         alert('Enseignant supprimé avec succès !');
-        
+
         // Retirer l'enseignant de la liste locale
         setEnseignants(enseignants.filter(e => e.id !== id));
       } catch (error: any) {
@@ -198,9 +197,9 @@ const CadminEnseignants = () => {
           return;
         }        // Utiliser apiService pour la création
         const nouvelEnseignant = await apiService.createEnseignant(formData) as any;
-        
+
         alert('Enseignant créé avec succès !');
-        
+
         // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
         const enseignantLocal: Enseignant = {
           id: nouvelEnseignant.id,
@@ -213,7 +212,7 @@ const CadminEnseignants = () => {
           statut: 'Actif',
           user: nouvelEnseignant.user
         };
-        
+
         setEnseignants([...enseignants, enseignantLocal]);
         setShowModal(false);
       } catch (error: any) {
@@ -243,9 +242,9 @@ const CadminEnseignants = () => {
         });
           // Utiliser apiService pour la modification
         const enseignantModifie = await apiService.updateEnseignant(selectedEnseignant.id, dataToSend) as any;
-        
+
         alert('Enseignant modifié avec succès !');
-        
+
         // Mettre à jour l'enseignant dans la liste locale
         const enseignantLocal: Enseignant = {
           id: enseignantModifie.id,
@@ -258,9 +257,9 @@ const CadminEnseignants = () => {
           statut: 'Actif',
           user: enseignantModifie.user
         };
-        
+
         // Remplacer l'enseignant modifié dans la liste
-        setEnseignants(enseignants.map(ens => 
+        setEnseignants(enseignants.map(ens =>
           ens.id === selectedEnseignant.id ? enseignantLocal : ens
         ));
         setShowModal(false);
@@ -319,7 +318,7 @@ const CadminEnseignants = () => {
           </div>
         </div>
       </header>
-      
+
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* En-tête de gestion */}
@@ -403,7 +402,7 @@ const CadminEnseignants = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-gray-900">{enseignant.email}</div>
-                      <div className="text-gray-500 text-sm">{enseignant.telephone}</div>
+                      <div className="text-gray-500 text-sm">{enseignant.telephone || enseignant.user?.telephone || 'Non renseigné'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -412,8 +411,8 @@ const CadminEnseignants = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        enseignant.statut === 'Actif' 
-                          ? 'bg-green-100 text-green-800' 
+                        enseignant.statut === 'Actif'
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
                         {enseignant.statut}
@@ -480,7 +479,7 @@ const CadminEnseignants = () => {
                   {modalType === 'demandes' && 'Demandes de l\'Enseignant'}
                 </h3>
               </div>
-              
+
               <div className="p-6">
                 {/* Formulaire de création */}
                 {modalType === 'create' && (
@@ -492,7 +491,7 @@ const CadminEnseignants = () => {
                           <User className="w-5 h-5 mr-2 text-blue-600" />
                           Informations personnelles
                         </h4>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Prénom *
@@ -732,7 +731,7 @@ const CadminEnseignants = () => {
                         Historique des demandes de {selectedEnseignant.prenom} {selectedEnseignant.nom}
                       </h4>
                     </div>
-                    
+
                     {demandesLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -787,7 +786,7 @@ const CadminEnseignants = () => {
                           <User className="w-5 h-5 mr-2 text-blue-600" />
                           Informations personnelles
                         </h4>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Prénom *
@@ -994,7 +993,7 @@ const CadminEnseignants = () => {
                   Fermer
                 </button>
                 {modalType !== 'view' && modalType !== 'demandes' && (
-                  <button 
+                  <button
                     onClick={handleSaveEnseignant}
                     disabled={isLoading}
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"

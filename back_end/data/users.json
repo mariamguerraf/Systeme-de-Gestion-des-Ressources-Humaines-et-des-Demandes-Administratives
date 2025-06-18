@@ -157,20 +157,6 @@
     "poste": "Gestionnaire RH",
     "grade": "Administrateur Principal"
   },
-  "mariamgrf02@gmail.com": {
-    "id": 14,
-    "email": "mariamgrf02@gmail.com",
-    "password": "1234",
-    "nom": "guerraf",
-    "prenom": "mariam",
-    "role": "enseignant",
-    "telephone": "0566552454",
-    "adresse": "tanger",
-    "cin": "E1234",
-    "specialite": "Mathématiques",
-    "grade": "Professeur Assistant",
-    "etablissement": ""
-  },
   "abdocooder@gmail.com": {
     "id": 15,
     "email": "abdocooder@gmail.com",
@@ -184,5 +170,18 @@
     "specialite": "Informatique",
     "grade": "Professeur",
     "etablissement": "kkkkkk"
+  },
+  "mariamgrf02@gmail.com": {
+    "id": 14,
+    "email": "mariamgrf02@gmail.com",
+    "password": "1234",
+    "nom": "guerraf",
+    "prenom": "mariam",
+    "role": "enseignant",
+    "telephone": "",
+    "adresse": "tetouan",
+    "cin": "",
+    "is_active": true,
+    "created_at": "2024-01-01T00:00:00"
   }
 }

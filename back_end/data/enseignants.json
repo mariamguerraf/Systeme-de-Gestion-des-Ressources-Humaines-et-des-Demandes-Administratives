@@ -2,15 +2,26 @@
   "14": {
     "id": 14,
     "user_id": 14,
-    "specialite": "Mathématiques",
-    "grade": "Professeur Assistant",
+    "nom": "guerraf",
+    "prenom": "mariam",
+    "email": "mariamgrf02@gmail.com",
+    "telephone": "",
+    "adresse": "tetouan",
+    "cin": "",
+    "specialite": "Biologie",
+    "grade": "",
     "etablissement": "",
     "user": {
       "id": 14,
       "email": "mariamgrf02@gmail.com",
       "nom": "guerraf",
       "prenom": "mariam",
-      "role": "enseignant"
+      "telephone": "",
+      "adresse": "tetouan",
+      "cin": "",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00"
     }
   },
   "15": {

@@ -152,7 +152,7 @@ DEFAULT_TEST_USERS = {
     },
     "secretaire@univ.ma": {
         "id": 2,
-        "email": "secretaire@univ.ma", 
+        "email": "secretaire@univ.ma",
         "password": "secretaire2024",
         "nom": "Benali",
         "prenom": "Fatima",
@@ -161,7 +161,7 @@ DEFAULT_TEST_USERS = {
     "enseignant@univ.ma": {
         "id": 3,
         "email": "enseignant@univ.ma",
-        "password": "enseignant2024", 
+        "password": "enseignant2024",
         "nom": "Tazi",
         "prenom": "Ahmed",
         "role": "enseignant"
@@ -192,7 +192,7 @@ DEMANDES_DB = load_data_from_file("demandes.json", {})
 # Initialize counters based on existing data
 def initialize_counters():
     global demande_id_counter
-    
+
     # Set demande counter to max existing ID + 1
     if DEMANDES_DB:
         max_demande_id = max(int(k) for k in DEMANDES_DB.keys())
@@ -207,7 +207,7 @@ initialize_counters()
 def initialize_test_demandes():
     global demande_id_counter, DEMANDES_DB
     from datetime import datetime, timedelta
-    
+
     test_demandes = [
         {
             "id": 1,
@@ -215,7 +215,7 @@ def initialize_test_demandes():
             "type_demande": "CONGE",
             "titre": "Congé annuel",
             "description": "Demande de congé annuel pour vacances d'été",
-            "date_debut": "2024-07-01",
+
             "date_fin": "2024-07-15",
             "statut": "EN_ATTENTE",
             "commentaire_admin": None,
@@ -305,7 +305,7 @@ def initialize_test_demandes():
             }
         }
     ]
-    
+
     for demande in test_demandes:
         DEMANDES_DB[demande["id"]] = demande
         if demande["id"] >= demande_id_counter:
@@ -321,7 +321,7 @@ fonctionnaire_id_counter = 1
 # Initialiser les données de test pour les fonctionnaires
 def initialize_test_fonctionnaires():
     global fonctionnaire_id_counter, FONCTIONNAIRES_DB
-    
+
     test_fonctionnaires = [
         {
             "id": 1,
@@ -338,7 +338,7 @@ def initialize_test_fonctionnaires():
             }
         }
     ]
-    
+
     for fonctionnaire in test_fonctionnaires:
         FONCTIONNAIRES_DB[fonctionnaire["id"]] = fonctionnaire
         if fonctionnaire["id"] >= fonctionnaire_id_counter:
@@ -373,10 +373,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Email ou mot de passe incorrect",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Retourner un token simple (pour les tests)
     return {
-        "access_token": f"test_token_{user['id']}_{user['role']}", 
+        "access_token": f"test_token_{user['id']}_{user['role']}",
         "token_type": "bearer"
     }
 
@@ -386,7 +386,7 @@ async def read_users_me(authorization: str = Header(None)):
     # Extraire les informations du token
     if authorization and authorization.startswith("Bearer "):
         token = authorization.replace("Bearer ", "")
-        
+
         # Le token a le format: test_token_{user_id}_{role}
         if token.startswith("test_token_"):
             parts = token.split("_")
@@ -394,18 +394,18 @@ async def read_users_me(authorization: str = Header(None)):
                 # Corriger l'indexation: test_token_2_secretaire -> ["test", "token", "2", "secretaire"]
                 user_id = parts[2]
                 role = parts[3] if len(parts) > 3 else ""
-                
+
                 # Trouver l'utilisateur correspondant
                 for email, user_data in TEST_USERS.items():
                     if str(user_data["id"]) == user_id and user_data["role"] == role:
                         return {
                             "id": user_data["id"],
                             "email": user_data["email"],
-                            "nom": user_data["nom"], 
+                            "nom": user_data["nom"],
                             "prenom": user_data["prenom"],
                             "role": user_data["role"]
                         }
-    
+
     # Si le token n'est pas valide, retourner une erreur au lieu de l'admin par défaut
     raise HTTPException(
         status_code=401,
@@ -436,9 +436,9 @@ async def create_enseignant(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
@@ -446,14 +446,14 @@ async def create_enseignant(
         if len(parts) >= 4 and parts[3] == "admin":
             # C'est un admin, on peut continuer
             admin_user = True
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent créer des enseignants")
-    
+
     # Vérifier si l'email existe déjà
     if enseignant_data.email in TEST_USERS:
         raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-    
+
     # Créer un nouvel ID
     new_id = max([user["id"] for user in TEST_USERS.values()]) + 1
       # Ajouter le nouvel enseignant aux utilisateurs de test
@@ -471,7 +471,7 @@ async def create_enseignant(
         "grade": enseignant_data.grade,
         "etablissement": enseignant_data.etablissement
     }
-    
+
     # Créer l'objet User pour la réponse
     user_data = User(
         id=new_id,
@@ -480,7 +480,7 @@ async def create_enseignant(
         prenom=enseignant_data.prenom,
         role="enseignant"
     )
-    
+
     # Ajouter aussi dans ENSEIGNANTS_DB pour la récupération
     enseignant_response = EnseignantComplete(        id=new_id,
         user_id=new_id,
@@ -489,7 +489,7 @@ async def create_enseignant(
         etablissement=enseignant_data.etablissement,
         user=user_data
     )
-    
+
     ENSEIGNANTS_DB[new_id] = {
         "id": new_id,
         "user_id": new_id,
@@ -504,10 +504,10 @@ async def create_enseignant(
             "role": user_data.role
         }
     }
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return enseignant_response
 
 # Récupérer tous les enseignants (endpoint pour admin)
@@ -518,19 +518,19 @@ async def get_all_enseignants(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
+
     # Retourner tous les enseignants créés
     enseignants_list = []
     for ens_id, ens_data in ENSEIGNANTS_DB.items():
@@ -542,7 +542,7 @@ async def get_all_enseignants(
             etablissement=ens_data["etablissement"],
             user=ens_data["user"]
         ))
-    
+
     return enseignants_list
 
 # Modifier un enseignant (endpoint pour admin)
@@ -555,9 +555,9 @@ async def update_enseignant(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
@@ -568,57 +568,72 @@ async def update_enseignant(
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")    # Vérifier si l'enseignant existe
     # Convertir enseignant_id en string pour la comparaison
     enseignant_id_str = str(enseignant_id)
-    
+
     if enseignant_id_str not in ENSEIGNANTS_DB:
         raise HTTPException(status_code=404, detail=f"Enseignant non trouvé")
-    
+
     # Récupérer les anciennes données
     old_data = ENSEIGNANTS_DB[enseignant_id_str]
     old_email = old_data["user"]["email"]
-    
+
     # Vérifier si le nouvel email existe déjà (sauf si c'est le même)
     if enseignant_data.email != old_email and enseignant_data.email in TEST_USERS:
         raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-    
-    # Mettre à jour TEST_USERS
+      # Mettre à jour TEST_USERS
     if old_email in TEST_USERS:
         del TEST_USERS[old_email]
-    
+
+    # Conserver le mot de passe existant si non fourni ou "unchanged"
+    password_to_use = old_data["user"].get("password", "enseignant123")
+    if enseignant_data.password and enseignant_data.password != "unchanged":
+        password_to_use = enseignant_data.password
+
     TEST_USERS[enseignant_data.email] = {
         "id": enseignant_id,
         "email": enseignant_data.email,
-        "password": enseignant_data.password,
+        "password": password_to_use,
         "nom": enseignant_data.nom,
         "prenom": enseignant_data.prenom,
         "role": "enseignant",
-        "telephone": enseignant_data.telephone,
-        "adresse": enseignant_data.adresse,
-        "cin": enseignant_data.cin,
-        "specialite": enseignant_data.specialite,
-        "grade": enseignant_data.grade,
-        "etablissement": enseignant_data.etablissement
+        "telephone": enseignant_data.telephone or "",
+        "adresse": enseignant_data.adresse or "",
+        "cin": enseignant_data.cin or "",
+        "is_active": True,
+        "created_at": old_data["user"].get("created_at", "2024-01-01T00:00:00")
     }
-    
-    # Créer l'objet User mis à jour
+      # Créer l'objet User mis à jour avec TOUS les champs
     updated_user = User(
         id=enseignant_id,
         email=enseignant_data.email,
         nom=enseignant_data.nom,
         prenom=enseignant_data.prenom,
         role="enseignant"
-    )    # Mettre à jour ENSEIGNANTS_DB
+    )
+
+    # Mettre à jour ENSEIGNANTS_DB avec structure complète
     ENSEIGNANTS_DB[enseignant_id_str] = {
         "id": enseignant_id,
         "user_id": enseignant_id,
-        "specialite": enseignant_data.specialite,
-        "grade": enseignant_data.grade,
-        "etablissement": enseignant_data.etablissement,
+        "nom": enseignant_data.nom,
+        "prenom": enseignant_data.prenom,
+        "email": enseignant_data.email,
+        "telephone": enseignant_data.telephone or "",
+        "adresse": enseignant_data.adresse or "",
+        "cin": enseignant_data.cin or "",
+        "specialite": enseignant_data.specialite or "",
+        "grade": enseignant_data.grade or "",
+        "etablissement": enseignant_data.etablissement or "",
         "user": {
             "id": updated_user.id,
             "email": updated_user.email,
             "nom": updated_user.nom,
             "prenom": updated_user.prenom,
-            "role": updated_user.role
+            "telephone": enseignant_data.telephone or "",
+            "adresse": enseignant_data.adresse or "",
+            "cin": enseignant_data.cin or "",
+            "role": updated_user.role,
+            "is_active": True,
+            "created_at": old_data["user"].get("created_at", "2024-01-01T00:00:00")
         }
     }
       # Retourner l'enseignant mis à jour
@@ -630,10 +645,10 @@ async def update_enseignant(
         etablissement=enseignant_data.etablissement,
         user=updated_user
     )
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return updated_enseignant
 
 # Supprimer un enseignant (endpoint pour admin)
@@ -645,39 +660,39 @@ async def delete_enseignant(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
       # Vérifier si l'enseignant existe
     # Convertir enseignant_id en string pour la comparaison
     enseignant_id_str = str(enseignant_id)
-    
+
     if enseignant_id_str not in ENSEIGNANTS_DB:
         raise HTTPException(status_code=404, detail="Enseignant non trouvé")
-    
+
     # Récupérer les données de l'enseignant avant suppression
     enseignant_data = ENSEIGNANTS_DB[enseignant_id_str]
     user_email = enseignant_data["user"]["email"]
-    
+
     # Supprimer de ENSEIGNANTS_DB
     del ENSEIGNANTS_DB[enseignant_id_str]
-    
+
     # Supprimer aussi de TEST_USERS
     if user_email in TEST_USERS:
         del TEST_USERS[user_email]
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return {"message": f"Enseignant {enseignant_data['user']['nom']} {enseignant_data['user']['prenom']} supprimé avec succès"}
 
 # ===== ENDPOINTS POUR LES FONCTIONNAIRES =====
@@ -691,26 +706,26 @@ async def create_fonctionnaire(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = True
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent créer des fonctionnaires")
-    
+
     # Vérifier si l'email existe déjà
     if fonctionnaire_data.email in TEST_USERS:
         raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-    
+
     # Créer un nouvel ID
     new_id = max([user["id"] for user in TEST_USERS.values()]) + 1
-    
+
     # Ajouter le nouveau fonctionnaire aux utilisateurs de test
     TEST_USERS[fonctionnaire_data.email] = {
         "id": new_id,
@@ -726,7 +741,7 @@ async def create_fonctionnaire(
         "poste": fonctionnaire_data.poste,
         "grade": fonctionnaire_data.grade
     }
-    
+
     # Créer l'objet User pour la réponse
     user_data = User(
         id=new_id,
@@ -735,7 +750,7 @@ async def create_fonctionnaire(
         prenom=fonctionnaire_data.prenom,
         role="fonctionnaire"
     )
-    
+
     # Ajouter aussi dans FONCTIONNAIRES_DB pour la récupération
     global fonctionnaire_id_counter
     fonctionnaire_response = FonctionnaireComplete(
@@ -746,7 +761,7 @@ async def create_fonctionnaire(
         grade=fonctionnaire_data.grade,
         user=user_data
     )
-    
+
     FONCTIONNAIRES_DB[fonctionnaire_id_counter] = {
         "id": fonctionnaire_id_counter,
         "user_id": new_id,
@@ -754,12 +769,12 @@ async def create_fonctionnaire(
         "poste": fonctionnaire_data.poste,
         "grade": fonctionnaire_data.grade,
         "user": user_data    }
-    
+
     fonctionnaire_id_counter += 1
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return fonctionnaire_response
 
 # Récupérer tous les fonctionnaires (endpoint pour admin)
@@ -770,19 +785,19 @@ async def get_all_fonctionnaires(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
+
     # Retourner tous les fonctionnaires créés
     fonctionnaires_list = []
     for fonc_id, fonc_data in FONCTIONNAIRES_DB.items():
@@ -794,7 +809,7 @@ async def get_all_fonctionnaires(
             grade=fonc_data["grade"],
             user=fonc_data["user"]
         ))
-    
+
     return fonctionnaires_list
 
 # Modifier un fonctionnaire (endpoint pour admin)
@@ -807,7 +822,7 @@ async def update_fonctionnaire(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
     # Vérifier si c'est un admin
     admin_user = None
@@ -817,7 +832,7 @@ async def update_fonctionnaire(
             admin_user = {"role": "admin"}
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
+
     # Vérifier si le fonctionnaire existe
     if fonctionnaire_id not in FONCTIONNAIRES_DB:
         raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
@@ -830,20 +845,20 @@ async def update_fonctionnaire(
         old_email = old_data["user"].email
         old_password = getattr(old_data["user"], "password", "")
     user_id = old_data["user_id"]
-    
+
     # Vérifier si le nouvel email existe déjà (sauf si c'est le même)
     if fonctionnaire_data.email != old_email and fonctionnaire_data.email in TEST_USERS:
         raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-    
+
     # Gérer le mot de passe : garder l'ancien si "unchanged" ou None
     password_to_use = old_password
     if fonctionnaire_data.password and fonctionnaire_data.password != "unchanged":
         password_to_use = fonctionnaire_data.password
-    
+
     # Mettre à jour TEST_USERS
     if old_email in TEST_USERS:
         del TEST_USERS[old_email]
-    
+
     TEST_USERS[fonctionnaire_data.email] = {
         "id": user_id,
         "email": fonctionnaire_data.email,
@@ -866,7 +881,7 @@ async def update_fonctionnaire(
         prenom=fonctionnaire_data.prenom,
         role="fonctionnaire"
     )
-    
+
     # Mettre à jour FONCTIONNAIRES_DB
     FONCTIONNAIRES_DB[fonctionnaire_id] = {
         "id": fonctionnaire_id,
@@ -876,10 +891,10 @@ async def update_fonctionnaire(
         "grade": fonctionnaire_data.grade,
         "user": updated_user
     }
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     # Retourner le fonctionnaire mis à jour
     return FonctionnaireComplete(
         id=fonctionnaire_id,
@@ -899,34 +914,34 @@ async def delete_fonctionnaire(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")    # Vérifier si le fonctionnaire existe
     if fonctionnaire_id not in FONCTIONNAIRES_DB:
         raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
-    
+
     # Récupérer les données du fonctionnaire avant suppression
     fonctionnaire_data = FONCTIONNAIRES_DB[fonctionnaire_id]
     user_email = fonctionnaire_data["user"]["email"]
-    
+
     # Supprimer de FONCTIONNAIRES_DB
     del FONCTIONNAIRES_DB[fonctionnaire_id]
       # Supprimer aussi de TEST_USERS
     if user_email in TEST_USERS:
         del TEST_USERS[user_email]
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return {"message": f"Fonctionnaire {fonctionnaire_data['user']['nom']} {fonctionnaire_data['user']['prenom']} supprimé avec succès"}
 
 # ===== ENDPOINTS POUR LES DEMANDES =====
@@ -941,29 +956,29 @@ async def get_all_demandes(
     # Vérifier l'autorisation (secrétaire ou admin)
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin ou secrétaire
     authorized_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
             authorized_user = {"role": parts[3]}
-    
+
     if not authorized_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
-    
+
     # Retourner toutes les demandes avec pagination
     demandes_list = list(DEMANDES_DB.values())
     demandes_list.sort(key=lambda x: x["created_at"], reverse=True)  # Trier par date de création décroissante
-    
+
     # Appliquer la pagination
     total = len(demandes_list)
     start = skip
     end = skip + limit
     paginated_demandes = demandes_list[start:end]
-    
+
     return paginated_demandes
 
 # Récupérer une demande spécifique (endpoint pour secrétaire/admin)
@@ -975,23 +990,23 @@ async def get_demande(
     # Vérifier l'autorisation
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin ou secrétaire
     authorized_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
             authorized_user = {"role": parts[3]}
-    
+
     if not authorized_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
-    
+
     # Vérifier si la demande existe
     if demande_id not in DEMANDES_DB:
         raise HTTPException(status_code=404, detail="Demande non trouvée")
-    
+
     return DEMANDES_DB[demande_id]
 
 # Créer une nouvelle demande (endpoint pour tous les utilisateurs connectés)
@@ -1003,9 +1018,9 @@ async def create_demande(
     # Vérifier l'autorisation
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Extraire l'utilisateur du token
     current_user = None
     if token.startswith("test_token_"):
@@ -1013,20 +1028,20 @@ async def create_demande(
         if len(parts) >= 3:
             user_id = parts[2]
             role = parts[3] if len(parts) > 3 else ""
-            
+
             # Trouver l'utilisateur correspondant
             for email, user_data in TEST_USERS.items():
                 if str(user_data["id"]) == user_id and user_data["role"] == role:
                     current_user = user_data
                     break
-    
+
     if not current_user:
         raise HTTPException(status_code=401, detail="Token invalide")
-    
+
     # Créer une nouvelle demande
     global demande_id_counter
     from datetime import datetime
-    
+
     new_demande = {
         "id": demande_id_counter,
         "user_id": current_user["id"],
@@ -1045,13 +1060,13 @@ async def create_demande(
             "prenom": current_user["prenom"],
             "role": current_user["role"]        }
     }
-    
+
     DEMANDES_DB[demande_id_counter] = new_demande
     demande_id_counter += 1
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return new_demande
 
 # Mettre à jour le statut d'une demande (endpoint pour secrétaire/admin)
@@ -1064,23 +1079,23 @@ async def update_demande_status(
     # Vérifier l'autorisation (secrétaire ou admin)
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin ou secrétaire
     authorized_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
             authorized_user = {"role": parts[3]}
-    
+
     if not authorized_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
-    
+
     # Vérifier si la demande existe
     if demande_id not in DEMANDES_DB:
         raise HTTPException(status_code=404, detail="Demande non trouvée")
-    
+
     # Vérifier que le statut est valide
     valid_statuses = ["EN_ATTENTE", "APPROUVEE", "REJETEE"]
     if status_update.statut not in valid_statuses:
@@ -1090,10 +1105,10 @@ async def update_demande_status(
     demande["statut"] = status_update.statut
     if status_update.commentaire_admin:
         demande["commentaire_admin"] = status_update.commentaire_admin
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return demande
 
 # Supprimer une demande (endpoint pour admin)
@@ -1105,31 +1120,31 @@ async def delete_demande(
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
+
     # Vérifier si la demande existe
     if demande_id not in DEMANDES_DB:
         raise HTTPException(status_code=404, detail="Demande non trouvée")
       # Récupérer les données avant suppression
     demande_data = DEMANDES_DB[demande_id]
-    
+
     # Supprimer la demande
     del DEMANDES_DB[demande_id]
-    
+
     # Sauvegarder les données dans les fichiers
     save_all_data()
-    
+
     return {"message": f"Demande '{demande_data['titre']}' supprimée avec succès"}
 
 # ===== ENDPOINT POUR LES STATISTIQUES DU DASHBOARD =====
@@ -1140,19 +1155,19 @@ async def get_dashboard_stats(authorization: str = Header(None)):
     # Vérifier l'autorisation
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier le token (admin ou secrétaire peuvent accéder aux stats)
     user_role = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4:
             user_role = parts[3]
-    
+
     if user_role not in ["admin", "secretaire"]:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
-    
+
     # Calculer les statistiques
     stats = {
         "totalUsers": len(TEST_USERS),
@@ -1164,7 +1179,7 @@ async def get_dashboard_stats(authorization: str = Header(None)):
         "demandesTraitees": sum(1 for demande in DEMANDES_DB.values() if demande["statut"] in ["APPROUVEE", "REJETEE"]),
         "totalDemandes": len(DEMANDES_DB)
     }
-    
+
     return stats
 
 # Endpoint de debug pour examiner FONCTIONNAIRES_DB
@@ -1173,23 +1188,102 @@ async def debug_fonctionnaires_db(authorization: str = Header(None)):
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     token = authorization.replace("Bearer ", "")
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
-    
+
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-    
+
     return {
         "FONCTIONNAIRES_DB_keys": list(FONCTIONNAIRES_DB.keys()),
         "FONCTIONNAIRES_DB_content": FONCTIONNAIRES_DB,
         "FONCTIONNAIRES_DB_size": len(FONCTIONNAIRES_DB),
         "key_types": [type(k).__name__ for k in FONCTIONNAIRES_DB.keys()]
     }
+
+# ===== ENDPOINT PROFIL ENSEIGNANT =====
+
+@app.get("/enseignant/profil")
+async def get_enseignant_profil(authorization: str = Header(None)):
+    """Obtenir le profil complet de l'enseignant connecté"""
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Décoder le token pour récupérer l'utilisateur
+    user_data = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4:
+            user_id = int(parts[2])
+            # Trouver l'utilisateur dans TEST_USERS
+            for email, user in TEST_USERS.items():
+                if user["id"] == user_id and user["role"] == "enseignant":
+                    user_data = user
+                    break
+
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Token invalide ou utilisateur non trouvé")
+
+    # Récupérer les données enseignant depuis ENSEIGNANTS_DB
+    enseignant_info = None
+    for ens_id, ens_data in ENSEIGNANTS_DB.items():
+        if ens_data.get("user_id") == user_data["id"]:
+            enseignant_info = ens_data
+            break
+
+    # Retourner les données complètes
+    if enseignant_info:        return {
+            "user": {
+                "id": user_data["id"],
+                "email": user_data["email"],
+                "nom": user_data["nom"],
+                "prenom": user_data["prenom"],
+                "telephone": enseignant_info.get("telephone", user_data.get("telephone", "")),
+                "adresse": enseignant_info.get("adresse", user_data.get("adresse", "")),
+                "cin": enseignant_info.get("cin", user_data.get("cin", "")),
+                "role": user_data["role"],
+                "is_active": user_data.get("is_active", True),
+                "created_at": user_data.get("created_at", "")
+            },
+            "enseignant": {
+                "id": enseignant_info.get("id"),
+                "user_id": enseignant_info.get("user_id"),
+                "specialite": enseignant_info.get("specialite", ""),
+                "grade": enseignant_info.get("grade", ""),
+                "etablissement": enseignant_info.get("etablissement", "")
+            }
+        }
+    else:
+        # Si pas trouvé dans ENSEIGNANTS_DB, retourner les données de base
+        return {
+            "user": {
+                "id": user_data["id"],
+                "email": user_data["email"],
+                "nom": user_data["nom"],
+                "prenom": user_data["prenom"],
+                "telephone": user_data.get("telephone", ""),
+                "adresse": user_data.get("adresse", ""),
+                "cin": user_data.get("cin", ""),
+                "role": user_data["role"],
+                "is_active": user_data.get("is_active", True),
+                "created_at": user_data.get("created_at", "")
+            },
+            "enseignant": {
+                "id": None,
+                "user_id": user_data["id"],
+                "specialite": "",
+                "grade": "",
+                "etablissement": ""
+            }
+        }
 
 if __name__ == "__main__":
     import uvicorn

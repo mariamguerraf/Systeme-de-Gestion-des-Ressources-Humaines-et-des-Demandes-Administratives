@@ -36,10 +36,10 @@ const ProfilPage = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log('🔍 [ProfilPage] Début récupération des données');
         console.log('👤 [ProfilPage] Utilisateur connecté:', user);
-        
+
         if (!user?.id) {
           console.error('❌ [ProfilPage] Utilisateur non connecté');
           setError('Utilisateur non connecté');
@@ -47,25 +47,67 @@ const ProfilPage = () => {
         }
 
         console.log('🌐 [ProfilPage] Appel API getEnseignants...');
-        
+
+        // NOUVEAU: Essayer d'abord l'endpoint profil dédié
+        try {
+          const profilResponse = await apiService.request<{
+            user: {
+              id: number;
+              nom: string;
+              prenom: string;
+              email: string;
+              telephone?: string;
+              adresse?: string;
+              cin?: string;
+              role: string;
+              is_active?: boolean;
+              created_at?: string;
+            };
+            enseignant: {
+              id?: number;
+              user_id: number;
+              specialite: string;
+              grade: string;
+              etablissement: string;
+            };
+          }>('/enseignant/profil', { method: 'GET' });
+
+          console.log('✅ [ProfilPage] Données profil récupérées:', profilResponse);
+
+          setEnseignantData({
+            id: profilResponse.enseignant.id || 0,
+            user_id: profilResponse.enseignant.user_id,
+            specialite: profilResponse.enseignant.specialite,
+            grade: profilResponse.enseignant.grade,
+            etablissement: profilResponse.enseignant.etablissement,
+            user: profilResponse.user
+          });
+
+          return; // Succès, on s'arrête ici
+        } catch (profilError) {
+          console.warn('⚠️ [ProfilPage] Endpoint profil non disponible, fallback vers liste enseignants');
+        }
+
+        // FALLBACK: Si l'endpoint profil ne marche pas, utiliser l'ancienne méthode
+
         // Récupérer les données de l'enseignant connecté
         const enseignants = await apiService.getEnseignants();
         console.log('📋 [ProfilPage] Enseignants reçus:', enseignants);
-        
+
         const enseignantsList = Array.isArray(enseignants) ? enseignants : [];
         console.log('📋 [ProfilPage] Liste enseignants:', enseignantsList);
-        
+
         const currentEnseignant = enseignantsList.find((ens: any) => {
-          console.log('🔍 [ProfilPage] Comparaison:', { 
-            ens_user_id: ens.user_id, 
-            ens_user_id_nested: ens.user?.id, 
-            current_user_id: user.id 
+          console.log('🔍 [ProfilPage] Comparaison:', {
+            ens_user_id: ens.user_id,
+            ens_user_id_nested: ens.user?.id,
+            current_user_id: user.id
           });
           return ens.user_id === user.id || ens.user?.id === user.id;
         });
-        
+
         console.log('🎯 [ProfilPage] Enseignant trouvé:', currentEnseignant);
-        
+
         if (currentEnseignant) {
           setEnseignantData(currentEnseignant);
         } else {
@@ -86,7 +128,7 @@ const ProfilPage = () => {
       } catch (error) {
         console.error('💥 [ProfilPage] Erreur lors de la récupération des données:', error);
         setError(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-        
+
         // En cas d'erreur, utiliser les données de base de l'utilisateur si disponible
         if (user) {
           console.log('🔄 [ProfilPage] Utilisation des données utilisateur de base');
@@ -130,12 +172,13 @@ const ProfilPage = () => {
     }
   };
 
-  // Données utilisateur avec fallback
+  // Données utilisateur avec fallback amélioré
   const userData = enseignantData?.user || user;
   const nom = userData?.nom || 'Non renseigné';
   const prenom = userData?.prenom || 'Non renseigné';
   const email = userData?.email || 'Non renseigné';
   const telephone = userData?.telephone || 'Non renseigné';
+  const adresse = userData?.adresse || 'Non renseigné';
   const specialite = enseignantData?.specialite || 'Non renseigné';
   const grade = enseignantData?.grade || 'Non renseigné';
   const etablissement = enseignantData?.etablissement || 'Non renseigné';
@@ -270,6 +313,10 @@ const ProfilPage = () => {
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Phone className="w-5 h-5 text-green-500" />
 						  <span className="text-gray-700 font-medium">{telephone}</span>
+						</div>
+						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+						  <MapPin className="w-5 h-5 text-orange-500" />
+						  <span className="text-gray-700 font-medium">Adresse: {adresse}</span>
 						</div>
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Calendar className="w-5 h-5 text-purple-500" />
