@@ -2,14 +2,24 @@
 Minimal FastAPI application - main_minimal.py
 This is a simplified version to test basic FastAPI functionality
 """
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List
 import json
 import os
+import shutil
+import uuid
 from pathlib import Path
+
+# Import conditionnel pour Pillow
+try:
+    from PIL import Image
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
 
 # Create FastAPI app
 app = FastAPI(
@@ -26,6 +36,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Créer le dossier pour les images
+UPLOAD_DIR = Path("uploads/images")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Monter le dossier static pour servir les images
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Data persistence functions
 DATA_DIR = Path("data")
@@ -83,6 +100,7 @@ class EnseignantCreateComplete(BaseModel):
     specialite: str = None
     grade: str = None
     etablissement: str = None
+    photo: str = None
 
 # Modèle pour la réponse enseignant
 class EnseignantComplete(BaseModel):
@@ -91,6 +109,7 @@ class EnseignantComplete(BaseModel):
     specialite: str = None
     grade: str = None
     etablissement: str = None
+    photo: str = None
     user: User
 
 # Modèle pour les demandes
@@ -346,6 +365,41 @@ def initialize_test_fonctionnaires():
 
 # Initialiser les données de test pour les fonctionnaires
 initialize_test_fonctionnaires()
+
+# Fonction pour sauvegarder et redimensionner l'image
+def save_and_resize_image(file: UploadFile, max_size: tuple = (300, 300)) -> str:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier manquant")
+
+    file_extension = file.filename.split(".")[-1].lower()
+    if file_extension not in ["jpg", "jpeg", "png", "gif"]:
+        raise HTTPException(status_code=400, detail="Format non supporté. Utilisez JPG, PNG ou GIF")
+
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
+
+    try:
+        # Sauvegarder l'image
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Redimensionner si Pillow disponible
+        if PILLOW_AVAILABLE:
+            try:
+                with Image.open(file_path) as img:
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        img = img.convert('RGB')
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                    img.save(file_path, optimize=True, quality=85)
+            except Exception:
+                pass  # Continuer sans redimensionnement
+
+        return f"/uploads/images/{unique_filename}"
+
+    except Exception as e:
+        if file_path.exists():
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
 # Root endpoint
 @app.get("/")
@@ -1284,6 +1338,78 @@ async def get_enseignant_profil(authorization: str = Header(None)):
                 "etablissement": ""
             }
         }
+
+# Endpoint pour upload d'image d'enseignant
+@app.post("/users/enseignants/{enseignant_id}/upload-photo")
+async def upload_enseignant_photo(
+    enseignant_id: int,
+    file: UploadFile = File(...),
+    authorization: str = Header(None)
+):
+    print(f"🔄 [UPLOAD] Début upload pour enseignant {enseignant_id}")
+    print(f"🔄 [UPLOAD] Fichier reçu: {file.filename if file else 'None'}")
+    print(f"🔄 [UPLOAD] Token reçu: {authorization[:50] if authorization else 'None'}...")
+    
+    try:        # Vérifier l'authentification
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Token manquant")
+        
+        token = authorization.replace("Bearer ", "")
+
+        # Vérifier si c'est un admin
+        admin_user = None
+        if token.startswith("test_token_"):
+            parts = token.split("_")
+            print(f"🔍 [UPLOAD] Token parts: {parts}")
+            # Le token peut être test_token_user_X_admin ou test_token_admin
+            if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+                admin_user = {"role": "admin"}
+                print(f"✅ [UPLOAD] Token admin validé")
+            elif "admin" in parts:  # Fallback plus permissif
+                admin_user = {"role": "admin"}
+                print(f"✅ [UPLOAD] Token admin validé (fallback)")
+            else:
+                print(f"❌ [UPLOAD] Token non admin: {parts}")
+
+        if not admin_user:
+            print(f"❌ [UPLOAD] Accès refusé pour token: {token[:30]}")
+            raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
+
+        # Vérifier taille (5MB max)
+        if hasattr(file, 'size') and file.size and file.size > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")
+
+        # Vérifier que l'enseignant existe
+        enseignant_id_str = str(enseignant_id)
+        if enseignant_id_str not in ENSEIGNANTS_DB:
+            raise HTTPException(status_code=404, detail="Enseignant non trouvé")
+
+        # Supprimer ancienne photo
+        enseignant = ENSEIGNANTS_DB[enseignant_id_str]
+        if enseignant.get("photo"):
+            old_photo_path = Path(f"uploads{enseignant['photo'].replace('/uploads', '')}")
+            if old_photo_path.exists():
+                try:
+                    os.remove(old_photo_path)
+                except:
+                    pass
+
+        # Sauvegarder nouvelle image
+        photo_url = save_and_resize_image(file)
+
+        # Mettre à jour enseignant
+        ENSEIGNANTS_DB[enseignant_id_str]["photo"] = photo_url
+        if "user" in ENSEIGNANTS_DB[enseignant_id_str]:
+            ENSEIGNANTS_DB[enseignant_id_str]["user"]["photo"] = photo_url
+
+        save_all_data()
+
+        return {"message": "Photo uploadée avec succès", "photo_url": photo_url}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

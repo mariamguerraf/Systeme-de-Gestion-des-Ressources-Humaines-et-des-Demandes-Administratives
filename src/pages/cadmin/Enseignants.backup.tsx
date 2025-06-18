@@ -1,23 +1,38 @@
 // Gestion des enseignants par le cadmin
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award } from 'lucide-react';
+import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award, FileText, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
+import PhotoUpload from '../../components/PhotoUpload';
 
 interface Enseignant {
   id: number;
+  user_id: number;
   nom: string;
   prenom: string;
   email: string;
-  telephone: string;
-  matiere: string;
+  telephone?: string;
+  adresse?: string;
+  cin?: string;
+  photo?: string;  // Add photo field
+  specialite?: string;
+  grade?: string;
+  // Remove etablissement from admin forms as requested
   statut: 'Actif' | 'Inactif';
-  dateEmbauche: string;
+  user?: {
+    id: number;
+    email: string;
+    nom: string;
+    prenom: string;
+    role: string;
+    created_at?: string;
+  };
 }
 
 const CadminEnseignants = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   
   const handleLogout = () => {
     logout();
@@ -26,61 +41,54 @@ const CadminEnseignants = () => {
 
   // État pour la liste des enseignants (récupérée depuis l'API)
   const [enseignants, setEnseignants] = useState<Enseignant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
+  const [showModal, setShowModal] = useState(false);  const [modalType, setModalType] = useState<'create' | 'edit' | 'view' | 'demandes'>('create');
   const [selectedEnseignant, setSelectedEnseignant] = useState<Enseignant | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userDemandes, setUserDemandes] = useState<any[]>([]);
+  const [demandesLoading, setDemandesLoading] = useState(false);
+
+  // Load enseignants on component mount
+  useEffect(() => {
+    loadEnseignants();
+  }, []);
 
   // Fonction pour charger tous les enseignants depuis l'API
   const loadEnseignants = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        console.error('Token manquant');
-        return;
-      }
+      setLoading(true);
+      setError(null);
+      const enseignantsData = await apiService.getEnseignants();
+        // Transform the data to match our interface
+      const transformedData = Array.isArray(enseignantsData) ? enseignantsData.map((ens: any) => ({
+        id: ens.id,
+        user_id: ens.user_id,
+        nom: ens.user?.nom || '',
+        prenom: ens.user?.prenom || '',
+        email: ens.user?.email || '',
+        telephone: ens.user?.telephone || '',
+        adresse: ens.user?.adresse || '',
+        cin: ens.user?.cin || '',
+        photo: ens.user?.photo || '',  // Add photo field
+        specialite: ens.specialite || '',
+        grade: ens.grade || '',
+        // Remove etablissement as requested
+        statut: 'Actif' as const,
+        user: ens.user
+      })) : [];
 
-      const response = await fetch('http://localhost:8080/users/enseignants', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const enseignantsData = await response.json();
-        console.log('Enseignants récupérés:', enseignantsData);
-        
-        // Convertir les données de l'API vers le format de l'interface locale
-        const enseignantsFormatted = enseignantsData.map((ens: any) => ({
-          id: ens.user.id,
-          nom: ens.user.nom,
-          prenom: ens.user.prenom,
-          email: ens.user.email,
-          telephone: ens.user.telephone || '',
-          matiere: ens.specialite || '',
-          statut: 'Actif' as const,
-          dateEmbauche: new Date().toISOString().split('T')[0]
-        }));
-        
-        setEnseignants(enseignantsFormatted);
-      } else {
-        console.error('Erreur lors du chargement des enseignants:', response.status);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des enseignants:', error);
+      setEnseignants(transformedData);} catch (err: any) {
+      console.error('Erreur lors du chargement des enseignants:', err);
+      setError('Erreur lors du chargement des enseignants');
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Charger les enseignants au démarrage du composant
-  React.useEffect(() => {
-    loadEnseignants();
-  }, []);
-  
-  // État pour le formulaire de création
+    // État pour le formulaire de création
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -90,8 +98,7 @@ const CadminEnseignants = () => {
     cin: '',
     password: '',
     specialite: '',
-    grade: '',
-    etablissement: ''
+    grade: '',    photo: ''  // Add photo field, remove etablissement
   });
 
   // Filtrage des enseignants
@@ -100,7 +107,7 @@ const CadminEnseignants = () => {
       enseignant.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enseignant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enseignant.matiere.toLowerCase().includes(searchTerm.toLowerCase());
+      (enseignant.specialite || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === '' || enseignant.statut === statusFilter;
     
@@ -109,8 +116,7 @@ const CadminEnseignants = () => {
 
   const handleCreate = () => {
     setModalType('create');
-    setSelectedEnseignant(null);
-    // Réinitialiser le formulaire
+    setSelectedEnseignant(null);    // Réinitialiser le formulaire
     setFormData({
       nom: '',
       prenom: '',
@@ -121,65 +127,63 @@ const CadminEnseignants = () => {
       password: '',
       specialite: '',
       grade: '',
-      etablissement: ''
+      photo: ''  // Add photo field, remove etablissement
     });
     setShowModal(true);
   };
 
   const handleEdit = (enseignant: Enseignant) => {
     setModalType('edit');
-    setSelectedEnseignant(enseignant);
-    // Pré-remplir le formulaire avec les données existantes
+    setSelectedEnseignant(enseignant);    // Pré-remplir le formulaire avec les données existantes
     setFormData({
       nom: enseignant.nom,
       prenom: enseignant.prenom,
       email: enseignant.email,
-      telephone: enseignant.telephone,
-      adresse: '', // Ces champs ne sont pas disponibles dans l'interface Enseignant
-      cin: '',
+      telephone: enseignant.telephone || '',
+      adresse: enseignant.adresse || '',
+      cin: enseignant.cin || '',
       password: '', // Laisser vide pour modification
-      specialite: enseignant.matiere,
-      grade: '',
-      etablissement: ''
+      specialite: enseignant.specialite || '',
+      grade: enseignant.grade || '',
+      photo: enseignant.photo || ''  // Add photo field, remove etablissement
     });
     setShowModal(true);
   };
-
   const handleView = (enseignant: Enseignant) => {
     setModalType('view');
     setSelectedEnseignant(enseignant);
     setShowModal(true);
   };
+  const handleViewDemandes = async (enseignant: Enseignant) => {
+    setModalType('demandes');
+    setSelectedEnseignant(enseignant);
+    setShowModal(true);
+    
+    // Charger les demandes de l'enseignant
+    setDemandesLoading(true);
+    setUserDemandes([]);
+    try {
+      const demandes = await apiService.getUserDemandes(enseignant.user_id);
+      setUserDemandes(Array.isArray(demandes) ? demandes : []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des demandes:', error);
+      setUserDemandes([]);
+    } finally {
+      setDemandesLoading(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet enseignant ?')) {
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
-        const response = await fetch(`http://localhost:8000/users/enseignants/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          alert(result.message || 'Enseignant supprimé avec succès !');
-          
-          // Retirer l'enseignant de la liste locale
-          setEnseignants(enseignants.filter(e => e.id !== id));
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de supprimer l\'enseignant'}`);
-        }
-      } catch (error) {
+        await apiService.deleteEnseignant(id);
+        alert('Enseignant supprimé avec succès !');
+        
+        // Retirer l'enseignant de la liste locale
+        setEnseignants(enseignants.filter(e => e.id !== id));
+      } catch (error: any) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de supprimer l\'enseignant'}`);
       }
     }
   };
@@ -187,59 +191,36 @@ const CadminEnseignants = () => {
   const handleSaveEnseignant = async () => {
     if (modalType === 'create') {
       setIsLoading(true);
-      try {
-        // Valider les champs requis
+      try {        // Valider les champs requis
         if (!formData.nom || !formData.prenom || !formData.email || !formData.password) {
           alert('Veuillez remplir tous les champs obligatoires');
           return;
-        }
-
-        // Obtenir le token depuis localStorage
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
-        // Faire l'appel API
-        const response = await fetch('http://localhost:8080/users/enseignants', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(formData)
-        });
-
-        if (response.ok) {
-          const nouvelEnseignant = await response.json();
-          alert('Enseignant créé avec succès !');
-          
-          // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
-          const enseignantLocal: Enseignant = {
-            id: nouvelEnseignant.user.id,
-            nom: nouvelEnseignant.user.nom,
-            prenom: nouvelEnseignant.user.prenom,
-            email: nouvelEnseignant.user.email,
-            telephone: nouvelEnseignant.user.telephone || '',
-            matiere: nouvelEnseignant.specialite || '',
-            statut: 'Actif',
-            dateEmbauche: new Date().toISOString().split('T')[0]
-          };
-          
-          setEnseignants([...enseignants, enseignantLocal]);
-          setShowModal(false);
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de créer l\'enseignant'}`);
-        }
-      } catch (error) {
+        }        // Utiliser apiService pour la création
+        const nouvelEnseignant = await apiService.createEnseignant(formData) as any;
+        
+        alert('Enseignant créé avec succès !');
+        
+        // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
+        const enseignantLocal: Enseignant = {
+          id: nouvelEnseignant.id,
+          user_id: nouvelEnseignant.user_id,
+          nom: nouvelEnseignant.user.nom,
+          prenom: nouvelEnseignant.user.prenom,
+          email: nouvelEnseignant.user.email,
+          telephone: nouvelEnseignant.user.telephone || '',
+          specialite: nouvelEnseignant.specialite || '',
+          statut: 'Actif',
+          user: nouvelEnseignant.user
+        };
+        
+        setEnseignants([...enseignants, enseignantLocal]);
+        setShowModal(false);
+      } catch (error: any) {
         console.error('Erreur lors de la création:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de créer l\'enseignant'}`);
       } finally {
         setIsLoading(false);
-      }
-    } else if (modalType === 'edit' && selectedEnseignant) {
+      }} else if (modalType === 'edit' && selectedEnseignant) {
       setIsLoading(true);
       try {
         // Valider les champs requis (mot de passe optionnel en modification)
@@ -248,57 +229,43 @@ const CadminEnseignants = () => {
           return;
         }
 
-        // Obtenir le token depuis localStorage
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          alert('Vous devez être connecté pour effectuer cette action');
-          return;
-        }
-
         // Si le mot de passe est vide, garder l'ancien (on peut améliorer cela)
         const dataToSend = {
           ...formData,
-          password: formData.password || 'unchanged' // Placeholder - dans un vrai système, on ne changerait le mot de passe que s'il est fourni
+          password: formData.password || 'unchanged'
         };
 
-        // Faire l'appel API pour la modification
-        const response = await fetch(`http://localhost:8000/users/enseignants/${selectedEnseignant.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(dataToSend)
+        console.log('Tentative de modification de l\'enseignant:', {
+          selectedEnseignantId: selectedEnseignant.id,
+          selectedEnseignant: selectedEnseignant,
+          dataToSend: dataToSend
         });
-
-        if (response.ok) {
-          const enseignantModifie = await response.json();
-          alert('Enseignant modifié avec succès !');
-          
-          // Mettre à jour l'enseignant dans la liste locale
-          const enseignantLocal: Enseignant = {
-            id: enseignantModifie.user.id,
-            nom: enseignantModifie.user.nom,
-            prenom: enseignantModifie.user.prenom,
-            email: enseignantModifie.user.email,
-            telephone: enseignantModifie.user.telephone || '',
-            matiere: enseignantModifie.specialite || '',
-            statut: 'Actif',
-            dateEmbauche: new Date().toISOString().split('T')[0]
-          };
-          
-          // Remplacer l'enseignant modifié dans la liste
-          setEnseignants(enseignants.map(ens => 
-            ens.id === selectedEnseignant.id ? enseignantLocal : ens
-          ));
-          setShowModal(false);
-        } else {
-          const errorData = await response.json();
-          alert(`Erreur: ${errorData.detail || 'Impossible de modifier l\'enseignant'}`);
-        }
-      } catch (error) {
+          // Utiliser apiService pour la modification
+        const enseignantModifie = await apiService.updateEnseignant(selectedEnseignant.id, dataToSend) as any;
+        
+        alert('Enseignant modifié avec succès !');
+        
+        // Mettre à jour l'enseignant dans la liste locale
+        const enseignantLocal: Enseignant = {
+          id: enseignantModifie.id,
+          user_id: enseignantModifie.user_id,
+          nom: enseignantModifie.user.nom,
+          prenom: enseignantModifie.user.prenom,
+          email: enseignantModifie.user.email,
+          telephone: enseignantModifie.user.telephone || '',
+          specialite: enseignantModifie.specialite || '',
+          statut: 'Actif',
+          user: enseignantModifie.user
+        };
+        
+        // Remplacer l'enseignant modifié dans la liste
+        setEnseignants(enseignants.map(ens => 
+          ens.id === selectedEnseignant.id ? enseignantLocal : ens
+        ));
+        setShowModal(false);
+      } catch (error: any) {
         console.error('Erreur lors de la modification:', error);
-        alert('Erreur de connexion au serveur');
+        alert(`Erreur: ${error.message || 'Impossible de modifier l\'enseignant'}`);
       } finally {
         setIsLoading(false);
       }
@@ -310,6 +277,13 @@ const CadminEnseignants = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePhotoChange = (photoUrl: string) => {
+    setFormData(prev => ({
+      ...prev,
+      photo: photoUrl
     }));
   };
 
@@ -425,7 +399,7 @@ const CadminEnseignants = () => {
                         <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                           <span className="text-white font-semibold text-sm">
                             {enseignant.prenom[0]}{enseignant.nom[0]}
-                          </span>
+                          </div>
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{enseignant.prenom} {enseignant.nom}</div>
@@ -439,7 +413,7 @@ const CadminEnseignants = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {enseignant.matiere}
+                        {enseignant.specialite}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -452,16 +426,22 @@ const CadminEnseignants = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-900">
-                      {new Date(enseignant.dateEmbauche).toLocaleDateString('fr-FR')}
+                      {enseignant.user?.created_at ? new Date(enseignant.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center space-x-2">
+                    <td className="px-6 py-4">                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleView(enseignant)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="Voir les détails"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleViewDemandes(enseignant)}
+                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                          title="Voir les demandes"
+                        >
+                          <FileText className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEdit(enseignant)}
@@ -499,11 +479,11 @@ const CadminEnseignants = () => {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">
+              <div className="p-6 border-b border-gray-200">                <h3 className="text-xl font-bold text-gray-900">
                   {modalType === 'create' && 'Ajouter un Enseignant'}
                   {modalType === 'edit' && 'Modifier l\'Enseignant'}
                   {modalType === 'view' && 'Détails de l\'Enseignant'}
+                  {modalType === 'demandes' && 'Demandes de l\'Enseignant'}
                 </h3>
               </div>
               
@@ -682,23 +662,25 @@ const CadminEnseignants = () => {
                             <option value="Professeur Assistant">Professeur Assistant</option>
                             <option value="Maître de Conférences">Maître de Conférences</option>
                             <option value="Chargé de Cours">Chargé de Cours</option>
-                            <option value="Vacataire">Vacataire</option>
-                          </select>
+                            <option value="Vacataire">Vacataire</option>                          </select>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Building className="w-4 h-4 inline mr-1" />
-                            Établissement
+                            <Camera className="w-4 h-4 inline mr-1" />
+                            Photo de profil
                           </label>
                           <input
-                            type="text"
-                            name="etablissement"
-                            value={formData.etablissement}
+                            type="url"
+                            name="photo"
+                            value={formData.photo}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Nom de l'établissement"
+                            placeholder="URL de la photo (optionnel)"
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Entrez l'URL d'une photo ou laissez vide pour utiliser l'avatar par défaut
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -742,13 +724,64 @@ const CadminEnseignants = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
-                        <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.matiere}</div>
-                      </div>
-                      <div>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.specialite}</div>
+                      </div>                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedEnseignant.statut}</div>
                       </div>
                     </div>
+                  </div>
+                )}                {/* Historique des demandes */}
+                {modalType === 'demandes' && selectedEnseignant && (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <h4 className="text-lg font-semibold text-gray-800">
+                        Historique des demandes de {selectedEnseignant.prenom} {selectedEnseignant.nom}
+                      </h4>
+                    </div>
+                    
+                    {demandesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                        <span className="ml-2 text-gray-600">Chargement des demandes...</span>
+                      </div>
+                    ) : userDemandes.length > 0 ? (
+                      <div className="space-y-3">
+                        {userDemandes.map((demande: any) => (
+                          <div key={demande.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-medium text-gray-900">{demande.titre}</h5>
+                                <p className="text-sm text-gray-600">{demande.type_demande}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
+                                demande.statut === 'APPROUVEE' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {demande.statut === 'EN_ATTENTE' ? 'En attente' :
+                                 demande.statut === 'APPROUVEE' ? 'Approuvée' : 'Rejetée'}
+                              </span>
+                            </div>
+                            {demande.description && (
+                              <p className="text-sm text-gray-600 mb-2">{demande.description}</p>
+                            )}
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>Créée le: {new Date(demande.created_at).toLocaleDateString('fr-FR')}</span>
+                              {demande.date_debut && demande.date_fin && (
+                                <span>Période: {demande.date_debut} - {demande.date_fin}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500">Aucune demande trouvée pour cet enseignant</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -927,22 +960,24 @@ const CadminEnseignants = () => {
                             <option value="Maître de Conférences">Maître de Conférences</option>
                             <option value="Chargé de Cours">Chargé de Cours</option>
                             <option value="Vacataire">Vacataire</option>
-                          </select>
-                        </div>
+                          </select>                        </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Building className="w-4 h-4 inline mr-1" />
-                            Établissement
+                            <Camera className="w-4 h-4 inline mr-1" />
+                            Photo de profil
                           </label>
                           <input
-                            type="text"
-                            name="etablissement"
-                            value={formData.etablissement}
+                            type="url"
+                            name="photo"
+                            value={formData.photo}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Nom de l'établissement"
+                            placeholder="URL de la photo (optionnel)"
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Entrez l'URL d'une photo ou laissez vide pour utiliser l'avatar par défaut
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -960,8 +995,7 @@ const CadminEnseignants = () => {
                   </div>
                 )}
               </div>
-              
-              <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button
                   onClick={() => setShowModal(false)}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -969,7 +1003,7 @@ const CadminEnseignants = () => {
                 >
                   Fermer
                 </button>
-                {modalType !== 'view' && (
+                {modalType !== 'view' && modalType !== 'demandes' && (
                   <button 
                     onClick={handleSaveEnseignant}
                     disabled={isLoading}

@@ -10,6 +10,7 @@ interface EnseignantData {
   specialite: string;
   grade: string;
   etablissement: string;
+  photo?: string;
   date_recrutement?: string;
   user?: {
     id: number;
@@ -283,9 +284,17 @@ const ProfilPage = () => {
 			>
 			  {/* Profile Photo - Fixed center position */}
 			  <div className="flex justify-center mb-6">
-				<div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center shadow-md">
-				  <User className="w-12 h-12 text-blue-600" />
-				</div>
+				{enseignantData?.photo ? (
+				  <img
+					src={`/api${enseignantData.photo}`}
+					alt={`${prenom} ${nom}`}
+					className="w-24 h-24 rounded-full object-cover shadow-md border-4 border-white"
+				  />
+				) : (
+				  <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center shadow-md">
+					<User className="w-12 h-12 text-blue-600" />
+				  </div>
+				)}
 			  </div>
 
 			  {/* User Name - Always visible */}

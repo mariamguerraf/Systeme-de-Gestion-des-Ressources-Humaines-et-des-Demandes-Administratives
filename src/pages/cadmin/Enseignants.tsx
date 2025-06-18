@@ -13,10 +13,10 @@ interface Enseignant {
   email: string;
   telephone?: string;
   adresse?: string;
-  cin?: string;
-  specialite?: string;
+  cin?: string;  specialite?: string;
   grade?: string;
   etablissement?: string;
+  photo?: string;
   statut: 'Actif' | 'Inactif';  user?: {
     id: number;
     email: string;
@@ -59,9 +59,7 @@ const CadminEnseignants = () => {
     try {
       setLoading(true);
       setError(null);
-      const enseignantsData = await apiService.getEnseignants();
-
-      // Transform the data to match our interface
+      const enseignantsData = await apiService.getEnseignants();      // Transform the data to match our interface
       const transformedData = Array.isArray(enseignantsData) ? enseignantsData.map((ens: any) => ({
         id: ens.id,
         user_id: ens.user_id,
@@ -74,6 +72,7 @@ const CadminEnseignants = () => {
         specialite: ens.specialite || '',
         grade: ens.grade || '',
         etablissement: ens.etablissement || '',
+        photo: ens.photo || null,
         statut: 'Actif' as const,
         user: ens.user
       })) : [];
@@ -85,7 +84,6 @@ const CadminEnseignants = () => {
       setLoading(false);
     }
   };
-
   // État pour le formulaire de création
   const [formData, setFormData] = useState({
     nom: '',
@@ -100,6 +98,10 @@ const CadminEnseignants = () => {
     etablissement: ''
   });
 
+  // État pour l'upload de photo
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
   // Filtrage des enseignants
   const filteredEnseignants = enseignants.filter(enseignant => {
     const matchesSearch =
@@ -112,7 +114,6 @@ const CadminEnseignants = () => {
 
     return matchesSearch && matchesStatus;
   });
-
   const handleCreate = () => {
     setModalType('create');
     setSelectedEnseignant(null);
@@ -129,9 +130,10 @@ const CadminEnseignants = () => {
       grade: '',
       etablissement: ''
     });
+    // Réinitialiser l'état de photo
+    resetPhotoState();
     setShowModal(true);
-  };
-  const handleEdit = (enseignant: Enseignant) => {
+  };  const handleEdit = (enseignant: Enseignant) => {
     setModalType('edit');
     setSelectedEnseignant(enseignant);
     // Pré-remplir le formulaire avec TOUTES les données disponibles
@@ -147,6 +149,8 @@ const CadminEnseignants = () => {
       grade: enseignant.grade || '',
       etablissement: enseignant.etablissement || ''
     });
+    // Réinitialiser l'état de photo (on affichera l'actuelle séparément)
+    resetPhotoState();
     setShowModal(true);
   };
   const handleView = (enseignant: Enseignant) => {
@@ -194,38 +198,75 @@ const CadminEnseignants = () => {
       try {        // Valider les champs requis
         if (!formData.nom || !formData.prenom || !formData.email || !formData.password) {
           alert('Veuillez remplir tous les champs obligatoires');
+          setIsLoading(false);
           return;
         }        // Utiliser apiService pour la création
         const nouvelEnseignant = await apiService.createEnseignant(formData) as any;
 
-        alert('Enseignant créé avec succès !');
+        if (!nouvelEnseignant || !nouvelEnseignant.id) {
+          throw new Error('Erreur lors de la création de l\'enseignant');
+        }
+
+        alert('Enseignant créé avec succès !');        // Upload de la photo si sélectionnée
+        if (selectedFile && nouvelEnseignant.id) {
+          try {
+            const photoUrl = await uploadPhoto(nouvelEnseignant.id);
+            if (photoUrl) {
+              nouvelEnseignant.photo = photoUrl;
+              alert('Enseignant et photo créés avec succès !');
+            } else {
+              alert('Enseignant créé avec succès !');
+            }
+          } catch (photoError) {
+            console.warn('Erreur upload photo:', photoError);
+            // Proposer de réessayer l'upload
+            const retry = confirm('Enseignant créé, mais erreur lors de l\'upload de la photo. Voulez-vous réessayer l\'upload maintenant ?');
+            if (retry) {
+              try {
+                const photoUrl = await uploadPhoto(nouvelEnseignant.id);
+                if (photoUrl) {
+                  nouvelEnseignant.photo = photoUrl;
+                  alert('Photo uploadée avec succès !');
+                }
+              } catch (retryError) {
+                console.error('Erreur lors du retry:', retryError);
+                alert('Échec de l\'upload. Vous pourrez ajouter la photo plus tard depuis la liste des enseignants.');
+              }
+            }
+          }
+        } else {
+          alert('Enseignant créé avec succès !');
+        }
 
         // Ajouter le nouvel enseignant à la liste (mapping vers l'interface locale)
         const enseignantLocal: Enseignant = {
           id: nouvelEnseignant.id,
           user_id: nouvelEnseignant.user_id,
-          nom: nouvelEnseignant.user.nom,
-          prenom: nouvelEnseignant.user.prenom,
-          email: nouvelEnseignant.user.email,
-          telephone: nouvelEnseignant.user.telephone || '',
+          nom: nouvelEnseignant.user?.nom || nouvelEnseignant.nom,
+          prenom: nouvelEnseignant.user?.prenom || nouvelEnseignant.prenom,
+          email: nouvelEnseignant.user?.email || nouvelEnseignant.email,
+          telephone: nouvelEnseignant.user?.telephone || '',
           specialite: nouvelEnseignant.specialite || '',
+          photo: nouvelEnseignant.photo || null,
           statut: 'Actif',
           user: nouvelEnseignant.user
-        };
-
-        setEnseignants([...enseignants, enseignantLocal]);
+        };        setEnseignants([...enseignants, enseignantLocal]);
         setShowModal(false);
+        // Réinitialiser l'état de photo
+        resetPhotoState();
       } catch (error: any) {
         console.error('Erreur lors de la création:', error);
         alert(`Erreur: ${error.message || 'Impossible de créer l\'enseignant'}`);
       } finally {
         setIsLoading(false);
-      }} else if (modalType === 'edit' && selectedEnseignant) {
+      }  } else if (modalType === 'edit' && selectedEnseignant) {
+      let enseignantModifie; // Déclaré ici pour être accessible partout
       setIsLoading(true);
       try {
         // Valider les champs requis (mot de passe optionnel en modification)
         if (!formData.nom || !formData.prenom || !formData.email) {
           alert('Veuillez remplir tous les champs obligatoires');
+          setIsLoading(false);
           return;
         }
 
@@ -240,29 +281,64 @@ const CadminEnseignants = () => {
           selectedEnseignant: selectedEnseignant,
           dataToSend: dataToSend
         });
-          // Utiliser apiService pour la modification
-        const enseignantModifie = await apiService.updateEnseignant(selectedEnseignant.id, dataToSend) as any;
+
+        // Utiliser apiService pour la modification
+        enseignantModifie = await apiService.updateEnseignant(selectedEnseignant.id, dataToSend) as any;
+
+        // Vérifier que la modification a réussi
+        if (!enseignantModifie || !enseignantModifie.id) {
+          throw new Error('Erreur lors de la modification de l\'enseignant');
+        }        // Upload de la photo si sélectionnée
+        if (selectedFile && selectedEnseignant.id) {
+          try {
+            const photoUrl = await uploadPhoto(selectedEnseignant.id);
+            if (photoUrl) {
+              enseignantModifie.photo = photoUrl;
+              alert('Enseignant et photo modifiés avec succès !');
+            } else {
+              alert('Enseignant modifié avec succès !');
+            }
+          } catch (photoError) {
+            console.warn('Erreur upload photo:', photoError);
+            // Proposer de réessayer l'upload
+            const retry = confirm('Enseignant modifié, mais erreur lors de l\'upload de la photo. Voulez-vous réessayer l\'upload maintenant ?');
+            if (retry) {
+              try {
+                const photoUrl = await uploadPhoto(selectedEnseignant.id);
+                if (photoUrl) {
+                  enseignantModifie.photo = photoUrl;
+                  alert('Photo uploadée avec succès !');
+                }
+              } catch (retryError) {
+                console.error('Erreur lors du retry:', retryError);
+                alert('Échec de l\'upload. Vous pourrez réessayer plus tard depuis la liste des enseignants.');
+              }
+            }
+          }
+        } else {
+          alert('Enseignant modifié avec succès !');
+        }
 
         alert('Enseignant modifié avec succès !');
-
-        // Mettre à jour l'enseignant dans la liste locale
         const enseignantLocal: Enseignant = {
           id: enseignantModifie.id,
           user_id: enseignantModifie.user_id,
-          nom: enseignantModifie.user.nom,
-          prenom: enseignantModifie.user.prenom,
-          email: enseignantModifie.user.email,
-          telephone: enseignantModifie.user.telephone || '',
+          nom: enseignantModifie.user?.nom || enseignantModifie.nom,
+          prenom: enseignantModifie.user?.prenom || enseignantModifie.prenom,
+          email: enseignantModifie.user?.email || enseignantModifie.email,
+          telephone: enseignantModifie.user?.telephone || '',
           specialite: enseignantModifie.specialite || '',
+          photo: enseignantModifie.photo || selectedEnseignant.photo || null,
           statut: 'Actif',
           user: enseignantModifie.user
         };
 
         // Remplacer l'enseignant modifié dans la liste
         setEnseignants(enseignants.map(ens =>
-          ens.id === selectedEnseignant.id ? enseignantLocal : ens
-        ));
+          ens.id === selectedEnseignant.id ? enseignantLocal : ens        ));
         setShowModal(false);
+        // Réinitialiser l'état de photo
+        resetPhotoState();
       } catch (error: any) {
         console.error('Erreur lors de la modification:', error);
         alert(`Erreur: ${error.message || 'Impossible de modifier l\'enseignant'}`);
@@ -270,6 +346,95 @@ const CadminEnseignants = () => {
         setIsLoading(false);
       }
     }
+  };
+
+  // Gestion de l'upload de photo
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Vérifier le type de fichier
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type)) {
+        alert('Format non supporté. Utilisez JPG, PNG ou GIF');
+        return;
+      }
+
+      // Vérifier la taille (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Le fichier est trop volumineux (maximum 5MB)');
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Créer un aperçu
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };  const uploadPhoto = async (enseignantId: number): Promise<string | null> => {
+    if (!selectedFile) return null;
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', selectedFile);
+
+      // Utiliser le bon nom de clé pour le token
+      const token = localStorage.getItem('access_token');
+      console.log('🔄 Upload photo - Token:', token ? `${token.substring(0, 30)}...` : 'Absent');
+      console.log('🔄 Upload photo - Enseignant ID:', enseignantId);
+      console.log('🔄 Upload photo - Fichier:', selectedFile.name, selectedFile.type, selectedFile.size);
+
+      if (!token) {
+        throw new Error('Token d\'authentification manquant. Veuillez vous reconnecter.');
+      }
+
+      console.log('🔄 Upload photo - URL:', `http://localhost:8000/users/enseignants/${enseignantId}/upload-photo`);
+
+      // Utiliser l'URL correcte avec le port 8000
+      const response = await fetch(`http://localhost:8000/users/enseignants/${enseignantId}/upload-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formDataUpload,
+      });
+
+      console.log('🔄 Upload photo - Réponse status:', response.status);
+      console.log('🔄 Upload photo - Réponse headers:', response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔄 Upload photo - Erreur réponse:', errorText);
+        
+        // Messages d'erreur plus spécifiques
+        if (response.status === 401) {
+          throw new Error('Authentification expirée. Veuillez vous reconnecter.');
+        } else if (response.status === 403) {
+          throw new Error('Permissions insuffisantes pour uploader une photo.');
+        } else if (response.status === 413) {
+          throw new Error('Fichier trop volumineux (maximum 5MB).');
+        } else if (response.status === 415) {
+          throw new Error('Format de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+        } else if (response.status === 404) {
+          throw new Error('Enseignant non trouvé ou endpoint non disponible.');
+        } else {
+          throw new Error(`Erreur serveur (${response.status}): ${errorText}`);
+        }
+      }
+
+      const result = await response.json();
+      console.log('✅ Upload photo - Succès:', result);
+      return result.photo_url;    } catch (error) {
+      console.error('❌ Erreur upload photo:', error);
+      throw error; // Re-throw pour que l'appelant puisse gérer
+    }
+  };
+
+  const resetPhotoState = () => {
+    setSelectedFile(null);
+    setPhotoPreview(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -386,14 +551,21 @@ const CadminEnseignants = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredEnseignants.map((enseignant) => (
-                  <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">                    <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
-                            {enseignant.prenom[0]}{enseignant.nom[0]}
-                          </span>
-                        </div>
+                        {enseignant.photo ? (
+                          <img
+                            src={`/api${enseignant.photo}`}
+                            alt={`${enseignant.prenom} ${enseignant.nom}`}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-300"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {enseignant.prenom[0]}{enseignant.nom[0]}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium text-gray-900">{enseignant.prenom} {enseignant.nom}</div>
                           <div className="text-gray-500 text-sm">ID: {enseignant.id}</div>
@@ -420,8 +592,7 @@ const CadminEnseignants = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-900">
                       {enseignant.user?.created_at ? new Date(enseignant.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4">                      <div className="flex items-center justify-center space-x-2">
+                    </td>                    <td className="px-6 py-4">                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleView(enseignant)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
@@ -604,9 +775,34 @@ const CadminEnseignants = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Mot de passe temporaire"
                             required
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
+                          />                          <p className="text-xs text-gray-500 mt-1">
                             L'enseignant pourra changer ce mot de passe lors de sa première connexion
+                          </p>
+                        </div>
+
+                        {/* Upload de photo */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <User className="w-4 h-4 inline mr-1" />
+                            Photo de profil
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          {photoPreview && (
+                            <div className="mt-2">
+                              <img
+                                src={photoPreview}
+                                alt="Aperçu"
+                                className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
+                              />
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Formats supportés: JPG, PNG, GIF (max 5MB)
                           </p>
                         </div>
 
@@ -898,9 +1094,52 @@ const CadminEnseignants = () => {
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Laisser vide pour conserver l'ancien"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
+                          />                          <p className="text-xs text-gray-500 mt-1">
                             Laissez vide pour conserver le mot de passe actuel
+                          </p>
+                        </div>
+
+                        {/* Photo actuelle et upload */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <User className="w-4 h-4 inline mr-1" />
+                            Photo de profil
+                          </label>
+
+                          {/* Photo actuelle */}
+                          {selectedEnseignant?.photo && !photoPreview && (
+                            <div className="mb-2">
+                              <p className="text-sm text-gray-600 mb-1">Photo actuelle:</p>
+                              <img
+                                src={`/api${selectedEnseignant.photo}`}
+                                alt="Photo actuelle"
+                                className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
+                              />
+                            </div>
+                          )}
+
+                          {/* Upload nouvelle photo */}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+
+                          {/* Aperçu nouvelle photo */}
+                          {photoPreview && (
+                            <div className="mt-2">
+                              <p className="text-sm text-gray-600 mb-1">Nouvelle photo:</p>
+                              <img
+                                src={photoPreview}
+                                alt="Aperçu nouvelle photo"
+                                className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
+                              />
+                            </div>
+                          )}
+
+                          <p className="text-xs text-gray-500 mt-1">
+                            Laissez vide pour conserver la photo actuelle. Formats: JPG, PNG, GIF (max 5MB)
                           </p>
                         </div>
 

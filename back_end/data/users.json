@@ -157,30 +157,42 @@
     "poste": "Gestionnaire RH",
     "grade": "Administrateur Principal"
   },
-  "abdocooder@gmail.com": {
-    "id": 15,
-    "email": "abdocooder@gmail.com",
-    "password": "123123123",
-    "nom": "ABDELKADER",
-    "prenom": "BENAJIBA",
+  "mariamgrf03@gmail.com": {
+    "id": 16,
+    "email": "mariamgrf03@gmail.com",
+    "password": "admin2024",
+    "nom": "hguerraf",
+    "prenom": "mariamh",
     "role": "enseignant",
-    "telephone": "+212682546206",
-    "adresse": "Av Mamoune Derb Zmizam Zkt 01 N04",
-    "cin": "5555555",
-    "specialite": "Informatique",
-    "grade": "Professeur",
-    "etablissement": "kkkkkk"
+    "telephone": "",
+    "adresse": "",
+    "cin": "admin@univ.ma",
+    "is_active": true,
+    "created_at": "2024-01-01T00:00:00"
+  },
+  "mariamgrfyy02@gmail.com": {
+    "id": 17,
+    "email": "mariamgrfyy02@gmail.com",
+    "password": "admin2024",
+    "nom": "yyguerraf",
+    "prenom": "mariamyy",
+    "role": "enseignant",
+    "telephone": "",
+    "adresse": "",
+    "cin": "admin@univ.ma",
+    "is_active": true,
+    "created_at": "2024-01-01T00:00:00"
   },
   "mariamgrf02@gmail.com": {
     "id": 14,
     "email": "mariamgrf02@gmail.com",
-    "password": "1234",
+    "password": "admin2024",
     "nom": "guerraf",
     "prenom": "mariam",
     "role": "enseignant",
     "telephone": "",
-    "adresse": "tetouan",
-    "cin": "",
+    "adresse": "",
+    "cin": "admin@univ.ma",
     "is_active": true,
     "created_at": "2024-01-01T00:00:00"
   }

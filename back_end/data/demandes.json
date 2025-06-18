@@ -5,11 +5,10 @@
     "type_demande": "CONGE",
     "titre": "Congé annuel",
     "description": "Demande de congé annuel pour vacances d'été",
-    "date_debut": "2024-07-01",
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-18T10:12:34.389851",
+    "created_at": "2025-06-18T18:04:43.291227",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -28,7 +27,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-13T10:12:34.389872",
+    "created_at": "2025-06-13T18:04:43.291235",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -47,7 +46,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-08T10:12:34.389878",
+    "created_at": "2025-06-08T18:04:43.291242",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -66,7 +65,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-16T10:12:34.389880",
+    "created_at": "2025-06-16T18:04:43.291246",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -85,7 +84,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-03T10:12:34.389882",
+    "created_at": "2025-06-03T18:04:43.291249",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -179,7 +178,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-18T11:02:41.695413",
+    "created_at": "2025-06-18T18:07:11.335003",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -198,7 +197,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-13T11:02:41.695422",
+    "created_at": "2025-06-13T18:07:11.335014",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -217,7 +216,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-08T11:02:41.695429",
+    "created_at": "2025-06-08T18:07:11.335024",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -236,7 +235,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-16T11:02:41.695431",
+    "created_at": "2025-06-16T18:07:11.335029",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -255,7 +254,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-03T11:02:41.695434",
+    "created_at": "2025-06-03T18:07:11.335033",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
