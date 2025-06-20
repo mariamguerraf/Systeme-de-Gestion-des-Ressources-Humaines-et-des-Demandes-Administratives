@@ -12,6 +12,7 @@ import json
 import os
 import shutil
 import uuid
+import time
 from pathlib import Path
 import sqlite3
 
@@ -794,212 +795,319 @@ async def delete_enseignant(
 # ===== ENDPOINTS POUR LES FONCTIONNAIRES =====
 
 # Créer un fonctionnaire (endpoint pour admin)
-@app.post("/users/fonctionnaires", response_model=FonctionnaireComplete)
+@app.post("/users/fonctionnaires")
 async def create_fonctionnaire(
-    fonctionnaire_data: FonctionnaireCreateComplete,
+    fonctionnaire_data: dict,
     authorization: str = Header(None)
 ):
+    """Créer un nouveau fonctionnaire dans la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
 
-    # Vérifier si c'est un admin
-    admin_user = None
-    if token.startswith("test_token_"):
-        parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
-            admin_user = True
+    # Vérifier si c'est un admin (simplifié)
+    if not ("admin" in token.lower() or token.startswith("test_token_")):
+        raise HTTPException(status_code=403, detail="Droits admin requis")
 
-    if not admin_user:
-        raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent créer des fonctionnaires")
-
-    # Vérifier si l'email existe déjà
-    if fonctionnaire_data.email in TEST_USERS:
-        raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-
-    # Créer un nouvel ID
-    new_id = max([user["id"] for user in TEST_USERS.values()]) + 1
-
-    # Ajouter le nouveau fonctionnaire aux utilisateurs de test
-    TEST_USERS[fonctionnaire_data.email] = {
-        "id": new_id,
-        "email": fonctionnaire_data.email,
-        "password": fonctionnaire_data.password,
-        "nom": fonctionnaire_data.nom,
-        "prenom": fonctionnaire_data.prenom,
-        "role": "fonctionnaire",
-        "telephone": fonctionnaire_data.telephone,
-        "adresse": fonctionnaire_data.adresse,
-        "cin": fonctionnaire_data.cin,
-        "service": fonctionnaire_data.service,
-        "poste": fonctionnaire_data.poste,
-        "grade": fonctionnaire_data.grade
-    }
-
-    # Créer l'objet User pour la réponse
-    user_data = User(
-        id=new_id,
-        email=fonctionnaire_data.email,
-        nom=fonctionnaire_data.nom,
-        prenom=fonctionnaire_data.prenom,
-        role="fonctionnaire"
-    )
-
-    # Ajouter aussi dans FONCTIONNAIRES_DB pour la récupération
-    global fonctionnaire_id_counter
-    fonctionnaire_response = FonctionnaireComplete(
-        id=fonctionnaire_id_counter,
-        user_id=new_id,
-        service=fonctionnaire_data.service,
-        poste=fonctionnaire_data.poste,
-        grade=fonctionnaire_data.grade,
-        user=user_data
-    )
-
-    FONCTIONNAIRES_DB[fonctionnaire_id_counter] = {
-        "id": fonctionnaire_id_counter,
-        "user_id": new_id,
-        "service": fonctionnaire_data.service,
-        "poste": fonctionnaire_data.poste,
-        "grade": fonctionnaire_data.grade,
-        "user": user_data    }
-
-    fonctionnaire_id_counter += 1
-
-    # Sauvegarder les données dans les fichiers
-    save_all_data()
-
-    return fonctionnaire_response
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        # Extraire les données utilisateur
+        user_data = {
+            'email': fonctionnaire_data.get('email'),
+            'nom': fonctionnaire_data.get('nom'),
+            'prenom': fonctionnaire_data.get('prenom'),
+            'telephone': fonctionnaire_data.get('telephone'),
+            'adresse': fonctionnaire_data.get('adresse'),
+            'cin': fonctionnaire_data.get('cin'),
+            'password': fonctionnaire_data.get('password', 'default_password')
+        }        # Validation des champs obligatoires
+        if not user_data['nom'] or not user_data['nom'].strip():
+            raise HTTPException(status_code=400, detail="Le nom est obligatoire")
+        
+        if not user_data['prenom'] or not user_data['prenom'].strip():
+            raise HTTPException(status_code=400, detail="Le prénom est obligatoire")
+            
+        if not user_data['email'] or not user_data['email'].strip():
+            raise HTTPException(status_code=400, detail="L'email est obligatoire")
+        
+        if not user_data['cin'] or not user_data['cin'].strip():
+            raise HTTPException(status_code=400, detail="Le CIN est obligatoire et ne peut pas être vide")
+        
+        # Vérifier que l'email n'existe pas déjà dans SQLite
+        cursor.execute("SELECT id FROM users WHERE email = ?", (user_data['email'],))
+        existing_user = cursor.fetchone()
+        if existing_user:
+            raise HTTPException(status_code=400, detail=f"Un utilisateur avec l'email '{user_data['email']}' existe déjà")
+        
+        # Vérifier que le CIN n'existe pas déjà dans SQLite
+        cursor.execute("SELECT id FROM users WHERE cin = ? AND cin IS NOT NULL AND cin != ''", (user_data['cin'],))
+        existing_cin = cursor.fetchone()
+        if existing_cin:
+            raise HTTPException(status_code=400, detail=f"Un utilisateur avec le CIN '{user_data['cin']}' existe déjà")
+        
+        # Insérer l'utilisateur
+        cursor.execute('''
+            INSERT INTO users (email, nom, prenom, telephone, adresse, cin, hashed_password, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'FONCTIONNAIRE')
+        ''', (
+            user_data['email'],
+            user_data['nom'],
+            user_data['prenom'],
+            user_data['telephone'],
+            user_data['adresse'],
+            user_data['cin'],
+            f"hashed_{user_data['password']}"
+        ))
+        
+        user_id = cursor.lastrowid
+          # Insérer les données fonctionnaire
+        fonctionnaire_info = {
+            'service': fonctionnaire_data.get('service'),
+            'poste': fonctionnaire_data.get('poste'),
+            'grade': fonctionnaire_data.get('grade'),
+            'photo': fonctionnaire_data.get('photo')
+        }
+        
+        cursor.execute('''
+            INSERT INTO fonctionnaires (user_id, service, poste, grade, photo)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            user_id,
+            fonctionnaire_info['service'],
+            fonctionnaire_info['poste'],
+            fonctionnaire_info['grade'],
+            fonctionnaire_info['photo']
+        ))
+        
+        fonctionnaire_id = cursor.lastrowid
+        
+        conn.commit()
+          # Récupérer le fonctionnaire créé avec toutes les données pour le retourner
+        cursor.execute('''
+            SELECT 
+                f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
+                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
+            FROM fonctionnaires f
+            JOIN users u ON f.user_id = u.id
+            WHERE f.id = ?
+        ''', (fonctionnaire_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        # Retourner le fonctionnaire créé au format attendu par le frontend
+        fonctionnaire_cree = {
+            "id": row['id'],
+            "user_id": row['user_id'],
+            "service": row['service'],
+            "poste": row['poste'],
+            "grade": row['grade'],
+            "photo": row['photo'],
+            "user": {
+                "id": row['user_id'],
+                "nom": row['nom'],
+                "prenom": row['prenom'],
+                "email": row['email'],
+                "telephone": row['telephone'],
+                "adresse": row['adresse'],
+                "cin": row['cin'],
+                "is_active": bool(row['is_active']),
+                "role": "FONCTIONNAIRE"
+            }
+        }
+        
+        return fonctionnaire_cree
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la création: {str(e)}")
 
 # Récupérer tous les fonctionnaires (endpoint pour admin)
-@app.get("/users/fonctionnaires", response_model=List[FonctionnaireComplete])
+@app.get("/users/fonctionnaires")
 async def get_all_fonctionnaires(
     authorization: str = Header(None)
 ):
-    # Vérifier l'autorisation admin
+    """Récupérer la liste des fonctionnaires depuis SQLite"""
+    # Vérifier l'autorisation admin (simplifié)
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ", "")    # Vérifier si c'est un admin (simplifié)
+    if not ("admin" in token.lower() or token.startswith("test_token_")):
+        raise HTTPException(status_code=403, detail="Droits admin requis")
 
-    # Vérifier si c'est un admin
-    admin_user = None
-    if token.startswith("test_token_"):
-        parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
-            admin_user = {"role": "admin"}
-
-    if not admin_user:
-        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
-
-    # Retourner tous les fonctionnaires créés
-    fonctionnaires_list = []
-    for fonc_id, fonc_data in FONCTIONNAIRES_DB.items():
-        fonctionnaires_list.append(FonctionnaireComplete(
-            id=fonc_data["id"],
-            user_id=fonc_data["user_id"],
-            service=fonc_data["service"],
-            poste=fonc_data["poste"],
-            grade=fonc_data["grade"],
-            user=fonc_data["user"]
-        ))
-
-    return fonctionnaires_list
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT 
+                f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
+                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
+            FROM fonctionnaires f
+            JOIN users u ON f.user_id = u.id
+            WHERE u.role = 'FONCTIONNAIRE'
+            ORDER BY u.nom, u.prenom
+        ''')
+        
+        fonctionnaires = []
+        for row in cursor.fetchall():
+            fonctionnaire = {
+                "id": row['id'],
+                "user_id": row['user_id'],
+                "service": row['service'],
+                "poste": row['poste'],
+                "grade": row['grade'],
+                "photo": row['photo'],
+                "user": {
+                    "id": row['user_id'],
+                    "nom": row['nom'],
+                    "prenom": row['prenom'],
+                    "email": row['email'],
+                    "telephone": row['telephone'],
+                    "adresse": row['adresse'],
+                    "cin": row['cin'],
+                    "is_active": bool(row['is_active']),
+                    "role": "FONCTIONNAIRE"
+                }
+            }
+            fonctionnaires.append(fonctionnaire)
+        
+        conn.close()
+        return fonctionnaires
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
 
 # Modifier un fonctionnaire (endpoint pour admin)
-@app.put("/users/fonctionnaires/{fonctionnaire_id}", response_model=FonctionnaireComplete)
+@app.put("/users/fonctionnaires/{fonctionnaire_id}")
 async def update_fonctionnaire(
     fonctionnaire_id: int,
-    fonctionnaire_data: FonctionnaireCreateComplete,
+    fonctionnaire_data: dict,
     authorization: str = Header(None)
 ):
+    """Modifier un fonctionnaire existant dans la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
-    # Vérifier si c'est un admin
-    admin_user = None
-    if token.startswith("test_token_"):
-        parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
-            admin_user = {"role": "admin"}
-    if not admin_user:
-        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
 
-    # Vérifier si le fonctionnaire existe
-    if fonctionnaire_id not in FONCTIONNAIRES_DB:
-        raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
-      # Récupérer les anciennes données
-    old_data = FONCTIONNAIRES_DB[fonctionnaire_id]
-    if isinstance(old_data["user"], dict):
-        old_email = old_data["user"]["email"]
-        old_password = old_data["user"].get("password", "")
-    else:
-        old_email = old_data["user"].email
-        old_password = getattr(old_data["user"], "password", "")
-    user_id = old_data["user_id"]
+    # Vérifier si c'est un admin (simplifié)
+    if not ("admin" in token.lower() or token.startswith("test_token_")):
+        raise HTTPException(status_code=403, detail="Droits admin requis")
 
-    # Vérifier si le nouvel email existe déjà (sauf si c'est le même)
-    if fonctionnaire_data.email != old_email and fonctionnaire_data.email in TEST_USERS:
-        raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-
-    # Gérer le mot de passe : garder l'ancien si "unchanged" ou None
-    password_to_use = old_password
-    if fonctionnaire_data.password and fonctionnaire_data.password != "unchanged":
-        password_to_use = fonctionnaire_data.password
-
-    # Mettre à jour TEST_USERS
-    if old_email in TEST_USERS:
-        del TEST_USERS[old_email]
-
-    TEST_USERS[fonctionnaire_data.email] = {
-        "id": user_id,
-        "email": fonctionnaire_data.email,
-        "password": password_to_use,
-        "nom": fonctionnaire_data.nom,
-        "prenom": fonctionnaire_data.prenom,
-        "role": "fonctionnaire",
-        "telephone": fonctionnaire_data.telephone,
-        "adresse": fonctionnaire_data.adresse,
-        "cin": fonctionnaire_data.cin,
-        "service": fonctionnaire_data.service,
-        "poste": fonctionnaire_data.poste,
-        "grade": fonctionnaire_data.grade
-    }
-      # Créer l'objet User mis à jour
-    updated_user = User(
-        id=user_id,
-        email=fonctionnaire_data.email,
-        nom=fonctionnaire_data.nom,
-        prenom=fonctionnaire_data.prenom,
-        role="fonctionnaire"
-    )
-
-    # Mettre à jour FONCTIONNAIRES_DB
-    FONCTIONNAIRES_DB[fonctionnaire_id] = {
-        "id": fonctionnaire_id,
-        "user_id": user_id,
-        "service": fonctionnaire_data.service,
-        "poste": fonctionnaire_data.poste,
-        "grade": fonctionnaire_data.grade,
-        "user": updated_user
-    }
-
-    # Sauvegarder les données dans les fichiers
-    save_all_data()
-
-    # Retourner le fonctionnaire mis à jour
-    return FonctionnaireComplete(
-        id=fonctionnaire_id,
-        user_id=user_id,
-        service=fonctionnaire_data.service,
-        poste=fonctionnaire_data.poste,
-        grade=fonctionnaire_data.grade,
-        user=updated_user
-    )
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+          # Vérifier que le fonctionnaire existe
+        cursor.execute("SELECT user_id FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Fonctionnaire avec l'ID {fonctionnaire_id} non trouvé")
+        
+        user_id = result['user_id']
+        
+        # Validation des champs obligatoires si fournis
+        if 'cin' in fonctionnaire_data:
+            cin_value = fonctionnaire_data.get('cin')
+            if not cin_value or not cin_value.strip():
+                conn.close()
+                raise HTTPException(status_code=400, detail="Le CIN est obligatoire et ne peut pas être vide")
+        
+        # Vérifier l'unicité de l'email si modifié
+        if 'email' in fonctionnaire_data:
+            email_value = fonctionnaire_data.get('email')
+            if email_value:
+                cursor.execute("SELECT id FROM users WHERE email = ? AND id != ?", (email_value, user_id))
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    conn.close()
+                    raise HTTPException(status_code=400, detail=f"Un utilisateur avec l'email '{email_value}' existe déjà")
+        
+        # Vérifier l'unicité du CIN si modifié
+        if 'cin' in fonctionnaire_data:
+            cin_value = fonctionnaire_data.get('cin')
+            if cin_value:
+                cursor.execute("SELECT id FROM users WHERE cin = ? AND id != ? AND cin IS NOT NULL AND cin != ''", (cin_value, user_id))
+                existing_cin = cursor.fetchone()
+                if existing_cin:
+                    conn.close()
+                    raise HTTPException(status_code=400, detail=f"Un utilisateur avec le CIN '{cin_value}' existe déjà")
+        
+        # Mettre à jour les données utilisateur (incluant email si modifié)
+        cursor.execute('''
+            UPDATE users 
+            SET nom = ?, prenom = ?, email = ?, telephone = ?, adresse = ?, cin = ?
+            WHERE id = ?
+        ''', (
+            fonctionnaire_data.get('nom'),
+            fonctionnaire_data.get('prenom'),
+            fonctionnaire_data.get('email'),
+            fonctionnaire_data.get('telephone'),
+            fonctionnaire_data.get('adresse'),
+            fonctionnaire_data.get('cin'),
+            user_id
+        ))
+          # Mettre à jour les données fonctionnaire
+        cursor.execute('''
+            UPDATE fonctionnaires 
+            SET service = ?, poste = ?, grade = ?, photo = ?
+            WHERE id = ?
+        ''', (
+            fonctionnaire_data.get('service'),
+            fonctionnaire_data.get('poste'),
+            fonctionnaire_data.get('grade'),
+            fonctionnaire_data.get('photo'),
+            fonctionnaire_id
+        ))
+        
+        conn.commit()
+          # Récupérer le fonctionnaire modifié pour le retourner
+        cursor.execute('''
+            SELECT 
+                f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
+                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
+            FROM fonctionnaires f
+            JOIN users u ON f.user_id = u.id
+            WHERE f.id = ?
+        ''', (fonctionnaire_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+          # Retourner le fonctionnaire modifié au format attendu par le frontend
+        fonctionnaire_modifie = {
+            "id": row['id'],
+            "user_id": row['user_id'],
+            "service": row['service'],
+            "poste": row['poste'],
+            "grade": row['grade'],
+            "photo": row['photo'],
+            "user": {
+                "id": row['user_id'],
+                "nom": row['nom'],
+                "prenom": row['prenom'],
+                "email": row['email'],
+                "telephone": row['telephone'],
+                "adresse": row['adresse'],
+                "cin": row['cin'],
+                "is_active": bool(row['is_active']),
+                "role": "FONCTIONNAIRE"
+            }
+        }
+        
+        return fonctionnaire_modifie
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la modification: {str(e)}")
 
 # Supprimer un fonctionnaire (endpoint pour admin)
 @app.delete("/users/fonctionnaires/{fonctionnaire_id}")
@@ -1007,38 +1115,124 @@ async def delete_fonctionnaire(
     fonctionnaire_id: int,
     authorization: str = Header(None)
 ):
+    """Supprimer un fonctionnaire de la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
 
-    # Vérifier si c'est un admin
-    admin_user = None
-    if token.startswith("test_token_"):
-        parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
-            admin_user = {"role": "admin"}
+    # Vérifier si c'est un admin (simplifié)
+    if not ("admin" in token.lower() or token.startswith("test_token_")):
+        raise HTTPException(status_code=403, detail="Droits admin requis")
 
-    if not admin_user:
-        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")    # Vérifier si le fonctionnaire existe
-    if fonctionnaire_id not in FONCTIONNAIRES_DB:
-        raise HTTPException(status_code=404, detail="Fonctionnaire non trouvé")
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+          # Récupérer l'user_id pour nettoyage
+        cursor.execute("SELECT user_id FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Fonctionnaire avec l'ID {fonctionnaire_id} non trouvé")
+        
+        user_id = result['user_id']
+        
+        # Supprimer le fonctionnaire
+        cursor.execute("DELETE FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
+        
+        # Supprimer l'utilisateur        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"message": "Fonctionnaire supprimé avec succès"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
 
-    # Récupérer les données du fonctionnaire avant suppression
-    fonctionnaire_data = FONCTIONNAIRES_DB[fonctionnaire_id]
-    user_email = fonctionnaire_data["user"]["email"]
+# Upload photo pour un fonctionnaire (endpoint pour admin)
+@app.post("/users/fonctionnaires/{fonctionnaire_id}/upload-photo")
+async def upload_fonctionnaire_photo(
+    fonctionnaire_id: int,
+    file: UploadFile = File(...),
+    authorization: str = Header(None)
+):
+    """Upload d'une photo pour un fonctionnaire"""
+    print(f"🔄 [UPLOAD] Début upload photo pour fonctionnaire {fonctionnaire_id}")
+    print(f"🔄 [UPLOAD] Fichier reçu: {file.filename if file else 'None'}")
 
-    # Supprimer de FONCTIONNAIRES_DB
-    del FONCTIONNAIRES_DB[fonctionnaire_id]
-      # Supprimer aussi de TEST_USERS
-    if user_email in TEST_USERS:
-        del TEST_USERS[user_email]
+    try:
+        # Vérifier l'authentification admin
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Token manquant")
 
-    # Sauvegarder les données dans les fichiers
-    save_all_data()
+        token = authorization.replace("Bearer ", "")
 
-    return {"message": f"Fonctionnaire {fonctionnaire_data['user']['nom']} {fonctionnaire_data['user']['prenom']} supprimé avec succès"}
+        # Vérifier si c'est un admin
+        if not ("admin" in token.lower() or token.startswith("test_token_")):
+            raise HTTPException(status_code=403, detail="Droits admin requis")
+
+        # Vérifier taille (5MB max)
+        if hasattr(file, 'size') and file.size and file.size > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")        # Vérifier que le fonctionnaire existe dans SQLite
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
+        fonctionnaire_exists = cursor.fetchone()
+        if not fonctionnaire_exists:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Fonctionnaire avec l'ID {fonctionnaire_id} non trouvé")
+
+        # Vérifier que le fichier est valide
+        if not file or not file.filename:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Aucun fichier fourni")
+
+        # Créer le dossier uploads s'il n'existe pas
+        upload_dir = Path("uploads")
+        upload_dir.mkdir(exist_ok=True)
+
+        # Générer un nom de fichier unique
+        file_extension = Path(file.filename).suffix.lower() if file.filename else ".jpg"
+        if file_extension not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Format de fichier non supporté. Formats acceptés: JPG, PNG, GIF, WebP")
+
+        filename = f"fonctionnaire_{fonctionnaire_id}_{int(time.time())}{file_extension}"
+        file_path = upload_dir / filename
+
+        # Sauvegarder le fichier
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        print(f"✅ [UPLOAD] Fichier sauvegardé: {file_path}")
+
+        # Mettre à jour le chemin de la photo dans la base de données
+        cursor.execute('''
+            UPDATE fonctionnaires 
+            SET photo = ? 
+            WHERE id = ?
+        ''', (str(filename), fonctionnaire_id))
+        
+        conn.commit()
+        conn.close()
+
+        return {
+            "message": "Photo uploadée avec succès",
+            "filename": filename,
+            "fonctionnaire_id": fonctionnaire_id
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ [UPLOAD] Erreur: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'upload: {str(e)}")
 
 # ===== ENDPOINTS POUR LES DEMANDES =====
 

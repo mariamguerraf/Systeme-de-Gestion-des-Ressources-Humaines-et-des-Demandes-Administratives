@@ -142,9 +142,9 @@ const CadminEnseignants = () => {
       nom: enseignant.nom || enseignant.user?.nom || '',
       prenom: enseignant.prenom || enseignant.user?.prenom || '',
       email: enseignant.email || enseignant.user?.email || '',
-      telephone: enseignant.telephone || enseignant.user?.telephone || '',
-      adresse: enseignant.adresse || enseignant.user?.adresse || '',
-      cin: enseignant.cin || enseignant.user?.cin || '',
+      telephone: enseignant.telephone || '',
+      adresse: enseignant.adresse || '',
+      cin: enseignant.cin || '',
       password: '', // Laisser vide pour modification
       specialite: enseignant.specialite || '',
       grade: enseignant.grade || '',
@@ -406,7 +406,7 @@ const CadminEnseignants = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('🔄 Upload photo - Erreur réponse:', errorText);
-        
+
         // Messages d'erreur plus spécifiques
         if (response.status === 401) {
           throw new Error('Authentification expirée. Veuillez vous reconnecter.');

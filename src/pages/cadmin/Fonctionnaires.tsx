@@ -1,9 +1,10 @@
 // Gestion des fonctionnaires administrés par le cadmin
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Plus, Edit3, Trash2, Eye, Search, Filter, FileText, Calendar } from 'lucide-react';
+import { Shield, Users, Plus, Edit3, Trash2, Eye, Search, Filter, FileText, Calendar, User, Lock, Phone, Mail, MapPin, CreditCard, Building, Briefcase, Award } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { getApiBaseUrl } from '../../utils/config';
 
 interface Fonctionnaire {
   id: number;
@@ -17,6 +18,7 @@ interface Fonctionnaire {
   service?: string;
   poste?: string;
   grade?: string;
+  photo?: string;
   statut: 'Actif' | 'Inactif';
   user?: {
     id: number;
@@ -31,11 +33,130 @@ interface Fonctionnaire {
 const CadminFonctionnaires = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  
+
+  // Fonction utilitaire pour construire l'URL de la photo
+  const getPhotoUrl = (photoPath: string | null) => {
+    if (!photoPath) return null;
+
+    // Si le chemin commence déjà par http, le retourner tel quel
+    if (photoPath.startsWith('http')) {
+      return photoPath;
+    }
+
+    // Construire l'URL complète
+    const baseUrl = getApiBaseUrl();
+
+    // Si c'est juste un nom de fichier (comme "fonctionnaire_5_1750446462.jpg"),
+    // ajouter le préfixe /uploads/
+    let cleanPath = photoPath;
+    if (!photoPath.startsWith('/')) {
+      cleanPath = `/uploads/${photoPath}`;
+    }
+
+    console.log('🖼️ Construction URL photo:', { photoPath, baseUrl, cleanPath, finalUrl: `${baseUrl}${cleanPath}` });
+
+    return `${baseUrl}${cleanPath}`;
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  // Fonction pour gérer l'upload de photo
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Vérifier le type de fichier
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+        alert('Format non supporté. Utilisez JPG, PNG, GIF ou WebP');
+        return;
+      }
+
+      // Vérifier la taille (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Le fichier est trop volumineux (maximum 5MB)');
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Créer un aperçu
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Fonction pour uploader la photo
+  const uploadPhoto = async (fonctionnaireId: number): Promise<string | null> => {
+    if (!selectedFile) return null;
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', selectedFile);
+
+      // Utiliser le bon nom de clé pour le token
+      const token = localStorage.getItem('access_token');
+      console.log('🔄 Upload photo - Token:', token ? `${token.substring(0, 30)}...` : 'Absent');
+      console.log('🔄 Upload photo - Fonctionnaire ID:', fonctionnaireId);
+      console.log('🔄 Upload photo - Fichier:', selectedFile.name, selectedFile.type, selectedFile.size);
+
+      if (!token) {
+        throw new Error('Token d\'authentification manquant. Veuillez vous reconnecter.');
+      }
+
+      console.log('🔄 Upload photo - URL:', `${getApiBaseUrl()}/users/fonctionnaires/${fonctionnaireId}/upload-photo`);
+
+      // Utiliser l'URL correcte de l'API
+      const response = await fetch(`${getApiBaseUrl()}/users/fonctionnaires/${fonctionnaireId}/upload-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formDataUpload,
+      });
+
+      console.log('🔄 Upload photo - Réponse status:', response.status);
+      console.log('🔄 Upload photo - Réponse headers:', response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔄 Upload photo - Erreur réponse:', errorText);
+
+        // Messages d'erreur plus spécifiques
+        if (response.status === 401) {
+          throw new Error('Authentification expirée. Veuillez vous reconnecter.');
+        } else if (response.status === 403) {
+          throw new Error('Permissions insuffisantes pour uploader une photo.');
+        } else if (response.status === 413) {
+          throw new Error('Fichier trop volumineux (maximum 5MB).');
+        } else if (response.status === 415) {
+          throw new Error('Format de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+        } else if (response.status === 404) {
+          throw new Error('Fonctionnaire non trouvé ou endpoint non disponible.');
+        } else {
+          throw new Error(`Erreur serveur (${response.status}): ${errorText}`);
+        }
+      }
+
+      const result = await response.json();
+      console.log('✅ Upload photo - Succès:', result);
+      return result.photo_url;
+    } catch (error) {
+      console.error('❌ Erreur upload photo:', error);
+      throw error; // Re-throw pour que l'appelant puisse gérer
+    }
+  };
+
+  const resetPhotoState = () => {
+    setSelectedFile(null);
+    setPhotoPreview(null);
+  };
+
+
 
   // État pour la liste des fonctionnaires (récupérée depuis l'API)
   const [fonctionnaires, setFonctionnaires] = useState<Fonctionnaire[]>([]);
@@ -48,7 +169,7 @@ const CadminFonctionnaires = () => {
       try {
         setLoading(true);
         const data = await apiService.getFonctionnaires();
-        
+
         // Transform data to match interface
         const transformedData = Array.isArray(data) ? data.map((item: any) => ({
           id: item.id,
@@ -57,13 +178,16 @@ const CadminFonctionnaires = () => {
           prenom: item.user?.prenom || item.prenom || 'N/A',
           email: item.user?.email || item.email || '',
           telephone: item.user?.telephone || item.telephone || '',
+          adresse: item.user?.adresse || item.adresse || '',
+          cin: item.user?.cin || item.cin || '',
           service: item.service || '',
           poste: item.poste || '',
           grade: item.grade || '',
+          photo: item.photo || null,
           statut: 'Actif' as const,
           user: item.user
         })) : [];
-        
+
         setFonctionnaires(transformedData);
       } catch (error) {
         console.error('Erreur lors du chargement des fonctionnaires:', error);
@@ -83,7 +207,13 @@ const CadminFonctionnaires = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userDemandes, setUserDemandes] = useState<any[]>([]);
   const [demandesLoading, setDemandesLoading] = useState(false);
-  
+
+  // États pour l'upload de photo
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+
   // État pour le formulaire de création/modification
   const [formData, setFormData] = useState({
     nom: '',
@@ -100,7 +230,7 @@ const CadminFonctionnaires = () => {
 
   // Filtrage des fonctionnaires
   const filteredFonctionnaires = fonctionnaires.filter(fonctionnaire => {
-    const matchesSearch = 
+    const matchesSearch =
       fonctionnaire.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       fonctionnaire.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       fonctionnaire.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,6 +258,8 @@ const CadminFonctionnaires = () => {
       poste: '',
       grade: ''
     });
+    // Réinitialiser l'état de photo
+    resetPhotoState();
     setShowModal(true);
   };
 
@@ -147,6 +279,8 @@ const CadminFonctionnaires = () => {
       poste: fonctionnaire.poste || '',
       grade: fonctionnaire.grade || ''
     });
+    // Réinitialiser l'état de photo (on affichera l'actuelle séparément)
+    resetPhotoState();
     setShowModal(true);
   };
 
@@ -160,7 +294,7 @@ const CadminFonctionnaires = () => {
     setModalType('demandes');
     setSelectedFonctionnaire(fonctionnaire);
     setShowModal(true);
-    
+
     // Charger les demandes du fonctionnaire
     setDemandesLoading(true);
     setUserDemandes([]);
@@ -182,9 +316,21 @@ const CadminFonctionnaires = () => {
         alert('Fonctionnaire supprimé avec succès !');
         // Retirer le fonctionnaire de la liste locale
         setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression du fonctionnaire');
+
+        // Gestion spécifique des erreurs
+        if (error.message) {
+          if (error.message.includes('404') || error.message.includes('non trouvé')) {
+            alert(`Fonctionnaire introuvable. Il a peut-être déjà été supprimé.`);
+            // Retirer quand même de la liste locale pour éviter l'incohérence
+            setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
+          } else {
+            alert(`Erreur lors de la suppression: ${error.message}`);
+          }
+        } else {
+          alert('Erreur lors de la suppression du fonctionnaire. Veuillez réessayer.');
+        }
       }
     }
   };
@@ -195,13 +341,58 @@ const CadminFonctionnaires = () => {
       try {
         // Valider les champs requis
         if (!formData.nom || !formData.prenom || !formData.email || !formData.password) {
-          alert('Veuillez remplir tous les champs obligatoires');
+          alert('Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Mot de passe)');
           return;
         }
 
-        const nouveauFonctionnaire = await apiService.createFonctionnaire(formData) as any;
+        // Valider le CIN obligatoire
+        if (!formData.cin || formData.cin.trim() === '') {
+          alert('Le CIN est obligatoire. Veuillez saisir un numéro CIN valide.');
+          return;
+        }
+
+        // Préparer les données à envoyer
+        let dataToSend = { ...formData };
+
+        const nouveauFonctionnaire = await apiService.createFonctionnaire(dataToSend) as any;
+
+        if (!nouveauFonctionnaire || !nouveauFonctionnaire.id) {
+          throw new Error('Erreur lors de la création du fonctionnaire');
+        }
+
         alert('Fonctionnaire créé avec succès !');
-        
+
+        // Upload de la photo si sélectionnée
+        if (selectedFile && nouveauFonctionnaire.id) {
+          try {
+            const photoUrl = await uploadPhoto(nouveauFonctionnaire.id);
+            if (photoUrl) {
+              nouveauFonctionnaire.photo = photoUrl;
+              alert('Fonctionnaire et photo créés avec succès !');
+            } else {
+              alert('Fonctionnaire créé avec succès !');
+            }
+          } catch (photoError) {
+            console.warn('Erreur upload photo:', photoError);
+            // Proposer de réessayer l'upload
+            const retry = confirm('Fonctionnaire créé, mais erreur lors de l\'upload de la photo. Voulez-vous réessayer l\'upload maintenant ?');
+            if (retry) {
+              try {
+                const photoUrl = await uploadPhoto(nouveauFonctionnaire.id);
+                if (photoUrl) {
+                  nouveauFonctionnaire.photo = photoUrl;
+                  alert('Photo uploadée avec succès !');
+                }
+              } catch (retryError) {
+                console.error('Erreur lors du retry:', retryError);
+                alert('Échec de l\'upload. Vous pourrez ajouter la photo plus tard depuis la liste des fonctionnaires.');
+              }
+            }
+          }
+        } else {
+          alert('Fonctionnaire créé avec succès !');
+        }
+
         // Ajouter le nouveau fonctionnaire à la liste (mapping vers l'interface locale)
         const fonctionnaireLocal: Fonctionnaire = {
           id: nouveauFonctionnaire.id,
@@ -210,18 +401,52 @@ const CadminFonctionnaires = () => {
           prenom: nouveauFonctionnaire.user.prenom,
           email: nouveauFonctionnaire.user.email,
           telephone: nouveauFonctionnaire.user.telephone || '',
+          adresse: nouveauFonctionnaire.user.adresse || '',
+          cin: nouveauFonctionnaire.user.cin || '',
           service: nouveauFonctionnaire.service || '',
           poste: nouveauFonctionnaire.poste || '',
           grade: nouveauFonctionnaire.grade || '',
+          photo: nouveauFonctionnaire.photo || null,
           statut: 'Actif',
           user: nouveauFonctionnaire.user
         };
-        
+
         setFonctionnaires([...fonctionnaires, fonctionnaireLocal]);
         setShowModal(false);
-      } catch (error) {
+
+        // Réinitialiser l'état de photo
+        resetPhotoState();
+
+        // Réinitialiser le formulaire
+        setFormData({
+          nom: '',
+          prenom: '',
+          email: '',
+          telephone: '',
+          adresse: '',
+          cin: '',
+          password: '',
+          service: '',
+          poste: '',
+          grade: ''
+        });
+      } catch (error: any) {
         console.error('Erreur lors de la création:', error);
-        alert('Erreur lors de la création du fonctionnaire');
+
+        // Gestion spécifique des erreurs courantes
+        if (error.message) {
+          if (error.message.includes('email') && error.message.includes('existe déjà')) {
+            alert(`L'adresse email "${formData.email}" est déjà utilisée par un autre utilisateur. Veuillez utiliser une autre adresse email.`);
+          } else if (error.message.includes('CIN') && error.message.includes('existe déjà')) {
+            alert(`Le CIN "${formData.cin}" est déjà utilisé par un autre utilisateur. Veuillez saisir un CIN différent.`);
+          } else if (error.message.includes('CIN') && error.message.includes('obligatoire')) {
+            alert('Le CIN est obligatoire et ne peut pas être vide. Veuillez saisir un numéro CIN valide.');
+          } else {
+            alert(`Erreur lors de la création: ${error.message}`);
+          }
+        } else {
+          alert('Erreur lors de la création du fonctionnaire. Veuillez réessayer.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -229,8 +454,8 @@ const CadminFonctionnaires = () => {
       setIsLoading(true);
       try {
         // Valider les champs requis (mot de passe optionnel en modification)
-        if (!formData.nom || !formData.prenom || !formData.email) {
-          alert('Veuillez remplir tous les champs obligatoires');
+        if (!formData.nom || !formData.prenom || !formData.email || !formData.cin) {
+          alert('Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, CIN)');
           return;
         }
 
@@ -241,8 +466,25 @@ const CadminFonctionnaires = () => {
         };
 
         const fonctionnaireModifie = await apiService.updateFonctionnaire(selectedFonctionnaire.id, dataToSend) as any;
-        alert('Fonctionnaire modifié avec succès !');
-        
+
+        // Upload de la photo si sélectionnée
+        if (selectedFile && selectedFonctionnaire.id) {
+          try {
+            const photoUrl = await uploadPhoto(selectedFonctionnaire.id);
+            if (photoUrl) {
+              fonctionnaireModifie.photo = photoUrl;
+              alert('Fonctionnaire et photo modifiés avec succès !');
+            } else {
+              alert('Fonctionnaire modifié avec succès !');
+            }
+          } catch (photoError) {
+            console.warn('Erreur upload photo:', photoError);
+            alert('Fonctionnaire modifié avec succès, mais erreur lors de l\'upload de la photo.');
+          }
+        } else {
+          alert('Fonctionnaire modifié avec succès !');
+        }
+
         // Mettre à jour le fonctionnaire dans la liste locale
         const fonctionnaireLocal: Fonctionnaire = {
           id: fonctionnaireModifie.id,
@@ -251,21 +493,43 @@ const CadminFonctionnaires = () => {
           prenom: fonctionnaireModifie.user.prenom,
           email: fonctionnaireModifie.user.email,
           telephone: fonctionnaireModifie.user.telephone || '',
+          adresse: fonctionnaireModifie.user.adresse || '',
+          cin: fonctionnaireModifie.user.cin || '',
           service: fonctionnaireModifie.service || '',
           poste: fonctionnaireModifie.poste || '',
           grade: fonctionnaireModifie.grade || '',
+          photo: fonctionnaireModifie.photo || null,
           statut: 'Actif',
           user: fonctionnaireModifie.user
         };
-        
+
         // Remplacer le fonctionnaire modifié dans la liste
-        setFonctionnaires(fonctionnaires.map(func => 
+        setFonctionnaires(fonctionnaires.map(func =>
           func.id === selectedFonctionnaire.id ? fonctionnaireLocal : func
         ));
         setShowModal(false);
+
+        // Réinitialiser l'état de photo
+        resetPhotoState();
       } catch (error: any) {
         console.error('Erreur lors de la modification:', error);
-        alert(`Erreur: ${error.message || 'Impossible de modifier le fonctionnaire'}`);
+
+        // Gestion spécifique des erreurs courantes
+        if (error.message) {
+          if (error.message.includes('404') || error.message.includes('non trouvé')) {
+            alert(`Fonctionnaire introuvable. Il a peut-être été supprimé par un autre utilisateur.`);
+          } else if (error.message.includes('email') && error.message.includes('existe déjà')) {
+            alert(`L'adresse email "${formData.email}" est déjà utilisée par un autre utilisateur. Veuillez utiliser une autre adresse email.`);
+          } else if (error.message.includes('CIN') && error.message.includes('existe déjà')) {
+            alert(`Le CIN "${formData.cin}" est déjà utilisé par un autre utilisateur. Veuillez saisir un CIN différent.`);
+          } else if (error.message.includes('CIN') && error.message.includes('obligatoire')) {
+            alert('Le CIN est obligatoire et ne peut pas être vide. Veuillez saisir un numéro CIN valide.');
+          } else {
+            alert(`Erreur lors de la modification: ${error.message}`);
+          }
+        } else {
+          alert('Erreur lors de la modification du fonctionnaire. Veuillez réessayer.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -327,7 +591,7 @@ const CadminFonctionnaires = () => {
           </div>
         </div>
       </header>
-      
+
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* En-tête de gestion */}
@@ -400,7 +664,19 @@ const CadminFonctionnaires = () => {
                   <tr key={fonctionnaire.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                        {fonctionnaire.photo ? (
+                          <img
+                            src={getPhotoUrl(fonctionnaire.photo)}
+                            alt={`${fonctionnaire.prenom} ${fonctionnaire.nom}`}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-300"
+                            onError={(e) => {
+                              console.error('Erreur chargement image:', fonctionnaire.photo);
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center ${fonctionnaire.photo ? 'hidden' : ''}`}>
                           <span className="text-white font-semibold text-sm">
                             {fonctionnaire.prenom[0]}{fonctionnaire.nom[0]}
                           </span>
@@ -510,6 +786,14 @@ const CadminFonctionnaires = () => {
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.telephone}</div>
                       </div>
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">CIN</label>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.cin || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                        <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.adresse || 'N/A'}</div>
+                      </div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Poste</label>
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.poste}</div>
                       </div>
@@ -530,9 +814,45 @@ const CadminFonctionnaires = () => {
                         <div className="p-3 bg-gray-50 rounded-lg">{selectedFonctionnaire.user?.created_at ? new Date(selectedFonctionnaire.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}</div>
                       </div>
                     </div>
+
+                    {/* Photo du fonctionnaire */}
+                    <div className="border-t pt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-4">Photo de profil</label>
+                      <div className="flex items-center space-x-6">
+                        {selectedFonctionnaire.photo ? (
+                          <img
+                            src={getPhotoUrl(selectedFonctionnaire.photo)}
+                            alt={`Photo de ${selectedFonctionnaire.prenom} ${selectedFonctionnaire.nom}`}
+                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                            onError={(e) => {
+                              console.error('Erreur chargement image dans modal:', selectedFonctionnaire.photo);
+                            }}
+                          />
+                        ) : (
+                          <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-2xl">
+                              {selectedFonctionnaire.prenom[0]}{selectedFonctionnaire.nom[0]}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-600">
+                          {selectedFonctionnaire.photo ? (
+                            <div>
+                              <p className="font-medium text-green-600">✓ Photo disponible</p>
+                              <p>Vous pouvez modifier la photo via le mode édition</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium text-gray-500">Aucune photo</p>
+                              <p>Vous pouvez ajouter une photo via le mode édition</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
-                
+
                 {modalType === 'demandes' && selectedFonctionnaire && (
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2 mb-4">
@@ -541,7 +861,7 @@ const CadminFonctionnaires = () => {
                         Historique des demandes de {selectedFonctionnaire.prenom} {selectedFonctionnaire.nom}
                       </h4>
                     </div>
-                    
+
                     {demandesLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -654,14 +974,15 @@ const CadminFonctionnaires = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">CIN</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">CIN *</label>
                         <input
                           type="text"
                           name="cin"
                           value={formData.cin}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="Numéro CIN"
+                          placeholder="Numéro CIN (obligatoire)"
+                          required
                         />
                       </div>
                       <div>
@@ -718,6 +1039,73 @@ const CadminFonctionnaires = () => {
                         </select>
                       </div>
                     </div>
+
+                    {/* Section Upload Photo */}
+                    {(modalType === 'create' || modalType === 'edit') && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h4 className="text-lg font-medium text-gray-900 mb-4">📸 Photo du Fonctionnaire</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Sélectionner une photo (optionnel)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileSelect}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            />
+                            <p className="text-sm text-gray-500 mt-1">
+                              Formats acceptés: JPG, PNG, GIF, WebP. Taille max: 5MB
+                            </p>
+                          </div>
+
+                          {selectedFile && (
+                            <div className="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
+                              {photoPreview && (
+                                <img
+                                  src={photoPreview}
+                                  alt="Aperçu"
+                                  className="w-16 h-16 rounded-lg object-cover border-2 border-blue-200"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-blue-900">
+                                  Fichier sélectionné: {selectedFile.name}
+                                </p>
+                                <p className="text-sm text-blue-700">
+                                  Taille: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={resetPhotoState}
+                                className="px-3 py-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          )}
+
+                          {isUploading && (
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${uploadProgress}%` }}
+                              ></div>
+                            </div>
+                          )}
+
+                          {modalType === 'edit' && selectedFonctionnaire?.photo && (
+                            <div className="p-3 bg-green-50 rounded-lg">
+                              <p className="text-sm font-medium text-green-900">
+                                📁 Photo actuelle: {selectedFonctionnaire.photo}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -729,7 +1117,7 @@ const CadminFonctionnaires = () => {
                   Fermer
                 </button>
                 {(modalType === 'create' || modalType === 'edit') && (
-                  <button 
+                  <button
                     onClick={handleSaveFonctionnaire}
                     disabled={isLoading}
                     className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"

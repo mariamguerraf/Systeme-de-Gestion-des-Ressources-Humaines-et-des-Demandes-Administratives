@@ -24,10 +24,23 @@ class ApiService {
   ): Promise<T> {
     const url = this.buildUrl(endpoint);
 
+    // Construire les headers de base
+    const baseHeaders: Record<string, string> = {};
+    
+    // Ajouter Content-Type seulement si ce n'est pas FormData
+    if (!(options.body instanceof FormData)) {
+      baseHeaders['Content-Type'] = 'application/json';
+    }
+    
+    // Ajouter le token d'auth
+    const token = this.token || localStorage.getItem('token') || localStorage.getItem('access_token');
+    if (token) {
+      baseHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...baseHeaders,
         ...options.headers,
       },
       ...options,
@@ -175,6 +188,13 @@ class ApiService {
   async deleteFonctionnaire(fonctionnaireId: number) {
     return this.request(`/users/fonctionnaires/${fonctionnaireId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async uploadFonctionnairePhoto(fonctionnaireId: number, formData: FormData) {
+    return this.request(`/users/fonctionnaires/${fonctionnaireId}/upload-photo`, {
+      method: 'POST',
+      body: formData,
     });
   }
 

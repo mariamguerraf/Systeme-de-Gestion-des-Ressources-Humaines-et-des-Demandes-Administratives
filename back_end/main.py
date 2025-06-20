@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routers import auth, demandes, users
+import os
 
 # Créer les tables
 Base.metadata.create_all(bind=engine)
@@ -25,6 +27,13 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(demandes.router)
 app.include_router(users.router)
+
+# Servir les fichiers statiques (images uploadées)
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+if not os.path.exists(uploads_dir):
+    os.makedirs(uploads_dir)
+
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 @app.get("/")
 async def root():
