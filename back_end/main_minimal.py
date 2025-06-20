@@ -509,7 +509,7 @@ async def create_enseignant(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         # Extraire les données utilisateur
         user_data = {
             'email': enseignant_data.get('email'),
@@ -520,12 +520,12 @@ async def create_enseignant(
             'cin': enseignant_data.get('cin'),
             'password': enseignant_data.get('password', 'default_password')
         }
-        
+
         # Vérifier que l'email n'existe pas déjà dans SQLite
         cursor.execute("SELECT id FROM users WHERE email = ?", (user_data['email'],))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-        
+
         # Insérer l'utilisateur
         cursor.execute('''
             INSERT INTO users (email, nom, prenom, telephone, adresse, cin, hashed_password, role)
@@ -539,16 +539,16 @@ async def create_enseignant(
             user_data['cin'],
             f"hashed_{user_data['password']}"
         ))
-        
+
         user_id = cursor.lastrowid
-        
+
         # Insérer les données enseignant
         enseignant_info = {
             'specialite': enseignant_data.get('specialite'),
             'grade': enseignant_data.get('grade'),
             'etablissement': enseignant_data.get('etablissement')
         }
-        
+
         cursor.execute('''
             INSERT INTO enseignants (user_id, specialite, grade, etablissement)
             VALUES (?, ?, ?, ?)
@@ -558,12 +558,12 @@ async def create_enseignant(
             enseignant_info['grade'],
             enseignant_info['etablissement']
         ))
-        
+
         enseignant_id = cursor.lastrowid
-        
+
         conn.commit()
         conn.close()
-        
+
         return {
             "message": "Enseignant créé avec succès",
             "id": enseignant_id,
@@ -572,7 +572,7 @@ async def create_enseignant(
             "nom": user_data['nom'],
             "prenom": user_data['prenom']
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -590,7 +590,7 @@ async def get_all_enseignants(
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
-    
+
     # Vérifier si c'est un admin (simplifié)
     if not ("admin" in token.lower() or token.startswith("test_token_")):
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
@@ -599,9 +599,9 @@ async def get_all_enseignants(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT 
+            SELECT
                 e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
@@ -609,7 +609,7 @@ async def get_all_enseignants(
             WHERE u.role = 'ENSEIGNANT'
             ORDER BY u.nom, u.prenom
         ''')
-        
+
         enseignants = []
         for row in cursor.fetchall():
             enseignant = {
@@ -632,10 +632,10 @@ async def get_all_enseignants(
                 }
             }
             enseignants.append(enseignant)
-        
+
         conn.close()
         return enseignants
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
 
@@ -660,18 +660,18 @@ async def update_enseignant(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         # Vérifier que l'enseignant existe
         cursor.execute("SELECT user_id FROM enseignants WHERE id = ?", (enseignant_id,))
         result = cursor.fetchone()
         if not result:
             raise HTTPException(status_code=404, detail="Enseignant non trouvé")
-        
+
         user_id = result['user_id']
-        
+
         # Mettre à jour les données utilisateur
         cursor.execute('''
-            UPDATE users 
+            UPDATE users
             SET nom = ?, prenom = ?, telephone = ?, adresse = ?, cin = ?
             WHERE id = ?
         ''', (
@@ -682,10 +682,10 @@ async def update_enseignant(
             enseignant_data.get('cin'),
             user_id
         ))
-        
+
         # Mettre à jour les données enseignant
         cursor.execute('''
-            UPDATE enseignants 
+            UPDATE enseignants
             SET specialite = ?, grade = ?, etablissement = ?
             WHERE id = ?
         ''', (
@@ -693,22 +693,22 @@ async def update_enseignant(
             enseignant_data.get('grade'),
             enseignant_data.get('etablissement'),            enseignant_id
         ))
-        
+
         conn.commit()
-        
+
         # Récupérer l'enseignant modifié pour le retourner
         cursor.execute('''
-            SELECT 
+            SELECT
                 e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
             JOIN users u ON e.user_id = u.id
             WHERE e.id = ?
         ''', (enseignant_id,))
-        
+
         row = cursor.fetchone()
         conn.close()
-        
+
         # Retourner l'enseignant modifié au format attendu par le frontend
         enseignant_modifie = {
             "id": row['id'],
@@ -729,9 +729,9 @@ async def update_enseignant(
                 "role": "ENSEIGNANT"
             }
         }
-        
+
         return enseignant_modifie
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -757,16 +757,16 @@ async def delete_enseignant(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         # Récupérer l'user_id et la photo pour nettoyage
         cursor.execute("SELECT user_id, photo FROM enseignants WHERE id = ?", (enseignant_id,))
         result = cursor.fetchone()
         if not result:
             raise HTTPException(status_code=404, detail="Enseignant non trouvé")
-        
+
         user_id = result['user_id']
         photo_url = result['photo']
-        
+
         # Supprimer la photo si elle existe
         if photo_url:
             photo_path = Path(f"uploads{photo_url.replace('/uploads', '')}")
@@ -775,18 +775,18 @@ async def delete_enseignant(
                     os.remove(photo_path)
                 except:
                     pass
-        
+
         # Supprimer l'enseignant
         cursor.execute("DELETE FROM enseignants WHERE id = ?", (enseignant_id,))
-        
+
         # Supprimer l'utilisateur
         cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        
+
         conn.commit()
         conn.close()
-        
+
         return {"message": "Enseignant supprimé avec succès"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -814,7 +814,7 @@ async def create_fonctionnaire(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         # Extraire les données utilisateur
         user_data = {
             'email': fonctionnaire_data.get('email'),
@@ -827,28 +827,28 @@ async def create_fonctionnaire(
         }        # Validation des champs obligatoires
         if not user_data['nom'] or not user_data['nom'].strip():
             raise HTTPException(status_code=400, detail="Le nom est obligatoire")
-        
+
         if not user_data['prenom'] or not user_data['prenom'].strip():
             raise HTTPException(status_code=400, detail="Le prénom est obligatoire")
-            
+
         if not user_data['email'] or not user_data['email'].strip():
             raise HTTPException(status_code=400, detail="L'email est obligatoire")
-        
+
         if not user_data['cin'] or not user_data['cin'].strip():
             raise HTTPException(status_code=400, detail="Le CIN est obligatoire et ne peut pas être vide")
-        
+
         # Vérifier que l'email n'existe pas déjà dans SQLite
         cursor.execute("SELECT id FROM users WHERE email = ?", (user_data['email'],))
         existing_user = cursor.fetchone()
         if existing_user:
             raise HTTPException(status_code=400, detail=f"Un utilisateur avec l'email '{user_data['email']}' existe déjà")
-        
+
         # Vérifier que le CIN n'existe pas déjà dans SQLite
         cursor.execute("SELECT id FROM users WHERE cin = ? AND cin IS NOT NULL AND cin != ''", (user_data['cin'],))
         existing_cin = cursor.fetchone()
         if existing_cin:
             raise HTTPException(status_code=400, detail=f"Un utilisateur avec le CIN '{user_data['cin']}' existe déjà")
-        
+
         # Insérer l'utilisateur
         cursor.execute('''
             INSERT INTO users (email, nom, prenom, telephone, adresse, cin, hashed_password, role)
@@ -862,7 +862,7 @@ async def create_fonctionnaire(
             user_data['cin'],
             f"hashed_{user_data['password']}"
         ))
-        
+
         user_id = cursor.lastrowid
           # Insérer les données fonctionnaire
         fonctionnaire_info = {
@@ -871,7 +871,7 @@ async def create_fonctionnaire(
             'grade': fonctionnaire_data.get('grade'),
             'photo': fonctionnaire_data.get('photo')
         }
-        
+
         cursor.execute('''
             INSERT INTO fonctionnaires (user_id, service, poste, grade, photo)
             VALUES (?, ?, ?, ?, ?)
@@ -882,23 +882,23 @@ async def create_fonctionnaire(
             fonctionnaire_info['grade'],
             fonctionnaire_info['photo']
         ))
-        
+
         fonctionnaire_id = cursor.lastrowid
-        
+
         conn.commit()
           # Récupérer le fonctionnaire créé avec toutes les données pour le retourner
         cursor.execute('''
-            SELECT 
+            SELECT
                 f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM fonctionnaires f
             JOIN users u ON f.user_id = u.id
             WHERE f.id = ?
         ''', (fonctionnaire_id,))
-        
+
         row = cursor.fetchone()
         conn.close()
-        
+
         # Retourner le fonctionnaire créé au format attendu par le frontend
         fonctionnaire_cree = {
             "id": row['id'],
@@ -919,9 +919,9 @@ async def create_fonctionnaire(
                 "role": "FONCTIONNAIRE"
             }
         }
-        
+
         return fonctionnaire_cree
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -944,9 +944,9 @@ async def get_all_fonctionnaires(
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT 
+            SELECT
                 f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM fonctionnaires f
@@ -954,7 +954,7 @@ async def get_all_fonctionnaires(
             WHERE u.role = 'FONCTIONNAIRE'
             ORDER BY u.nom, u.prenom
         ''')
-        
+
         fonctionnaires = []
         for row in cursor.fetchall():
             fonctionnaire = {
@@ -977,10 +977,10 @@ async def get_all_fonctionnaires(
                 }
             }
             fonctionnaires.append(fonctionnaire)
-        
+
         conn.close()
         return fonctionnaires
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
 
@@ -1011,16 +1011,16 @@ async def update_fonctionnaire(
         if not result:
             conn.close()
             raise HTTPException(status_code=404, detail=f"Fonctionnaire avec l'ID {fonctionnaire_id} non trouvé")
-        
+
         user_id = result['user_id']
-        
+
         # Validation des champs obligatoires si fournis
         if 'cin' in fonctionnaire_data:
             cin_value = fonctionnaire_data.get('cin')
             if not cin_value or not cin_value.strip():
                 conn.close()
                 raise HTTPException(status_code=400, detail="Le CIN est obligatoire et ne peut pas être vide")
-        
+
         # Vérifier l'unicité de l'email si modifié
         if 'email' in fonctionnaire_data:
             email_value = fonctionnaire_data.get('email')
@@ -1030,7 +1030,7 @@ async def update_fonctionnaire(
                 if existing_user:
                     conn.close()
                     raise HTTPException(status_code=400, detail=f"Un utilisateur avec l'email '{email_value}' existe déjà")
-        
+
         # Vérifier l'unicité du CIN si modifié
         if 'cin' in fonctionnaire_data:
             cin_value = fonctionnaire_data.get('cin')
@@ -1040,10 +1040,10 @@ async def update_fonctionnaire(
                 if existing_cin:
                     conn.close()
                     raise HTTPException(status_code=400, detail=f"Un utilisateur avec le CIN '{cin_value}' existe déjà")
-        
+
         # Mettre à jour les données utilisateur (incluant email si modifié)
         cursor.execute('''
-            UPDATE users 
+            UPDATE users
             SET nom = ?, prenom = ?, email = ?, telephone = ?, adresse = ?, cin = ?
             WHERE id = ?
         ''', (
@@ -1057,7 +1057,7 @@ async def update_fonctionnaire(
         ))
           # Mettre à jour les données fonctionnaire
         cursor.execute('''
-            UPDATE fonctionnaires 
+            UPDATE fonctionnaires
             SET service = ?, poste = ?, grade = ?, photo = ?
             WHERE id = ?
         ''', (
@@ -1067,18 +1067,18 @@ async def update_fonctionnaire(
             fonctionnaire_data.get('photo'),
             fonctionnaire_id
         ))
-        
+
         conn.commit()
           # Récupérer le fonctionnaire modifié pour le retourner
         cursor.execute('''
-            SELECT 
+            SELECT
                 f.id, f.user_id, f.service, f.poste, f.grade, f.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM fonctionnaires f
             JOIN users u ON f.user_id = u.id
             WHERE f.id = ?
         ''', (fonctionnaire_id,))
-        
+
         row = cursor.fetchone()
         conn.close()
           # Retourner le fonctionnaire modifié au format attendu par le frontend
@@ -1101,9 +1101,9 @@ async def update_fonctionnaire(
                 "role": "FONCTIONNAIRE"
             }
         }
-        
+
         return fonctionnaire_modifie
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1135,19 +1135,19 @@ async def delete_fonctionnaire(
         if not result:
             conn.close()
             raise HTTPException(status_code=404, detail=f"Fonctionnaire avec l'ID {fonctionnaire_id} non trouvé")
-        
+
         user_id = result['user_id']
-        
-        # Supprimer le fonctionnaire
+          # Supprimer le fonctionnaire
         cursor.execute("DELETE FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
-        
-        # Supprimer l'utilisateur        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        
+
+        # Supprimer l'utilisateur
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
         conn.commit()
         conn.close()
-        
+
         return {"message": "Fonctionnaire supprimé avec succès"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1180,7 +1180,7 @@ async def upload_fonctionnaire_photo(
             raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")        # Vérifier que le fonctionnaire existe dans SQLite
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT id FROM fonctionnaires WHERE id = ?", (fonctionnaire_id,))
         fonctionnaire_exists = cursor.fetchone()
         if not fonctionnaire_exists:
@@ -1214,11 +1214,11 @@ async def upload_fonctionnaire_photo(
 
         # Mettre à jour le chemin de la photo dans la base de données
         cursor.execute('''
-            UPDATE fonctionnaires 
-            SET photo = ? 
+            UPDATE fonctionnaires
+            SET photo = ?
             WHERE id = ?
         ''', (str(filename), fonctionnaire_id))
-        
+
         conn.commit()
         conn.close()
 
@@ -1441,42 +1441,83 @@ async def delete_demande(
 
 @app.get("/dashboard/stats")
 async def get_dashboard_stats():
-    """Obtenir les statistiques pour le dashboard - version simplifiée"""
+    """Obtenir les statistiques réelles pour le dashboard depuis la base SQLite"""
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
-        # Compter les enseignants
-        cursor.execute("SELECT COUNT(*) as count FROM enseignants")
-        total_enseignants = cursor.fetchone()['count']
-        
-        # Compter les fonctionnaires
-        cursor.execute("SELECT COUNT(*) as count FROM fonctionnaires")
-        total_fonctionnaires = cursor.fetchone()['count']
-        
-        # Compter les demandes
-        cursor.execute("SELECT COUNT(*) as count FROM demandes")
-        total_demandes = cursor.fetchone()['count']
-        
-        # Compter les demandes en attente
-        cursor.execute("SELECT COUNT(*) as count FROM demandes WHERE statut = 'EN_ATTENTE'")
-        demandes_en_attente = cursor.fetchone()['count']
-        
+
+        # Compter les enseignants (avec JOIN pour s'assurer qu'ils ont un enregistrement dans la table enseignants)
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM users u
+            JOIN enseignants e ON u.id = e.user_id
+            WHERE u.is_active = 1 AND u.role = 'ENSEIGNANT'
+        """)
+        enseignants_count = cursor.fetchone()['count']
+
+        # Compter les fonctionnaires (avec JOIN pour s'assurer qu'ils ont un enregistrement dans la table fonctionnaires)
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM users u
+            JOIN fonctionnaires f ON u.id = f.user_id
+            WHERE u.is_active = 1 AND u.role = 'FONCTIONNAIRE'
+        """)
+        fonctionnaires_count = cursor.fetchone()['count']
+
+        # Compter les autres rôles directement depuis la table users
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM users
+            WHERE is_active = 1 AND role = 'SECRETAIRE'
+        """)
+        secretaires_count = cursor.fetchone()['count']
+
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM users
+            WHERE is_active = 1 AND role = 'ADMIN'
+        """)
+        admins_count = cursor.fetchone()['count']
+
+        # Compter les demandes par statut
+        cursor.execute("""
+            SELECT statut, COUNT(*) as count
+            FROM demandes
+            GROUP BY statut
+        """)
+        demande_counts = {row['statut']: row['count'] for row in cursor.fetchall()}
+
+        # Compter le total d'utilisateurs actifs
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE is_active = 1")
+        total_users = cursor.fetchone()['count']
+
         conn.close()
-        
-        return {
-            "total_enseignants": total_enseignants,
-            "total_fonctionnaires": total_fonctionnaires,
-            "total_demandes": total_demandes,
-            "demandes_en_attente": demandes_en_attente
+
+        # Retourner exactement les champs attendus par le frontend
+        stats = {
+            "totalUsers": total_users,
+            "enseignants": enseignants_count,
+            "fonctionnaires": fonctionnaires_count,
+            "secretaires": secretaires_count,
+            "admins": admins_count,
+            "demandesEnAttente": demande_counts.get("EN_ATTENTE", 0),
+            "demandesTraitees": demande_counts.get("APPROUVEE", 0) + demande_counts.get("REJETEE", 0)
         }
-        
+
+        print(f"📊 [DASHBOARD] Statistiques calculées: {stats}")
+        return stats
+
     except Exception as e:
+        print(f"❌ [DASHBOARD] Erreur: {str(e)}")
+        # Retourner des valeurs par défaut en cas d'erreur
         return {
-            "total_enseignants": 0,
-            "total_fonctionnaires": 0,
-            "total_demandes": 0,
-            "demandes_en_attente": 0,            "error": str(e)
+            "totalUsers": 0,
+            "enseignants": 0,
+            "fonctionnaires": 0,
+            "secretaires": 0,
+            "admins": 0,
+            "demandesEnAttente": 0,
+            "demandesTraitees": 0
         }
 
 # Endpoint de debug pour examiner FONCTIONNAIRES_DB
@@ -1682,9 +1723,9 @@ async def get_enseignants_test():
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT 
+            SELECT
                 e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
@@ -1692,7 +1733,7 @@ async def get_enseignants_test():
             WHERE u.role = 'ENSEIGNANT'
             ORDER BY u.nom, u.prenom
         ''')
-        
+
         enseignants = []
         for row in cursor.fetchall():
             enseignant = {
@@ -1715,10 +1756,10 @@ async def get_enseignants_test():
                 }
             }
             enseignants.append(enseignant)
-        
+
         conn.close()
         return {"success": True, "count": len(enseignants), "data": enseignants}
-        
+
     except Exception as e:
         return {"success": False, "error": str(e)}
 

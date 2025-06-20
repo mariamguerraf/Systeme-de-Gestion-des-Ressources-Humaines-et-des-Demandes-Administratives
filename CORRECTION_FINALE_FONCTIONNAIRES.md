@@ -6,7 +6,8 @@
 **Backend (`main_minimal.py`)** :
 - Messages d'erreur 404 plus spécifiques avec l'ID du fonctionnaire
 - Fermeture propre des connexions SQLite en cas d'erreur
-- Format : `"Fonctionnaire avec l'ID {id} non trouvé"`
+- Format :
+  `"Fonctionnaire avec l'ID {id} non trouvé"`
 
 **Frontend (`Fonctionnaires.tsx`)** :
 - Gestion spécifique des erreurs 404 dans toutes les opérations (modification, suppression, upload)

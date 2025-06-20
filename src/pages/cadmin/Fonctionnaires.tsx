@@ -5,6 +5,7 @@ import { Shield, Users, Plus, Edit3, Trash2, Eye, Search, Filter, FileText, Cale
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 import { getApiBaseUrl } from '../../utils/config';
+import { useDashboardRefresh } from '../../hooks/useDashboardRefresh';
 
 interface Fonctionnaire {
   id: number;
@@ -33,6 +34,7 @@ interface Fonctionnaire {
 const CadminFonctionnaires = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { triggerRefresh } = useDashboardRefresh();
 
   // Fonction utilitaire pour construire l'URL de la photo
   const getPhotoUrl = (photoPath: string | null) => {
@@ -316,6 +318,8 @@ const CadminFonctionnaires = () => {
         alert('Fonctionnaire supprimé avec succès !');
         // Retirer le fonctionnaire de la liste locale
         setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
       } catch (error: any) {
         console.error('Erreur lors de la suppression:', error);
 
@@ -325,6 +329,8 @@ const CadminFonctionnaires = () => {
             alert(`Fonctionnaire introuvable. Il a peut-être déjà été supprimé.`);
             // Retirer quand même de la liste locale pour éviter l'incohérence
             setFonctionnaires(fonctionnaires.filter(f => f.id !== id));
+            // Déclencher le rafraîchissement du dashboard même en cas d'erreur 404
+            triggerRefresh();
           } else {
             alert(`Erreur lors de la suppression: ${error.message}`);
           }
@@ -413,6 +419,9 @@ const CadminFonctionnaires = () => {
 
         setFonctionnaires([...fonctionnaires, fonctionnaireLocal]);
         setShowModal(false);
+
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
 
         // Réinitialiser l'état de photo
         resetPhotoState();
@@ -508,6 +517,9 @@ const CadminFonctionnaires = () => {
           func.id === selectedFonctionnaire.id ? fonctionnaireLocal : func
         ));
         setShowModal(false);
+
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
 
         // Réinitialiser l'état de photo
         resetPhotoState();

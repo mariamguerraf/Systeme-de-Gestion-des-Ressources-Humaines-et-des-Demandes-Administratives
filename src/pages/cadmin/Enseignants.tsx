@@ -5,6 +5,7 @@ import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 import { getApiBaseUrl } from '../../utils/config';
+import { useDashboardRefresh } from '../../hooks/useDashboardRefresh';
 
 interface Enseignant {
   id: number;
@@ -31,6 +32,7 @@ interface Enseignant {
 const CadminEnseignants = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { triggerRefresh } = useDashboardRefresh();
 
   const handleLogout = () => {
     logout();
@@ -182,10 +184,10 @@ const CadminEnseignants = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet enseignant ?')) {
       try {
         await apiService.deleteEnseignant(id);
-        alert('Enseignant supprimé avec succès !');
-
-        // Retirer l'enseignant de la liste locale
+        alert('Enseignant supprimé avec succès !');        // Retirer l'enseignant de la liste locale
         setEnseignants(enseignants.filter(e => e.id !== id));
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
       } catch (error: any) {
         console.error('Erreur lors de la suppression:', error);
         alert(`Erreur: ${error.message || 'Impossible de supprimer l\'enseignant'}`);
@@ -255,6 +257,8 @@ const CadminEnseignants = () => {
         setShowModal(false);
         // Réinitialiser l'état de photo
         resetPhotoState();
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
       } catch (error: any) {
         console.error('Erreur lors de la création:', error);
         alert(`Erreur: ${error.message || 'Impossible de créer l\'enseignant'}`);
@@ -332,14 +336,14 @@ const CadminEnseignants = () => {
           photo: enseignantModifie.photo || selectedEnseignant.photo || null,
           statut: 'Actif',
           user: enseignantModifie.user
-        };
-
-        // Remplacer l'enseignant modifié dans la liste
+        };        // Remplacer l'enseignant modifié dans la liste
         setEnseignants(enseignants.map(ens =>
           ens.id === selectedEnseignant.id ? enseignantLocal : ens        ));
         setShowModal(false);
         // Réinitialiser l'état de photo
         resetPhotoState();
+        // Déclencher le rafraîchissement du dashboard
+        triggerRefresh();
       } catch (error: any) {
         console.error('Erreur lors de la modification:', error);
         alert(`Erreur: ${error.message || 'Impossible de modifier l\'enseignant'}`);

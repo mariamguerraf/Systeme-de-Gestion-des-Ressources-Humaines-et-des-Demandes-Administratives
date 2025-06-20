@@ -26,12 +26,12 @@ class ApiService {
 
     // Construire les headers de base
     const baseHeaders: Record<string, string> = {};
-    
+
     // Ajouter Content-Type seulement si ce n'est pas FormData
     if (!(options.body instanceof FormData)) {
       baseHeaders['Content-Type'] = 'application/json';
     }
-    
+
     // Ajouter le token d'auth
     const token = this.token || localStorage.getItem('token') || localStorage.getItem('access_token');
     if (token) {

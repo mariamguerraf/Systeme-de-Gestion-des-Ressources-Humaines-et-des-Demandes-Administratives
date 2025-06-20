@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, Users, UserCheck, BarChart3, Settings, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { useDashboardRefresh } from '../../hooks/useDashboardRefresh';
 
 interface DashboardStats {
   totalUsers: number;
@@ -18,6 +19,7 @@ interface DashboardStats {
 const CadminDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { onRefresh } = useDashboardRefresh();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     enseignants: 0,
@@ -29,30 +31,51 @@ const CadminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  // Fonction pour recharger les statistiques
+  const refreshStats = async () => {
+    try {
+      console.log('📊 [Dashboard] Rechargement des statistiques...');
+      const dashboardStats = await apiService.getDashboardStats() as DashboardStats;
+      console.log('📊 [Dashboard] Statistiques reçues:', dashboardStats);
+      setStats(dashboardStats);
+      setError(null);
+    } catch (err: any) {
+      console.error('❌ [Dashboard] Erreur lors du chargement des statistiques:', err);
+      setError('Erreur lors du chargement des statistiques');
+    }
   };
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
-        setError(null);
-        const dashboardStats = await apiService.getDashboardStats();
-        setStats(dashboardStats);
-      } catch (err: any) {
-        console.error('Error fetching dashboard stats:', err);
-        setError('Erreur lors du chargement des statistiques');
-        // Keep default values in case of error
+        await refreshStats();
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardStats();
-  }, []);
+
+    // Écouter les événements de rafraîchissement
+    const cleanup = onRefresh(() => {
+      console.log('🔄 [Dashboard] Rafraîchissement déclenché par événement');
+      refreshStats();
+    });
+
+    return cleanup;
+  }, [onRefresh]);
+
+  // Fonction pour gérer la navigation avec mise à jour des stats
+  const handleNavigateWithRefresh = (path: string) => {
+    navigate(path);
+  };
 
   const dashboardCards = [
     { title: 'Enseignants', count: stats.enseignants, color: 'from-blue-500 to-blue-600', icon: UserCheck },
@@ -147,8 +170,8 @@ const CadminDashboard = () => {
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden p-8">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">Actions Principales</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <button 
-              onClick={() => navigate('/cadmin/enseignants')}
+            <button
+              onClick={() => handleNavigateWithRefresh('/cadmin/enseignants')}
               className="block p-6 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl shadow hover:shadow-lg border border-blue-200 hover:scale-105 transition-transform text-left"
             >
               <div className="flex items-center space-x-4 mb-3">
@@ -159,8 +182,8 @@ const CadminDashboard = () => {
               </div>
               <p className="text-gray-600">Créer, modifier, supprimer et consulter les profils enseignants. Gérez leurs permissions et suivez leur activité.</p>
             </button>
-            <button 
-              onClick={() => navigate('/cadmin/fonctionnaires')}
+            <button
+              onClick={() => handleNavigateWithRefresh('/cadmin/fonctionnaires')}
               className="block p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl shadow hover:shadow-lg border border-purple-200 hover:scale-105 transition-transform text-left"
             >
               <div className="flex items-center space-x-4 mb-3">
