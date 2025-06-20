@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { getApiBaseUrl } from '../../utils/config';
 
 interface Enseignant {
   id: number;
@@ -388,12 +389,10 @@ const CadminEnseignants = () => {
 
       if (!token) {
         throw new Error('Token d\'authentification manquant. Veuillez vous reconnecter.');
-      }
+      }      console.log('🔄 Upload photo - URL:', `${getApiBaseUrl()}/users/enseignants/${enseignantId}/upload-photo`);
 
-      console.log('🔄 Upload photo - URL:', `http://localhost:8000/users/enseignants/${enseignantId}/upload-photo`);
-
-      // Utiliser l'URL correcte avec le port 8000
-      const response = await fetch(`http://localhost:8000/users/enseignants/${enseignantId}/upload-photo`, {
+      // Utiliser l'URL correcte de l'API
+      const response = await fetch(`${getApiBaseUrl()}/users/enseignants/${enseignantId}/upload-photo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -552,10 +551,9 @@ const CadminEnseignants = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredEnseignants.map((enseignant) => (
                   <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        {enseignant.photo ? (
+                      <div className="flex items-center space-x-3">                        {enseignant.photo ? (
                           <img
-                            src={`/api${enseignant.photo}`}
+                            src={`${getApiBaseUrl()}${enseignant.photo}`}
                             alt={`${enseignant.prenom} ${enseignant.nom}`}
                             className="w-10 h-10 rounded-full object-cover border-2 border-gray-300"
                           />
@@ -1109,9 +1107,8 @@ const CadminEnseignants = () => {
                           {/* Photo actuelle */}
                           {selectedEnseignant?.photo && !photoPreview && (
                             <div className="mb-2">
-                              <p className="text-sm text-gray-600 mb-1">Photo actuelle:</p>
-                              <img
-                                src={`/api${selectedEnseignant.photo}`}
+                              <p className="text-sm text-gray-600 mb-1">Photo actuelle:</p>                              <img
+                                src={`${getApiBaseUrl()}${selectedEnseignant.photo}`}
                                 alt="Photo actuelle"
                                 className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
                               />

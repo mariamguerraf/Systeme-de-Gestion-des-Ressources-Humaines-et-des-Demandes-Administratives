@@ -67,6 +67,7 @@ class Enseignant(Base):
     specialite = Column(String)
     grade = Column(String)
     etablissement = Column(String)
+    photo = Column(String, nullable=True)  # URL de la photo de profil
     
     # Relations
     user = relationship("User")

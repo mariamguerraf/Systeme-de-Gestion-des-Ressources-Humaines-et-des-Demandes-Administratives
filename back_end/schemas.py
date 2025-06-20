@@ -81,6 +81,7 @@ class EnseignantBase(BaseModel):
     specialite: Optional[str] = None
     grade: Optional[str] = None
     etablissement: Optional[str] = None
+    photo: Optional[str] = None
 
 class EnseignantCreate(EnseignantBase):
     user_id: int
@@ -124,6 +125,7 @@ class EnseignantCreateComplete(BaseModel):
     specialite: Optional[str] = None
     grade: Optional[str] = None
     etablissement: Optional[str] = None
+    photo: Optional[str] = None
 
 # Schéma pour la réponse complète enseignant
 class EnseignantComplete(BaseModel):
@@ -132,6 +134,7 @@ class EnseignantComplete(BaseModel):
     specialite: Optional[str] = None
     grade: Optional[str] = None
     etablissement: Optional[str] = None
+    photo: Optional[str] = None
     user: User
 
     class Config:

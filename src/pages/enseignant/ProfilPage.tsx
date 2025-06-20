@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Phone, Calendar, MapPin, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { getApiBaseUrl } from '../../utils/config';
 
 interface EnseignantData {
   id: number;
@@ -286,7 +287,7 @@ const ProfilPage = () => {
 			  <div className="flex justify-center mb-6">
 				{enseignantData?.photo ? (
 				  <img
-					src={`/api${enseignantData.photo}`}
+					src={`${getApiBaseUrl()}${enseignantData.photo}`}
 					alt={`${prenom} ${nom}`}
 					className="w-24 h-24 rounded-full object-cover shadow-md border-4 border-white"
 				  />

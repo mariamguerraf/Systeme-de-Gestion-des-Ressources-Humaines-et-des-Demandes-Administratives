@@ -13,7 +13,7 @@ const LoginPage = () => {
           alt="Beautiful landscape"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 "></div>
+        <div className="absolute inset-0"></div>
       </div>
 
       {/* Right side with form */}
@@ -22,7 +22,9 @@ const LoginPage = () => {
 
         <div className="z-10 flex flex-col items-center space-y-6 w-full max-w-md animate-fade-in">
           <div className="text-center space-y-2">
-        </div>
+            <h1 className="text-3xl font-bold text-gray-900">Connexion</h1>
+            <p className="text-gray-600">Accédez à votre espace</p>
+          </div>
 
           <LoginForm />
         </div>
@@ -32,68 +34,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-// import { useState } from 'react';
-
-// export default function LoginForm() {
-//   const [username, setUsername] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [error, setError] = useState('');
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     try {
-//       const res = await fetch('http://localhost:8000/api/login/', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({ username, password }),
-//       });
-
-//       if (!res.ok) throw new Error('Invalid credentials');
-
-//       const data = await res.json();
-//       console.log('Token:', data.access);  // Tu peux sauvegarder ce token pour l'utiliser
-
-//       // Sauvegarde du token dans le localStorage ou cookie
-//       localStorage.setItem('access_token', data.access);
-//       localStorage.setItem('refresh_token', data.refresh);
-
-//       // Redirige l'utilisateur après connexion
-//       window.location.href = '/dashboard';  // ou n'importe quelle autre page
-//     } catch (err) {
-//       setError('Login failed. Please try again.');
-//     }
-//   };
-
-//   return (
-//     <form onSubmit={handleSubmit} className="space-y-4 w-full">
-//       {error && <p className="text-red-500 text-sm">{error}</p>}
-
-//       <input
-//         type="text"
-//         placeholder="Username"
-//         value={username}
-//         onChange={(e) => setUsername(e.target.value)}
-//         className="w-full p-2 border rounded"
-//         required
-//       />
-//       <input
-//         type="password"
-//         placeholder="Password"
-//         value={password}
-//         onChange={(e) => setPassword(e.target.value)}
-//         className="w-full p-2 border rounded"
-//         required
-//       />
-//       <button
-//         type="submit"
-//         className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-//       >
-//         Login
-//       </button>
-//     </form>
-//   );
-// }

@@ -21,8 +21,10 @@
       "cin": "admin@univ.ma",
       "role": "enseignant",
       "is_active": true,
-      "created_at": "2024-01-01T00:00:00"
-    }
+      "created_at": "2024-01-01T00:00:00",
+      "photo": "/uploads/images/af501ab2-ab8d-4f74-aa50-3c0f654cffa8.jpg"
+    },
+    "photo": "/uploads/images/af501ab2-ab8d-4f74-aa50-3c0f654cffa8.jpg"
   },
   "16": {
     "id": 16,
@@ -72,6 +74,117 @@
       "role": "enseignant",
       "is_active": true,
       "created_at": "2024-01-01T00:00:00"
+    }
+  },
+  "18": {
+    "id": 18,
+    "user_id": 18,
+    "specialite": "",
+    "grade": "",
+    "etablissement": "",
+    "user": {
+      "id": 18,
+      "email": "mariamgrf023@gmail.com",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant"
+    }
+  },
+  "19": {
+    "id": 19,
+    "user_id": 19,
+    "nom": "guerraf",
+    "prenom": "mariam",
+    "email": "mariamgrf02@sssgmail.ma",
+    "telephone": "",
+    "adresse": "",
+    "cin": "admin@univ.ma",
+    "specialite": "Mathématiques",
+    "grade": "Professeur Assistant",
+    "etablissement": "",
+    "user": {
+      "id": 19,
+      "email": "mariamgrf02@sssgmail.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "telephone": "",
+      "adresse": "",
+      "cin": "admin@univ.ma",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00",
+      "photo": "/uploads/images/ea330c88-faeb-47e1-8577-6c86d4ceeab9.jpeg"
+    },
+    "photo": "/uploads/images/ea330c88-faeb-47e1-8577-6c86d4ceeab9.jpeg"
+  },
+  "20": {
+    "id": 20,
+    "user_id": 20,
+    "specialite": "",
+    "grade": "",
+    "etablissement": "",
+    "user": {
+      "id": 20,
+      "email": "mariamgrwf02@gmail.comw",
+      "nom": "guerrafww",
+      "prenom": "mariamwww",
+      "role": "enseignant"
+    }
+  },
+  "21": {
+    "id": 21,
+    "user_id": 21,
+    "specialite": "Chimie",
+    "grade": "Professeur Assistant",
+    "etablissement": "",
+    "user": {
+      "id": 21,
+      "email": "mariamgrf02@gmail.comrr",
+      "nom": "guerrafrr",
+      "prenom": "mariamrr",
+      "role": "enseignant"
+    }
+  },
+  "22": {
+    "id": 22,
+    "user_id": 22,
+    "specialite": "",
+    "grade": "",
+    "etablissement": "",
+    "user": {
+      "id": 22,
+      "email": "mariamgrf02@gmail.comff",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant"
+    }
+  },
+  "23": {
+    "id": 23,
+    "user_id": 23,
+    "specialite": "Biologie",
+    "grade": "Professeur",
+    "etablissement": "",
+    "user": {
+      "id": 23,
+      "email": "ahmad02@univ.ma",
+      "nom": "ahmad",
+      "prenom": "ahmad",
+      "role": "enseignant"
+    }
+  },
+  "24": {
+    "id": 24,
+    "user_id": 24,
+    "specialite": "Mathématiques",
+    "grade": "Professeur",
+    "etablissement": "",
+    "user": {
+      "id": 24,
+      "email": "ahmad@univ.ma",
+      "nom": "ahmad",
+      "prenom": "abdlkader",
+      "role": "enseignant"
     }
   }
 }

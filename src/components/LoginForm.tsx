@@ -7,8 +7,6 @@ import { Eye, EyeOff, Lock, Mail, LogIn } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { apiService } from "../services/api";
-import TestCredentialsHelper from "./TestCredentialsHelper";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -53,10 +51,7 @@ const LoginForm = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleTestCredentials = (testEmail: string, testPassword: string) => {
-    setEmail(testEmail);
-    setPassword(testPassword);
-  };
+
 
   return (
     <div className="w-full max-w-md animate-fade-in">
@@ -64,7 +59,7 @@ const LoginForm = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
           <CardDescription className="text-center text-slate-500">
-            Sign in to your account to continue
+				Connectez-vous à votre compte pour continuer
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,7 +87,7 @@ const LoginForm = () => {
               </div>
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -103,7 +98,7 @@ const LoginForm = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder="name@univ.ma"
                   className="pl-10 border-slate-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                   value={email}
                   onChange={(e) => {
@@ -173,9 +168,6 @@ const LoginForm = () => {
               <div className="w-full border-t border-slate-200"></div>
             </div>
           </div>
-
-          {/* Ajout de l'aide aux credentials de test */}
-          <TestCredentialsHelper onSelectCredentials={handleTestCredentials} />
         </CardFooter>
       </Card>
     </div>

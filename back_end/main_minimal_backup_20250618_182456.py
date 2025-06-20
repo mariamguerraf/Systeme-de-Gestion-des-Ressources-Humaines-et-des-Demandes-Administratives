@@ -13,13 +13,6 @@ import os
 import shutil
 import uuid
 from pathlib import Path
-import sqlite3
-
-# Imports pour la base de données
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine
-from models import Base, User, UserRole, Enseignant, Fonctionnaire, Demande, DemandeStatus
-from schemas import EnseignantComplete
 
 # Import conditionnel pour Pillow
 try:
@@ -489,98 +482,90 @@ async def get_test_users():
     }
 
 # Créer un enseignant (endpoint pour admin)
-@app.post("/users/enseignants")
+@app.post("/users/enseignants", response_model=EnseignantComplete)
 async def create_enseignant(
-    enseignant_data: dict,
+    enseignant_data: EnseignantCreateComplete,
     authorization: str = Header(None)
 ):
-    """Créer un nouvel enseignant dans la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
 
-    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
-        raise HTTPException(status_code=403, detail="Droits admin requis")
+    # Vérifier si c'est un admin
+    admin_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] == "admin":
+            # C'est un admin, on peut continuer
+            admin_user = True
 
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Extraire les données utilisateur
-        user_data = {
-            'email': enseignant_data.get('email'),
-            'nom': enseignant_data.get('nom'),
-            'prenom': enseignant_data.get('prenom'),
-            'telephone': enseignant_data.get('telephone'),
-            'adresse': enseignant_data.get('adresse'),
-            'cin': enseignant_data.get('cin'),
-            'password': enseignant_data.get('password', 'default_password')
+    if not admin_user:
+        raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent créer des enseignants")
+
+    # Vérifier si l'email existe déjà
+    if enseignant_data.email in TEST_USERS:
+        raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
+
+    # Créer un nouvel ID
+    new_id = max([user["id"] for user in TEST_USERS.values()]) + 1
+      # Ajouter le nouvel enseignant aux utilisateurs de test
+    TEST_USERS[enseignant_data.email] = {
+        "id": new_id,
+        "email": enseignant_data.email,
+        "password": enseignant_data.password,
+        "nom": enseignant_data.nom,
+        "prenom": enseignant_data.prenom,
+        "role": "enseignant",
+        "telephone": enseignant_data.telephone,
+        "adresse": enseignant_data.adresse,
+        "cin": enseignant_data.cin,
+        "specialite": enseignant_data.specialite,
+        "grade": enseignant_data.grade,
+        "etablissement": enseignant_data.etablissement
+    }
+
+    # Créer l'objet User pour la réponse
+    user_data = User(
+        id=new_id,
+        email=enseignant_data.email,
+        nom=enseignant_data.nom,
+        prenom=enseignant_data.prenom,
+        role="enseignant"
+    )
+
+    # Ajouter aussi dans ENSEIGNANTS_DB pour la récupération
+    enseignant_response = EnseignantComplete(        id=new_id,
+        user_id=new_id,
+        specialite=enseignant_data.specialite,
+        grade=enseignant_data.grade,
+        etablissement=enseignant_data.etablissement,
+        user=user_data
+    )
+
+    ENSEIGNANTS_DB[new_id] = {
+        "id": new_id,
+        "user_id": new_id,
+        "specialite": enseignant_data.specialite,
+        "grade": enseignant_data.grade,
+        "etablissement": enseignant_data.etablissement,
+        "user": {
+            "id": user_data.id,
+            "email": user_data.email,
+            "nom": user_data.nom,
+            "prenom": user_data.prenom,
+            "role": user_data.role
         }
-        
-        # Vérifier que l'email n'existe pas déjà dans SQLite
-        cursor.execute("SELECT id FROM users WHERE email = ?", (user_data['email'],))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
-        
-        # Insérer l'utilisateur
-        cursor.execute('''
-            INSERT INTO users (email, nom, prenom, telephone, adresse, cin, hashed_password, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'ENSEIGNANT')
-        ''', (
-            user_data['email'],
-            user_data['nom'],
-            user_data['prenom'],
-            user_data['telephone'],
-            user_data['adresse'],
-            user_data['cin'],
-            f"hashed_{user_data['password']}"
-        ))
-        
-        user_id = cursor.lastrowid
-        
-        # Insérer les données enseignant
-        enseignant_info = {
-            'specialite': enseignant_data.get('specialite'),
-            'grade': enseignant_data.get('grade'),
-            'etablissement': enseignant_data.get('etablissement')
-        }
-        
-        cursor.execute('''
-            INSERT INTO enseignants (user_id, specialite, grade, etablissement)
-            VALUES (?, ?, ?, ?)
-        ''', (
-            user_id,
-            enseignant_info['specialite'],
-            enseignant_info['grade'],
-            enseignant_info['etablissement']
-        ))
-        
-        enseignant_id = cursor.lastrowid
-        
-        conn.commit()
-        conn.close()
-        
-        return {
-            "message": "Enseignant créé avec succès",
-            "id": enseignant_id,
-            "user_id": user_id,
-            "email": user_data['email'],
-            "nom": user_data['nom'],
-            "prenom": user_data['prenom']
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la création: {str(e)}")
+    }
+
+    # Sauvegarder les données dans les fichiers
+    save_all_data()
 
     return enseignant_response
 
 # Récupérer tous les enseignants (endpoint pour admin)
-@app.get("/users/enseignants")
+@app.get("/users/enseignants", response_model=List[EnseignantComplete])
 async def get_all_enseignants(
     authorization: str = Header(None)
 ):
@@ -589,152 +574,136 @@ async def get_all_enseignants(
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
-    
-    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
+
+    # Vérifier si c'est un admin
+    admin_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] == "admin":
+            admin_user = {"role": "admin"}
+
+    if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
 
-    # Récupérer tous les enseignants depuis SQLite directement
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT 
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
-                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
-            FROM enseignants e
-            JOIN users u ON e.user_id = u.id
-            WHERE u.role = 'ENSEIGNANT'
-            ORDER BY u.nom, u.prenom
-        ''')
-        
-        enseignants = []
-        for row in cursor.fetchall():
-            enseignant = {
-                "id": row['id'],
-                "user_id": row['user_id'],
-                "specialite": row['specialite'],
-                "grade": row['grade'],
-                "etablissement": row['etablissement'],
-                "photo": row['photo'],
-                "user": {
-                    "id": row['user_id'],
-                    "nom": row['nom'],
-                    "prenom": row['prenom'],
-                    "email": row['email'],
-                    "telephone": row['telephone'],
-                    "adresse": row['adresse'],
-                    "cin": row['cin'],
-                    "is_active": bool(row['is_active']),
-                    "role": "ENSEIGNANT"
-                }
-            }
-            enseignants.append(enseignant)
-        
-        conn.close()
-        return enseignants
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+    # Retourner tous les enseignants créés
+    enseignants_list = []
+    for ens_id, ens_data in ENSEIGNANTS_DB.items():
+        enseignants_list.append(EnseignantComplete(
+            id=ens_data["id"],
+            user_id=ens_data["user_id"],
+            specialite=ens_data["specialite"],
+            grade=ens_data["grade"],
+            etablissement=ens_data["etablissement"],
+            user=ens_data["user"]
+        ))
+
+    return enseignants_list
 
 # Modifier un enseignant (endpoint pour admin)
-@app.put("/users/enseignants/{enseignant_id}")
+@app.put("/users/enseignants/{enseignant_id}", response_model=EnseignantComplete)
 async def update_enseignant(
     enseignant_id: int,
-    enseignant_data: dict,
+    enseignant_data: EnseignantCreateComplete,
     authorization: str = Header(None)
 ):
-    """Modifier un enseignant existant dans la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
 
-    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
-        raise HTTPException(status_code=403, detail="Droits admin requis")
+    # Vérifier si c'est un admin
+    admin_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] == "admin":
+            admin_user = {"role": "admin"}
+    if not admin_user:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")    # Vérifier si l'enseignant existe
+    # Convertir enseignant_id en string pour la comparaison
+    enseignant_id_str = str(enseignant_id)
 
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Vérifier que l'enseignant existe
-        cursor.execute("SELECT user_id FROM enseignants WHERE id = ?", (enseignant_id,))
-        result = cursor.fetchone()
-        if not result:
-            raise HTTPException(status_code=404, detail="Enseignant non trouvé")
-        
-        user_id = result['user_id']
-        
-        # Mettre à jour les données utilisateur
-        cursor.execute('''
-            UPDATE users 
-            SET nom = ?, prenom = ?, telephone = ?, adresse = ?, cin = ?
-            WHERE id = ?
-        ''', (
-            enseignant_data.get('nom'),
-            enseignant_data.get('prenom'),
-            enseignant_data.get('telephone'),
-            enseignant_data.get('adresse'),
-            enseignant_data.get('cin'),
-            user_id
-        ))
-        
-        # Mettre à jour les données enseignant
-        cursor.execute('''
-            UPDATE enseignants 
-            SET specialite = ?, grade = ?, etablissement = ?
-            WHERE id = ?
-        ''', (
-            enseignant_data.get('specialite'),
-            enseignant_data.get('grade'),
-            enseignant_data.get('etablissement'),            enseignant_id
-        ))
-        
-        conn.commit()
-        
-        # Récupérer l'enseignant modifié pour le retourner
-        cursor.execute('''
-            SELECT 
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
-                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
-            FROM enseignants e
-            JOIN users u ON e.user_id = u.id
-            WHERE e.id = ?
-        ''', (enseignant_id,))
-        
-        row = cursor.fetchone()
-        conn.close()
-        
-        # Retourner l'enseignant modifié au format attendu par le frontend
-        enseignant_modifie = {
-            "id": row['id'],
-            "user_id": row['user_id'],
-            "specialite": row['specialite'],
-            "grade": row['grade'],
-            "etablissement": row['etablissement'],
-            "photo": row['photo'],
-            "user": {
-                "id": row['user_id'],
-                "nom": row['nom'],
-                "prenom": row['prenom'],
-                "email": row['email'],
-                "telephone": row['telephone'],
-                "adresse": row['adresse'],
-                "cin": row['cin'],
-                "is_active": bool(row['is_active']),
-                "role": "ENSEIGNANT"
-            }
+    if enseignant_id_str not in ENSEIGNANTS_DB:
+        raise HTTPException(status_code=404, detail=f"Enseignant non trouvé")
+
+    # Récupérer les anciennes données
+    old_data = ENSEIGNANTS_DB[enseignant_id_str]
+    old_email = old_data["user"]["email"]
+
+    # Vérifier si le nouvel email existe déjà (sauf si c'est le même)
+    if enseignant_data.email != old_email and enseignant_data.email in TEST_USERS:
+        raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
+      # Mettre à jour TEST_USERS
+    if old_email in TEST_USERS:
+        del TEST_USERS[old_email]
+
+    # Conserver le mot de passe existant si non fourni ou "unchanged"
+    password_to_use = old_data["user"].get("password", "enseignant123")
+    if enseignant_data.password and enseignant_data.password != "unchanged":
+        password_to_use = enseignant_data.password
+
+    TEST_USERS[enseignant_data.email] = {
+        "id": enseignant_id,
+        "email": enseignant_data.email,
+        "password": password_to_use,
+        "nom": enseignant_data.nom,
+        "prenom": enseignant_data.prenom,
+        "role": "enseignant",
+        "telephone": enseignant_data.telephone or "",
+        "adresse": enseignant_data.adresse or "",
+        "cin": enseignant_data.cin or "",
+        "is_active": True,
+        "created_at": old_data["user"].get("created_at", "2024-01-01T00:00:00")
+    }
+      # Créer l'objet User mis à jour avec TOUS les champs
+    updated_user = User(
+        id=enseignant_id,
+        email=enseignant_data.email,
+        nom=enseignant_data.nom,
+        prenom=enseignant_data.prenom,
+        role="enseignant"
+    )
+
+    # Mettre à jour ENSEIGNANTS_DB avec structure complète
+    ENSEIGNANTS_DB[enseignant_id_str] = {
+        "id": enseignant_id,
+        "user_id": enseignant_id,
+        "nom": enseignant_data.nom,
+        "prenom": enseignant_data.prenom,
+        "email": enseignant_data.email,
+        "telephone": enseignant_data.telephone or "",
+        "adresse": enseignant_data.adresse or "",
+        "cin": enseignant_data.cin or "",
+        "specialite": enseignant_data.specialite or "",
+        "grade": enseignant_data.grade or "",
+        "etablissement": enseignant_data.etablissement or "",
+        "user": {
+            "id": updated_user.id,
+            "email": updated_user.email,
+            "nom": updated_user.nom,
+            "prenom": updated_user.prenom,
+            "telephone": enseignant_data.telephone or "",
+            "adresse": enseignant_data.adresse or "",
+            "cin": enseignant_data.cin or "",
+            "role": updated_user.role,
+            "is_active": True,
+            "created_at": old_data["user"].get("created_at", "2024-01-01T00:00:00")
         }
-        
-        return enseignant_modifie
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la modification: {str(e)}")
+    }
+      # Retourner l'enseignant mis à jour
+    updated_enseignant = EnseignantComplete(
+        id=enseignant_id,
+        user_id=enseignant_id,
+        specialite=enseignant_data.specialite,
+        grade=enseignant_data.grade,
+        etablissement=enseignant_data.etablissement,
+        user=updated_user
+    )
+
+    # Sauvegarder les données dans les fichiers
+    save_all_data()
+
+    return updated_enseignant
 
 # Supprimer un enseignant (endpoint pour admin)
 @app.delete("/users/enseignants/{enseignant_id}")
@@ -742,54 +711,43 @@ async def delete_enseignant(
     enseignant_id: int,
     authorization: str = Header(None)
 ):
-    """Supprimer un enseignant de la base de données SQLite"""
     # Vérifier l'autorisation admin
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
 
-    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
-        raise HTTPException(status_code=403, detail="Droits admin requis")
+    # Vérifier si c'est un admin
+    admin_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] == "admin":
+            admin_user = {"role": "admin"}
 
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Récupérer l'user_id et la photo pour nettoyage
-        cursor.execute("SELECT user_id, photo FROM enseignants WHERE id = ?", (enseignant_id,))
-        result = cursor.fetchone()
-        if not result:
-            raise HTTPException(status_code=404, detail="Enseignant non trouvé")
-        
-        user_id = result['user_id']
-        photo_url = result['photo']
-        
-        # Supprimer la photo si elle existe
-        if photo_url:
-            photo_path = Path(f"uploads{photo_url.replace('/uploads', '')}")
-            if photo_path.exists():
-                try:
-                    os.remove(photo_path)
-                except:
-                    pass
-        
-        # Supprimer l'enseignant
-        cursor.execute("DELETE FROM enseignants WHERE id = ?", (enseignant_id,))
-        
-        # Supprimer l'utilisateur
-        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        
-        conn.commit()
-        conn.close()
-        
-        return {"message": "Enseignant supprimé avec succès"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
+    if not admin_user:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
+      # Vérifier si l'enseignant existe
+    # Convertir enseignant_id en string pour la comparaison
+    enseignant_id_str = str(enseignant_id)
+
+    if enseignant_id_str not in ENSEIGNANTS_DB:
+        raise HTTPException(status_code=404, detail="Enseignant non trouvé")
+
+    # Récupérer les données de l'enseignant avant suppression
+    enseignant_data = ENSEIGNANTS_DB[enseignant_id_str]
+    user_email = enseignant_data["user"]["email"]
+
+    # Supprimer de ENSEIGNANTS_DB
+    del ENSEIGNANTS_DB[enseignant_id_str]
+
+    # Supprimer aussi de TEST_USERS
+    if user_email in TEST_USERS:
+        del TEST_USERS[user_email]
+
+    # Sauvegarder les données dans les fichiers
+    save_all_data()
+
+    return {"message": f"Enseignant {enseignant_data['user']['nom']} {enseignant_data['user']['prenom']} supprimé avec succès"}
 
 # ===== ENDPOINTS POUR LES FONCTIONNAIRES =====
 
@@ -809,7 +767,7 @@ async def create_fonctionnaire(
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = True
 
     if not admin_user:
@@ -888,7 +846,7 @@ async def get_all_fonctionnaires(
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
 
     if not admin_user:
@@ -924,7 +882,7 @@ async def update_fonctionnaire(
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
     if not admin_user:
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
@@ -1017,7 +975,7 @@ async def delete_fonctionnaire(
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
 
     if not admin_user:
@@ -1223,7 +1181,7 @@ async def delete_demande(
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
 
     if not admin_user:
@@ -1246,44 +1204,37 @@ async def delete_demande(
 # ===== ENDPOINT POUR LES STATISTIQUES DU DASHBOARD =====
 
 @app.get("/dashboard/stats")
-async def get_dashboard_stats():
-    """Obtenir les statistiques pour le dashboard - version simplifiée"""
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Compter les enseignants
-        cursor.execute("SELECT COUNT(*) as count FROM enseignants")
-        total_enseignants = cursor.fetchone()['count']
-        
-        # Compter les fonctionnaires
-        cursor.execute("SELECT COUNT(*) as count FROM fonctionnaires")
-        total_fonctionnaires = cursor.fetchone()['count']
-        
-        # Compter les demandes
-        cursor.execute("SELECT COUNT(*) as count FROM demandes")
-        total_demandes = cursor.fetchone()['count']
-        
-        # Compter les demandes en attente
-        cursor.execute("SELECT COUNT(*) as count FROM demandes WHERE statut = 'EN_ATTENTE'")
-        demandes_en_attente = cursor.fetchone()['count']
-        
-        conn.close()
-        
-        return {
-            "total_enseignants": total_enseignants,
-            "total_fonctionnaires": total_fonctionnaires,
-            "total_demandes": total_demandes,
-            "demandes_en_attente": demandes_en_attente
-        }
-        
-    except Exception as e:
-        return {
-            "total_enseignants": 0,
-            "total_fonctionnaires": 0,
-            "total_demandes": 0,
-            "demandes_en_attente": 0,            "error": str(e)
-        }
+async def get_dashboard_stats(authorization: str = Header(None)):
+    """Obtenir les statistiques pour le dashboard"""
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Vérifier le token (admin ou secrétaire peuvent accéder aux stats)
+    user_role = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4:
+            user_role = parts[3]
+
+    if user_role not in ["admin", "secretaire"]:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
+
+    # Calculer les statistiques
+    stats = {
+        "totalUsers": len(TEST_USERS),
+        "enseignants": len(ENSEIGNANTS_DB),
+        "fonctionnaires": len(FONCTIONNAIRES_DB),
+        "secretaires": sum(1 for user in TEST_USERS.values() if user["role"] == "secretaire"),
+        "admins": sum(1 for user in TEST_USERS.values() if user["role"] == "admin"),
+        "demandesEnAttente": sum(1 for demande in DEMANDES_DB.values() if demande["statut"] == "EN_ATTENTE"),
+        "demandesTraitees": sum(1 for demande in DEMANDES_DB.values() if demande["statut"] in ["APPROUVEE", "REJETEE"]),
+        "totalDemandes": len(DEMANDES_DB)
+    }
+
+    return stats
 
 # Endpoint de debug pour examiner FONCTIONNAIRES_DB
 @app.get("/debug/fonctionnaires-db")
@@ -1296,7 +1247,7 @@ async def debug_fonctionnaires_db(authorization: str = Header(None)):
     admin_user = None
     if token.startswith("test_token_"):
         parts = token.split("_")
-        if len(parts) >= 4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+        if len(parts) >= 4 and parts[3] == "admin":
             admin_user = {"role": "admin"}
 
     if not admin_user:
@@ -1321,77 +1272,72 @@ async def get_enseignant_profil(authorization: str = Header(None)):
     token = authorization.replace("Bearer ", "")
 
     # Décoder le token pour récupérer l'utilisateur
-    user_id = None
+    user_data = None
     if token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 4:
             user_id = int(parts[2])
+            # Trouver l'utilisateur dans TEST_USERS
+            for email, user in TEST_USERS.items():
+                if user["id"] == user_id and user["role"] == "enseignant":
+                    user_data = user
+                    break
 
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Token invalide")
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Token invalide ou utilisateur non trouvé")
 
-    # Récupérer les données depuis la base de données
-    from database import SessionLocal
-    from models import Enseignant, User
+    # Récupérer les données enseignant depuis ENSEIGNANTS_DB
+    enseignant_info = None
+    for ens_id, ens_data in ENSEIGNANTS_DB.items():
+        if ens_data.get("user_id") == user_data["id"]:
+            enseignant_info = ens_data
+            break
 
-    db = SessionLocal()
-    try:
-        # Récupérer l'utilisateur
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user or user.role.value != "ENSEIGNANT":
-            raise HTTPException(status_code=401, detail="Utilisateur non trouvé ou pas enseignant")
-
-        # Récupérer les données enseignant
-        enseignant = db.query(Enseignant).filter(Enseignant.user_id == user_id).first()
-
-        if enseignant:
-            return {
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "nom": user.nom,
-                    "prenom": user.prenom,
-                    "telephone": user.telephone,
-                    "adresse": user.adresse,
-                    "cin": user.cin,
-                    "role": user.role.value,
-                    "is_active": user.is_active,
-                    "created_at": user.created_at.isoformat() if user.created_at else None
-                },
-                "enseignant": {
-                    "id": enseignant.id,
-                    "user_id": enseignant.user_id,
-                    "specialite": enseignant.specialite or "",
-                    "grade": enseignant.grade or "",
-                    "etablissement": enseignant.etablissement or "",
-                    "photo": enseignant.photo  # Inclure la photo depuis la base de données
-                }
+    # Retourner les données complètes
+    if enseignant_info:        return {
+            "user": {
+                "id": user_data["id"],
+                "email": user_data["email"],
+                "nom": user_data["nom"],
+                "prenom": user_data["prenom"],
+                "telephone": enseignant_info.get("telephone", user_data.get("telephone", "")),
+                "adresse": enseignant_info.get("adresse", user_data.get("adresse", "")),
+                "cin": enseignant_info.get("cin", user_data.get("cin", "")),
+                "role": user_data["role"],
+                "is_active": user_data.get("is_active", True),
+                "created_at": user_data.get("created_at", "")
+            },
+            "enseignant": {
+                "id": enseignant_info.get("id"),
+                "user_id": enseignant_info.get("user_id"),
+                "specialite": enseignant_info.get("specialite", ""),
+                "grade": enseignant_info.get("grade", ""),
+                "etablissement": enseignant_info.get("etablissement", "")
             }
-        else:
-            # Si pas trouvé dans la table enseignants, créer une entrée
-            return {
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "nom": user.nom,
-                    "prenom": user.prenom,
-                    "telephone": user.telephone,
-                    "adresse": user.adresse,
-                    "cin": user.cin,
-                    "role": user.role.value,
-                    "is_active": user.is_active,
-                    "created_at": user.created_at.isoformat() if user.created_at else None
-                },
-                "enseignant": {
-                    "id": None,
-                    "user_id": user.id,
-                    "specialite": "",
-                    "grade": "",
-                    "etablissement": "",
-                    "photo": None
-                }            }
-    finally:
-        db.close()
+        }
+    else:
+        # Si pas trouvé dans ENSEIGNANTS_DB, retourner les données de base
+        return {
+            "user": {
+                "id": user_data["id"],
+                "email": user_data["email"],
+                "nom": user_data["nom"],
+                "prenom": user_data["prenom"],
+                "telephone": user_data.get("telephone", ""),
+                "adresse": user_data.get("adresse", ""),
+                "cin": user_data.get("cin", ""),
+                "role": user_data["role"],
+                "is_active": user_data.get("is_active", True),
+                "created_at": user_data.get("created_at", "")
+            },
+            "enseignant": {
+                "id": None,
+                "user_id": user_data["id"],
+                "specialite": "",
+                "grade": "",
+                "etablissement": ""
+            }
+        }
 
 # Endpoint pour upload d'image d'enseignant
 @app.post("/users/enseignants/{enseignant_id}/upload-photo")
@@ -1403,11 +1349,11 @@ async def upload_enseignant_photo(
     print(f"🔄 [UPLOAD] Début upload pour enseignant {enseignant_id}")
     print(f"🔄 [UPLOAD] Fichier reçu: {file.filename if file else 'None'}")
     print(f"🔄 [UPLOAD] Token reçu: {authorization[:50] if authorization else 'None'}...")
-
+    
     try:        # Vérifier l'authentification
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Token manquant")
-
+        
         token = authorization.replace("Bearer ", "")
 
         # Vérifier si c'est un admin
@@ -1431,102 +1377,39 @@ async def upload_enseignant_photo(
 
         # Vérifier taille (5MB max)
         if hasattr(file, 'size') and file.size and file.size > 5 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")        # Vérifier que l'enseignant existe dans la base de données
-        from database import SessionLocal
-        from models import Enseignant
+            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")
 
-        db = SessionLocal()
-        try:
-            enseignant = db.query(Enseignant).filter(Enseignant.id == enseignant_id).first()
-            if not enseignant:
-                raise HTTPException(status_code=404, detail="Enseignant non trouvé")
+        # Vérifier que l'enseignant existe
+        enseignant_id_str = str(enseignant_id)
+        if enseignant_id_str not in ENSEIGNANTS_DB:
+            raise HTTPException(status_code=404, detail="Enseignant non trouvé")
 
-            # Supprimer ancienne photo si elle existe
-            if enseignant.photo:
-                old_photo_path = Path(f"uploads{enseignant.photo.replace('/uploads', '')}")
-                if old_photo_path.exists():
-                    try:
-                        os.remove(old_photo_path)
-                        print(f"🗑️ [UPLOAD] Ancienne photo supprimée: {old_photo_path}")
-                    except Exception as e:
-                        print(f"⚠️ [UPLOAD] Erreur suppression ancienne photo: {e}")
+        # Supprimer ancienne photo
+        enseignant = ENSEIGNANTS_DB[enseignant_id_str]
+        if enseignant.get("photo"):
+            old_photo_path = Path(f"uploads{enseignant['photo'].replace('/uploads', '')}")
+            if old_photo_path.exists():
+                try:
+                    os.remove(old_photo_path)
+                except:
+                    pass
 
-            # Sauvegarder nouvelle image
-            photo_url = save_and_resize_image(file)
-            print(f"💾 [UPLOAD] Nouvelle photo sauvegardée: {photo_url}")
+        # Sauvegarder nouvelle image
+        photo_url = save_and_resize_image(file)
 
-            # Mettre à jour l'enseignant dans la base de données
-            enseignant.photo = photo_url
-            db.commit()
-            db.refresh(enseignant)
+        # Mettre à jour enseignant
+        ENSEIGNANTS_DB[enseignant_id_str]["photo"] = photo_url
+        if "user" in ENSEIGNANTS_DB[enseignant_id_str]:
+            ENSEIGNANTS_DB[enseignant_id_str]["user"]["photo"] = photo_url
 
-            print(f"✅ [UPLOAD] Photo mise à jour dans la base de données pour enseignant {enseignant_id}")
+        save_all_data()
 
-            return {"message": "Photo uploadée avec succès", "photo_url": photo_url}
-
-        finally:
-            db.close()
+        return {"message": "Photo uploadée avec succès", "photo_url": photo_url}
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
-
-# Fonction de connexion SQLite simple (fallback)
-def get_sqlite_connection():
-    """Obtenir une connexion SQLite directe pour debug"""
-    conn = sqlite3.connect('gestion_db.db', timeout=20.0)
-    conn.row_factory = sqlite3.Row
-    # Activer le mode WAL pour éviter les locks
-    conn.execute('PRAGMA journal_mode=WAL')
-    return conn
-
-# Endpoint de test simplifié pour récupérer les enseignants
-@app.get("/users/enseignants/test")
-async def get_enseignants_test():
-    """Endpoint de test pour récupérer les enseignants avec SQLite direct"""
-    try:
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT 
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
-                u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
-            FROM enseignants e
-            JOIN users u ON e.user_id = u.id
-            WHERE u.role = 'ENSEIGNANT'
-            ORDER BY u.nom, u.prenom
-        ''')
-        
-        enseignants = []
-        for row in cursor.fetchall():
-            enseignant = {
-                "id": row['id'],
-                "user_id": row['user_id'],
-                "specialite": row['specialite'],
-                "grade": row['grade'],
-                "etablissement": row['etablissement'],
-                "photo": row['photo'],
-                "user": {
-                    "id": row['user_id'],
-                    "nom": row['nom'],
-                    "prenom": row['prenom'],
-                    "email": row['email'],
-                    "telephone": row['telephone'],
-                    "adresse": row['adresse'],
-                    "cin": row['cin'],
-                    "is_active": bool(row['is_active']),
-                    "role": "ENSEIGNANT"
-                }
-            }
-            enseignants.append(enseignant)
-        
-        conn.close()
-        return {"success": True, "count": len(enseignants), "data": enseignants}
-        
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
