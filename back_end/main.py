@@ -1187,9 +1187,9 @@ async def upload_fonctionnaire_photo(
             conn.close()
             raise HTTPException(status_code=400, detail="Aucun fichier fourni")
 
-        # Créer le dossier uploads s'il n'existe pas
-        upload_dir = Path("uploads")
-        upload_dir.mkdir(exist_ok=True)
+        # Créer le dossier uploads/images s'il n'existe pas
+        upload_dir = Path("uploads/images")
+        upload_dir.mkdir(parents=True, exist_ok=True)
 
         # Générer un nom de fichier unique
         file_extension = Path(file.filename).suffix.lower() if file.filename else ".jpg"
@@ -1208,11 +1208,12 @@ async def upload_fonctionnaire_photo(
         print(f"✅ [UPLOAD] Fichier sauvegardé: {file_path}")
 
         # Mettre à jour le chemin de la photo dans la base de données
+        photo_path = f"/uploads/images/{filename}"
         cursor.execute('''
             UPDATE fonctionnaires
             SET photo = ?
             WHERE id = ?
-        ''', (str(filename), fonctionnaire_id))
+        ''', (photo_path, fonctionnaire_id))
 
         conn.commit()
         conn.close()

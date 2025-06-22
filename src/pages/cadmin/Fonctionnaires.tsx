@@ -678,21 +678,17 @@ const CadminFonctionnaires = () => {
                       <div className="flex items-center space-x-3">
                         {fonctionnaire.photo ? (
                           <img
-                            src={getPhotoUrl(fonctionnaire.photo)}
+                            src={`${getApiBaseUrl()}${fonctionnaire.photo}`}
                             alt={`${fonctionnaire.prenom} ${fonctionnaire.nom}`}
                             className="w-10 h-10 rounded-full object-cover border-2 border-gray-300"
-                            onError={(e) => {
-                              console.error('Erreur chargement image:', fonctionnaire.photo);
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
                           />
-                        ) : null}
-                        <div className={`w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center ${fonctionnaire.photo ? 'hidden' : ''}`}>
-                          <span className="text-white font-semibold text-sm">
-                            {fonctionnaire.prenom[0]}{fonctionnaire.nom[0]}
-                          </span>
-                        </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {fonctionnaire.prenom[0]}{fonctionnaire.nom[0]}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium text-gray-900">{fonctionnaire.prenom} {fonctionnaire.nom}</div>
                           <div className="text-gray-500 text-sm">ID: {fonctionnaire.id}</div>
@@ -833,12 +829,9 @@ const CadminFonctionnaires = () => {
                       <div className="flex items-center space-x-6">
                         {selectedFonctionnaire.photo ? (
                           <img
-                            src={getPhotoUrl(selectedFonctionnaire.photo)}
+                            src={`${getApiBaseUrl()}${selectedFonctionnaire.photo}`}
                             alt={`Photo de ${selectedFonctionnaire.prenom} ${selectedFonctionnaire.nom}`}
                             className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
-                            onError={(e) => {
-                              console.error('Erreur chargement image dans modal:', selectedFonctionnaire.photo);
-                            }}
                           />
                         ) : (
                           <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
