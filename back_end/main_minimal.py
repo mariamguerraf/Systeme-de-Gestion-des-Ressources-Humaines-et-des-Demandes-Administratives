@@ -42,8 +42,8 @@ app.add_middleware(
     allow_origins=["*"],  # Allow all origins for testing
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-)
+    allow_headers=["*"]
+        )
 
 # Créer le dossier pour les images
 UPLOAD_DIR = Path("uploads/images")
@@ -107,7 +107,6 @@ class EnseignantCreateComplete(BaseModel):
     password: str
     specialite: str = None
     grade: str = None
-    etablissement: str = None
     photo: str = None
 
 # Modèle pour la réponse enseignant
@@ -116,7 +115,6 @@ class EnseignantComplete(BaseModel):
     user_id: int
     specialite: str = None
     grade: str = None
-    etablissement: str = None
     photo: str = None
     user: User
 
@@ -433,7 +431,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         raise HTTPException(
             status_code=401,
             detail="Email ou mot de passe incorrect",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
     # Retourner un token simple (pour les tests)
@@ -472,8 +470,8 @@ async def read_users_me(authorization: str = Header(None)):
     raise HTTPException(
         status_code=401,
         detail="Token invalide ou manquant",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+        headers={"WWW-Authenticate": "Bearer"}
+        )
 
 # List test users endpoint
 @app.get("/test/users")
@@ -534,8 +532,7 @@ async def create_enseignant(
             user_data['email'],
             user_data['nom'],
             user_data['prenom'],
-            user_data['telephone'],
-            user_data['adresse'],
+            user_data['telephone'],            user_data['adresse'],
             user_data['cin'],
             f"hashed_{user_data['password']}"
         ))
@@ -545,18 +542,16 @@ async def create_enseignant(
         # Insérer les données enseignant
         enseignant_info = {
             'specialite': enseignant_data.get('specialite'),
-            'grade': enseignant_data.get('grade'),
-            'etablissement': enseignant_data.get('etablissement')
+            'grade': enseignant_data.get('grade')
         }
 
         cursor.execute('''
-            INSERT INTO enseignants (user_id, specialite, grade, etablissement)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO enseignants (user_id, specialite, grade)
+            VALUES (?, ?, ?)
         ''', (
             user_id,
             enseignant_info['specialite'],
-            enseignant_info['grade'],
-            enseignant_info['etablissement']
+            enseignant_info['grade']
         ))
 
         enseignant_id = cursor.lastrowid
@@ -602,7 +597,7 @@ async def get_all_enseignants(
 
         cursor.execute('''
             SELECT
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
+                e.id, e.user_id, e.specialite, e.grade, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
             JOIN users u ON e.user_id = u.id
@@ -617,7 +612,7 @@ async def get_all_enseignants(
                 "user_id": row['user_id'],
                 "specialite": row['specialite'],
                 "grade": row['grade'],
-                "etablissement": row['etablissement'],
+
                 "photo": row['photo'],
                 "user": {
                     "id": row['user_id'],
@@ -686,12 +681,12 @@ async def update_enseignant(
         # Mettre à jour les données enseignant
         cursor.execute('''
             UPDATE enseignants
-            SET specialite = ?, grade = ?, etablissement = ?
+            SET specialite = ?, grade = ?
             WHERE id = ?
         ''', (
             enseignant_data.get('specialite'),
             enseignant_data.get('grade'),
-            enseignant_data.get('etablissement'),            enseignant_id
+            enseignant_id
         ))
 
         conn.commit()
@@ -699,7 +694,7 @@ async def update_enseignant(
         # Récupérer l'enseignant modifié pour le retourner
         cursor.execute('''
             SELECT
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
+                e.id, e.user_id, e.specialite, e.grade, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
             JOIN users u ON e.user_id = u.id
@@ -715,7 +710,7 @@ async def update_enseignant(
             "user_id": row['user_id'],
             "specialite": row['specialite'],
             "grade": row['grade'],
-            "etablissement": row['etablissement'],
+
             "photo": row['photo'],
             "user": {
                 "id": row['user_id'],
@@ -1598,7 +1593,7 @@ async def get_enseignant_profil(authorization: str = Header(None)):
                     "user_id": enseignant.user_id,
                     "specialite": enseignant.specialite or "",
                     "grade": enseignant.grade or "",
-                    "etablissement": enseignant.etablissement or "",
+
                     "photo": enseignant.photo  # Inclure la photo depuis la base de données
                 }
             }
@@ -1622,7 +1617,7 @@ async def get_enseignant_profil(authorization: str = Header(None)):
                     "user_id": user.id,
                     "specialite": "",
                     "grade": "",
-                    "etablissement": "",
+
                     "photo": None
                 }            }
     finally:
@@ -1726,7 +1721,7 @@ async def get_enseignants_test():
 
         cursor.execute('''
             SELECT
-                e.id, e.user_id, e.specialite, e.grade, e.etablissement, e.photo,
+                e.id, e.user_id, e.specialite, e.grade, e.photo,
                 u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, u.is_active
             FROM enseignants e
             JOIN users u ON e.user_id = u.id
@@ -1741,7 +1736,7 @@ async def get_enseignants_test():
                 "user_id": row['user_id'],
                 "specialite": row['specialite'],
                 "grade": row['grade'],
-                "etablissement": row['etablissement'],
+
                 "photo": row['photo'],
                 "user": {
                     "id": row['user_id'],

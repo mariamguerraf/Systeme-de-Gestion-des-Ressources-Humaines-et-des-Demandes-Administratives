@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Diagnostic Page de Login</h1>
+
+        <div class="test-section info">
+            <h3>🌐 Configuration Actuelle</h3>
+            <p><strong>URL Frontend:</strong> <span id="frontend-url"></span></p>
+            <p><strong>URL Backend Calculée:</strong> <span id="backend-url"></span></p>
+            <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Tests de Connectivité</h3>
+            <button onclick="testBackendHealth()">Test Backend Health</button>
+            <button onclick="testBackendAuth()">Test Backend Auth Endpoint</button>
+            <button onclick="testLogin()">Test Login Complet</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Configuration - copié depuis le code React
+        function getApiBaseUrl() {
+            if (window.location.hostname.includes('app.github.dev')) {
+                const hostname = window.location.hostname;
+                console.log('🌐 [Config] Hostname détecté:', hostname);
+
+                let backendHostname;
+                if (hostname.includes('-8080.')) {
+                    backendHostname = hostname.replace('-8080.', '-8000.');
+                } else if (hostname.includes('-8081.')) {
+                    backendHostname = hostname.replace('-8081.', '-8000.');
+                } else if (hostname.includes('-5173.')) {
+                    backendHostname = hostname.replace('-5173.', '-8000.');
+                } else {
+                    backendHostname = hostname.replace('.app.github.dev', '-8000.app.github.dev');
+                }
+
+                const apiUrl = `https://${backendHostname}`;
+                console.log('🔗 [Config] URL API construite:', apiUrl);
+                return apiUrl;
+            }
+
+            if (window.location.hostname === 'localhost') {
+                return 'http://localhost:8000';
+            }
+
+            return 'https://congenial-halibut-4qgp7jg67v35q-8000.app.github.dev';
+        }
+
+        // Initialisation
+        document.getElementById('frontend-url').textContent = window.location.origin;
+        document.getElementById('backend-url').textContent = getApiBaseUrl();
+        document.getElementById('hostname').textContent = window.location.hostname;
+
+        function addLog(message, type = 'info') {
+            const results = document.getElementById('results');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(logDiv);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testBackendHealth() {
+            addLog('🔍 Test de sanité du backend...', 'info');
+            const backendUrl = getApiBaseUrl();
+
+            try {
+                const response = await fetch(`${backendUrl}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog(`✅ Backend accessible: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addLog(`❌ Backend répond mais avec erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Impossible de joindre le backend: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBackendAuth() {
+            addLog('🔍 Test de l\'endpoint auth...', 'info');
+            const backendUrl = getApiBaseUrl();
+
+            try {
+                const response = await fetch(`${backendUrl}/auth/login`, {
+                    method: 'OPTIONS'
+                });
+                addLog(`✅ Endpoint auth accessible (OPTIONS): ${response.status}`, 'success');
+            } catch (error) {
+                addLog(`❌ Endpoint auth inaccessible: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            addLog('🔍 Test de connexion avec utilisateur test...', 'info');
+            const backendUrl = getApiBaseUrl();
+
+            const params = new URLSearchParams();
+            params.append('username', 'test@example.com');
+            params.append('password', 'testpassword');
+
+            try {
+                const response = await fetch(`${backendUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog(`✅ Login réussi: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    addLog(`❌ Login échoué: ${response.status} - ${JSON.stringify(errorData)}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Erreur de login: ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            addLog('🚀 Page de diagnostic chargée', 'info');
+            setTimeout(() => {
+                testBackendHealth();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

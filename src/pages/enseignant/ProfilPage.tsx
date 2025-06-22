@@ -10,7 +10,6 @@ interface EnseignantData {
   user_id: number;
   specialite: string;
   grade: string;
-  etablissement: string;
   photo?: string;
   date_recrutement?: string;
   user?: {
@@ -70,7 +69,6 @@ const ProfilPage = () => {
               user_id: number;
               specialite: string;
               grade: string;
-              etablissement: string;
             };
           }>('/enseignant/profil', { method: 'GET' });
 
@@ -81,7 +79,6 @@ const ProfilPage = () => {
             user_id: profilResponse.enseignant.user_id,
             specialite: profilResponse.enseignant.specialite,
             grade: profilResponse.enseignant.grade,
-            etablissement: profilResponse.enseignant.etablissement,
             user: profilResponse.user
           });
 
@@ -120,7 +117,6 @@ const ProfilPage = () => {
             user_id: user.id,
             specialite: 'Non renseigné',
             grade: 'Non renseigné',
-            etablissement: 'Non renseigné',
             user: {
               ...user,
               telephone: user.telephone || 'Non renseigné'
@@ -139,7 +135,6 @@ const ProfilPage = () => {
             user_id: user.id,
             specialite: 'Non renseigné',
             grade: 'Non renseigné',
-            etablissement: 'Non renseigné',
             user: {
               ...user,
               telephone: user.telephone || 'Non renseigné'
@@ -180,10 +175,9 @@ const ProfilPage = () => {
   const prenom = userData?.prenom || 'Non renseigné';
   const email = userData?.email || 'Non renseigné';
   const telephone = userData?.telephone || 'Non renseigné';
-  const adresse = userData?.adresse || 'Non renseigné';
+  const adresse = (userData as any)?.adresse || 'Non renseigné';
   const specialite = enseignantData?.specialite || 'Non renseigné';
   const grade = enseignantData?.grade || 'Non renseigné';
-  const etablissement = enseignantData?.etablissement || 'Non renseigné';
   const dateInscription = userData?.created_at ? formatDate(userData.created_at) : 'Non renseigné';
   const dateRecrutement = enseignantData?.date_recrutement ? formatDate(enseignantData.date_recrutement) : 'Non renseigné';
 
@@ -331,10 +325,6 @@ const ProfilPage = () => {
 						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
 						  <Calendar className="w-5 h-5 text-purple-500" />
 						  <span className="text-gray-700 font-medium">Inscrit le: {dateInscription}</span>
-						</div>
-						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-						  <MapPin className="w-5 h-5 text-red-500" />
-						  <span className="text-gray-700 font-medium">Établissement: {etablissement}</span>
 						</div>
 					  </div>
 					</div>

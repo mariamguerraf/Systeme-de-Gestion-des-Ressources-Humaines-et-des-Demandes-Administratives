@@ -16,7 +16,7 @@ import CongePage from "./pages/fonctionnaire administré/CongePage";
 import OrdreMissionPage from "./pages/enseignant/OrdreMissionPage";
 import PageDemandesEnseignant from "./pages/enseignant/PageDemandesEnseignant";
 import Heures_sup from "./pages/enseignant/heures_sup";
-import AbsencePage from "./pages/enseignant/AbsencePage";
+// import AbsencePage from "./pages/enseignant/AbsencePage";
 import ProfilFonctionnaire from './pages/fonctionnaire administré/ProfilPage';
 import DemandesFonctionnaire from './pages/fonctionnaire administré/DemandesPage';
 import OrdreMissionFonctionnaire from './pages/fonctionnaire administré/OrdreMissionPage';
@@ -30,16 +30,20 @@ import TestLoginPage from './components/TestLoginPage';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+const App = () => {
+  console.log('🚀 App - Composant principal chargé');
+  console.log('🌐 Location:', window.location.href);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
-            
+
             {/* Route de test pour la connexion API */}
             <Route path="/test-login" element={<TestLoginPage />} />
 
@@ -80,7 +84,7 @@ const App = () => (
                 <Demandes />
               </ProtectedRoute>
             } />
-            
+
             {/* Routes Secrétaire avec préfixe */}
             <Route path="/secretaire/dashboard" element={
               <ProtectedRoute allowedRoles={['secretaire']}>
@@ -141,11 +145,13 @@ const App = () => (
                 <Heures_sup />
               </ProtectedRoute>
             } />
+            {/*
             <Route path="/enseignant/absence" element={
               <ProtectedRoute allowedRoles={['enseignant']}>
                 <AbsencePage />
               </ProtectedRoute>
             } />
+            */}
 
             {/* Routes Fonctionnaire */}
             <Route path="/fonctionnaire/profil" element={
@@ -198,5 +204,6 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
+};
 
 export default App;

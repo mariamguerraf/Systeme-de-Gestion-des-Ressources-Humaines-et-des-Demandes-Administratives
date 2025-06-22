@@ -27,7 +27,7 @@ async def get_demandes(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role.value in ["admin", "secretaire"]:
+    if current_user.role in ["ADMIN", "SECRETAIRE"]:
         # Admin et secrétaire voient toutes les demandes
         demandes = db.query(Demande).offset(skip).limit(limit).all()
     else:
@@ -48,7 +48,7 @@ async def get_demande(
         raise HTTPException(status_code=404, detail="Demande non trouvée")
 
     # Vérifier les permissions
-    if current_user.role.value not in ["admin", "secretaire"] and demande.user_id != current_user.id:
+    if current_user.role not in ["ADMIN", "SECRETAIRE"] and demande.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
 
     return demande
@@ -65,11 +65,11 @@ async def update_demande(
         raise HTTPException(status_code=404, detail="Demande non trouvée")
 
     # Vérifier les permissions
-    if current_user.role.value not in ["admin", "secretaire"] and demande.user_id != current_user.id:
+    if current_user.role not in ["ADMIN", "SECRETAIRE"] and demande.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
 
     # Seuls admin et secrétaire peuvent changer le statut
-    if demande_update.statut and current_user.role.value not in ["admin", "secretaire"]:
+    if demande_update.statut and current_user.role not in ["ADMIN", "SECRETAIRE"]:
         raise HTTPException(status_code=403, detail="Seuls les administrateurs peuvent changer le statut")
 
     update_data = demande_update.dict(exclude_unset=True)
@@ -91,7 +91,7 @@ async def delete_demande(
         raise HTTPException(status_code=404, detail="Demande non trouvée")
 
     # Vérifier les permissions
-    if current_user.role.value not in ["admin", "secretaire"] and demande.user_id != current_user.id:
+    if current_user.role not in ["ADMIN", "SECRETAIRE"] and demande.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
 
     db.delete(demande)

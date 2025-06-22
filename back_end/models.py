@@ -66,9 +66,8 @@ class Enseignant(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
     specialite = Column(String)
     grade = Column(String)
-    etablissement = Column(String)
     photo = Column(String, nullable=True)  # URL de la photo de profil
-    
+
     # Relations
     user = relationship("User")
 
@@ -80,6 +79,6 @@ class Fonctionnaire(Base):
     service = Column(String)
     poste = Column(String)
     grade = Column(String)
-    
+
     # Relations
     user = relationship("User")

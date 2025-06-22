@@ -4,6 +4,8 @@ import LoginForm from './LoginForm';
 import LoginBackground from './LoginBackground';
 
 const LoginPage = () => {
+  console.log('🔐 LoginPage - Composant chargé');
+
   return (
     <div className="flex min-h-screen bg-white overflow-hidden">
       {/* Left side with image */}
@@ -12,6 +14,8 @@ const LoginPage = () => {
           src="https://images.unsplash.com/photo-1558021211-6d1403321394?q=80&w=2465&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt="Beautiful landscape"
           className="absolute inset-0 w-full h-full object-cover"
+          onLoad={() => console.log('🖼️ Image de fond chargée')}
+          onError={() => console.log('❌ Erreur de chargement de l\'image de fond')}
         />
         <div className="absolute inset-0"></div>
       </div>

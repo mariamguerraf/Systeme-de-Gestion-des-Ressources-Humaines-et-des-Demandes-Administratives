@@ -1,7 +1,7 @@
 // Gestion des enseignants par le cadmin
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, Building, GraduationCap, Award, FileText } from 'lucide-react';
+import { Shield, UserCheck, Plus, Edit3, Trash2, Eye, Search, Filter, User, Lock, Phone, Mail, MapPin, CreditCard, GraduationCap, Award, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 import { getApiBaseUrl } from '../../utils/config';
@@ -11,13 +11,11 @@ interface Enseignant {
   id: number;
   user_id: number;
   nom: string;
-  prenom: string;
-  email: string;
+  prenom: string;  email: string;
   telephone?: string;
   adresse?: string;
   cin?: string;  specialite?: string;
   grade?: string;
-  etablissement?: string;
   photo?: string;
   statut: 'Actif' | 'Inactif';  user?: {
     id: number;
@@ -68,13 +66,11 @@ const CadminEnseignants = () => {
         user_id: ens.user_id,
         nom: ens.user?.nom || '',
         prenom: ens.user?.prenom || '',
-        email: ens.user?.email || '',
-        telephone: ens.user?.telephone || '',
+        email: ens.user?.email || '',        telephone: ens.user?.telephone || '',
         adresse: ens.user?.adresse || '',
         cin: ens.user?.cin || '',
         specialite: ens.specialite || '',
         grade: ens.grade || '',
-        etablissement: ens.etablissement || '',
         photo: ens.photo || null,
         statut: 'Actif' as const,
         user: ens.user
@@ -86,8 +82,7 @@ const CadminEnseignants = () => {
     } finally {
       setLoading(false);
     }
-  };
-  // État pour le formulaire de création
+  };  // État pour le formulaire de création
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -97,8 +92,7 @@ const CadminEnseignants = () => {
     cin: '',
     password: '',
     specialite: '',
-    grade: '',
-    etablissement: ''
+    grade: ''
   });
 
   // État pour l'upload de photo
@@ -116,8 +110,7 @@ const CadminEnseignants = () => {
     const matchesStatus = statusFilter === '' || enseignant.statut === statusFilter;
 
     return matchesSearch && matchesStatus;
-  });
-  const handleCreate = () => {
+  });  const handleCreate = () => {
     setModalType('create');
     setSelectedEnseignant(null);
     // Réinitialiser le formulaire
@@ -130,13 +123,13 @@ const CadminEnseignants = () => {
       cin: '',
       password: '',
       specialite: '',
-      grade: '',
-      etablissement: ''
+      grade: ''
     });
     // Réinitialiser l'état de photo
     resetPhotoState();
-    setShowModal(true);
-  };  const handleEdit = (enseignant: Enseignant) => {
+    setShowModal(true);  };
+
+  const handleEdit = (enseignant: Enseignant) => {
     setModalType('edit');
     setSelectedEnseignant(enseignant);
     // Pré-remplir le formulaire avec TOUTES les données disponibles
@@ -149,8 +142,7 @@ const CadminEnseignants = () => {
       cin: enseignant.cin || '',
       password: '', // Laisser vide pour modification
       specialite: enseignant.specialite || '',
-      grade: enseignant.grade || '',
-      etablissement: enseignant.etablissement || ''
+      grade: enseignant.grade || ''
     });
     // Réinitialiser l'état de photo (on affichera l'actuelle séparément)
     resetPhotoState();
@@ -706,7 +698,7 @@ const CadminEnseignants = () => {
                             value={formData.email}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="email@universite.ma"
+                            placeholder="email@univ.ma"
                             required
                           />
                         </div>
@@ -722,7 +714,7 @@ const CadminEnseignants = () => {
                             value={formData.telephone}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0612345678"
+                            placeholder="0X XX XX XX XX"
                           />
                         </div>
 
@@ -849,27 +841,11 @@ const CadminEnseignants = () => {
                           >
                             <option value="">Sélectionner un grade</option>
                             <option value="Professeur">Professeur</option>
-                            <option value="Professeur Associé">Professeur Associé</option>
-                            <option value="Professeur Assistant">Professeur Assistant</option>
+                            <option value="Professeur Associé">Professeur Associé</option>                            <option value="Professeur Assistant">Professeur Assistant</option>
                             <option value="Maître de Conférences">Maître de Conférences</option>
                             <option value="Chargé de Cours">Chargé de Cours</option>
                             <option value="Vacataire">Vacataire</option>
                           </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Building className="w-4 h-4 inline mr-1" />
-                            Établissement
-                          </label>
-                          <input
-                            type="text"
-                            name="etablissement"
-                            value={formData.etablissement}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Nom de l'établissement"
-                          />
                         </div>
                       </div>
                     </div>
@@ -1026,7 +1002,7 @@ const CadminEnseignants = () => {
                             value={formData.email}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="email@universite.ma"
+                            placeholder="email@univ.ma"
                             required
                           />
                         </div>
@@ -1042,7 +1018,7 @@ const CadminEnseignants = () => {
                             value={formData.telephone}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0612345678"
+                            placeholder="0X XX XX XX XX"
                           />
                         </div>
 
@@ -1190,23 +1166,7 @@ const CadminEnseignants = () => {
                             <option value="Professeur Assistant">Professeur Assistant</option>
                             <option value="Maître de Conférences">Maître de Conférences</option>
                             <option value="Chargé de Cours">Chargé de Cours</option>
-                            <option value="Vacataire">Vacataire</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Building className="w-4 h-4 inline mr-1" />
-                            Établissement
-                          </label>
-                          <input
-                            type="text"
-                            name="etablissement"
-                            value={formData.etablissement}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Nom de l'établissement"
-                          />
+                            <option value="Vacataire">Vacataire</option>                          </select>
                         </div>
                       </div>
                     </div>

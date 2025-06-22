@@ -80,7 +80,6 @@ class Demande(DemandeBase):
 class EnseignantBase(BaseModel):
     specialite: Optional[str] = None
     grade: Optional[str] = None
-    etablissement: Optional[str] = None
     photo: Optional[str] = None
 
 class EnseignantCreate(EnseignantBase):
@@ -124,7 +123,21 @@ class EnseignantCreateComplete(BaseModel):
     # Informations spécifiques enseignant
     specialite: Optional[str] = None
     grade: Optional[str] = None
-    etablissement: Optional[str] = None
+    photo: Optional[str] = None
+
+# Schéma pour modifier un enseignant complet (utilisateur + infos enseignant)
+class EnseignantUpdateComplete(BaseModel):
+    # Informations utilisateur (toutes optionnelles en modification)
+    email: Optional[EmailStr] = None
+    nom: Optional[str] = None
+    prenom: Optional[str] = None
+    telephone: Optional[str] = None
+    adresse: Optional[str] = None
+    cin: Optional[str] = None
+    password: Optional[str] = None
+    # Informations spécifiques enseignant
+    specialite: Optional[str] = None
+    grade: Optional[str] = None
     photo: Optional[str] = None
 
 # Schéma pour la réponse complète enseignant
@@ -133,7 +146,6 @@ class EnseignantComplete(BaseModel):
     user_id: int
     specialite: Optional[str] = None
     grade: Optional[str] = None
-    etablissement: Optional[str] = None
     photo: Optional[str] = None
     user: User
 

@@ -100,7 +100,6 @@ export interface Enseignant {
   user_id: number;
   specialite?: string;
   grade?: string;
-  etablissement?: string;
   user: User;
 }
 

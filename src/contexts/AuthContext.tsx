@@ -26,22 +26,29 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  console.log('🔐 AuthProvider - Initialisation');
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔄 AuthProvider - useEffect initAuth');
     const initAuth = async () => {
       const token = localStorage.getItem('access_token');
+      console.log('🔑 AuthProvider - Token trouvé:', !!token);
       if (token) {
         try {
+          console.log('👤 AuthProvider - Récupération utilisateur courant');
           const currentUser = await apiService.getCurrentUser();
+          console.log('✅ AuthProvider - Utilisateur récupéré:', currentUser);
           setUser(currentUser as User);
         } catch (error) {
-          console.error('Failed to get current user:', error);
+          console.error('❌ AuthProvider - Erreur récupération utilisateur:', error);
           localStorage.removeItem('access_token');
         }
       }
       setLoading(false);
+      console.log('🏁 AuthProvider - Initialisation terminée');
     };
 
     initAuth();
@@ -52,10 +59,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔑 Tentative de connexion avec:', credentials.email);
       await apiService.login(credentials.email, credentials.password);
       console.log('✅ Connexion API réussie');
-      
+
       const currentUser = await apiService.getCurrentUser();
       console.log('👤 Utilisateur récupéré:', currentUser);
-      
+
       setUser(currentUser as User);
       console.log('🔄 Utilisateur mis à jour dans le contexte');
     } catch (error) {

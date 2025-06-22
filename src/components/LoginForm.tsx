@@ -9,6 +9,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
+  console.log('📝 LoginForm - Composant chargé');
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -18,24 +20,32 @@ const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  console.log('🔐 LoginForm - Hooks initialisés');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📤 LoginForm - Tentative de connexion');
     setErrorMessage("");
     if (!email || !password) {
-      setErrorMessage("Veuillez remplir tous les champs");
+      const msg = "Veuillez remplir tous les champs";
+      console.log('❌ LoginForm - Champs manquants');
+      setErrorMessage(msg);
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs",
+        description: msg,
         variant: "destructive",
       });
       return;
     }
     setIsLoading(true);
     try {
+      console.log('🔑 LoginForm - Appel à login()');
       await login({ email, password });
+      console.log('✅ LoginForm - Connexion réussie');
       navigate("/dashboard-router", { replace: true });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Email ou mot de passe incorrect";
+      console.log('❌ LoginForm - Erreur de connexion:', errorMsg);
       setErrorMessage(errorMsg);
       toast({
         title: "Erreur de connexion",

@@ -1,89 +1,211 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, Upload, Calendar, User, AlertCircle, Clock, X, Send } from 'lucide-react';
+import { FileText, Calendar, Send, X, User, Upload, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { useToast } from '../../hooks/use-toast';
+import { apiService } from '../../services/api';
 
 const HeuresSup = () => {
   const [formData, setFormData] = useState({
-	typeAttestation: '',
-	motif: '',
-	dateDebut: '',
-	dateFin: '',
-	observations: ''
+    dateDebut: '',
+    dateFin: '',
+    heures: '',
+    motif: '',
+    description: '',
+    observations: ''
   });
-
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleInputChange = (e) => {
-	const { name, value } = e.target;
-	setFormData(prev => ({
-	  ...prev,
-	  [name]: value
-	}));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSubmit = (e) => {
-	e.preventDefault();
-	console.log('Demande d\'heures supplémentaires soumise:', formData);
-	console.log('Fichiers attachés:', selectedFiles);
-	alert('Demande d\'heures supplémentaires soumise avec succès !');
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      // Traitement des fichiers ici
+      console.log('Fichiers sélectionnés:', files);
+    }
   };
 
-  const handleFileSelect = () => {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.multiple = true;
-	input.accept = '.pdf,.jpg,.jpeg,.png';
-	input.onchange = (e) => {
-	  const files = Array.from((e.target as HTMLInputElement).files || []);
-	  const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
-	  if (validFiles.length !== files.length) {
-		alert('Certains fichiers sont trop volumineux (max 5MB)');
-	  }
-	  setSelectedFiles(prev => [...prev, ...validFiles]);
-	};
-	input.click();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const demandeData = {
+        type_demande: 'HEURES_SUP',
+        titre: `Demande d'heures supplémentaires - ${formData.heures}h`,
+        description: `${formData.description}\nNombre d'heures: ${formData.heures}h\nMotif: ${formData.motif}`,
+        date_debut: formData.dateDebut,
+        date_fin: formData.dateFin
+      };
+
+      await apiService.createDemande(demandeData);
+
+      toast({
+        title: "Succès",
+        description: "Votre demande d'heures supplémentaires a été soumise avec succès",
+      });
+
+      navigate('/enseignant/demandes');
+    } catch (error: any) {
+      console.error('Erreur lors de la soumission:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la soumission de la demande",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
-	navigate('/enseignant/demandes');
-  };
-
-  const handleLogout = () => {
-    navigate('/');
+    navigate('/enseignant/demandes');
   };
 
   return (
-	<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-	  {/* Header avec dégradé moderne */}
-	  <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-blue-600 text-white px-6 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Système de Gestion</h1>
-            <nav className="ml-8 flex space-x-1">
-              <Link to="/enseignant/profil" className="px-6 py-3 bg-white bg-opacity-10 rounded-xl hover:bg-opacity-20 transition-all duration-200 backdrop-blur-sm hover:underline">Profil</Link>
-              <Link to="/enseignant/demandes" className="px-6 py-3 bg-white bg-opacity-20 rounded-xl border-b-2 border-yellow-300 backdrop-blur-sm font-medium hover:underline">Demandes</Link>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-medium">Bienvenue, Enseignant</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"
-            >
-              Déconnexion
-            </button>
-          </div>
+          <h1 className="text-xl font-semibold">Système de Gestion</h1>
+          <span>Demande d'Heures Supplémentaires</span>
         </div>
+        <nav className="mt-4">
+          <div className="flex space-x-6">
+            <Link to="/enseignant/profil" className="hover:underline">Profil</Link>
+            <Link to="/enseignant/demandes" className="border-b-2 border-white pb-1 hover:underline">Demandes</Link>
+          </div>
+        </nav>
       </header>
+
+      <main className="container mx-auto px-6 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-3">
+              <FileText className="w-6 h-6 text-blue-600" />
+              <span>Demande d'Heures Supplémentaires</span>
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date de début *
+                    </label>
+                    <input
+                      type="date"
+                      name="dateDebut"
+                      value={formData.dateDebut}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date de fin *
+                    </label>
+                    <input
+                      type="date"
+                      name="dateFin"
+                      value={formData.dateFin}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre d'heures *
+                    </label>
+                    <input
+                      type="number"
+                      name="heures"
+                      value={formData.heures}
+                      onChange={handleInputChange}
+                      required
+                      min="1"
+                      max="40"
+                      placeholder="Ex: 5"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Motif *
+                    </label>
+                    <select
+                      name="motif"
+                      value={formData.motif}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Sélectionner un motif</option>
+                      <option value="Remplacement d'un collègue">Remplacement d'un collègue</option>
+                      <option value="Cours de soutien">Cours de soutien</option>
+                      <option value="Activités parascolaires">Activités parascolaires</option>
+                      <option value="Formation">Formation</option>
+                      <option value="Examens">Surveillance d'examens</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description détaillée
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  placeholder="Décrivez en détail les raisons de votre demande d'heures supplémentaires..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isLoading ? 'Envoi...' : 'Soumettre la demande'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
 
 	  {/* Main Content */}
 	  <main className="container mx-auto px-6 py-8">
@@ -229,7 +351,7 @@ const HeuresSup = () => {
 			</div>
 
 			{/* Boutons d'action stylisés */}
-			<div className="mt-10 flex justify-end space-x-4">
+			<div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 pt-8">
 			  <button
 				type="button"
 				onClick={handleCancel}
