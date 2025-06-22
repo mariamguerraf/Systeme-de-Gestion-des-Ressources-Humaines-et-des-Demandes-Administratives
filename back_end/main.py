@@ -721,38 +721,91 @@ async def update_enseignant(
         conn = get_sqlite_connection()
         cursor = conn.cursor()
 
-        # Vérifier que l'enseignant existe
-        cursor.execute("SELECT user_id FROM enseignants WHERE id = ?", (enseignant_id,))
+        # Vérifier que l'enseignant existe et récupérer les données actuelles
+        cursor.execute('''
+            SELECT u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin,
+                   e.specialite, e.grade, e.user_id
+            FROM enseignants e
+            JOIN users u ON e.user_id = u.id
+            WHERE e.id = ?
+        ''', (enseignant_id,))
         result = cursor.fetchone()
         if not result:
             raise HTTPException(status_code=404, detail="Enseignant non trouvé")
 
         user_id = result['user_id']
+        
+        # Préparer les données de mise à jour en gardant les valeurs existantes si non fournies
+        user_updates = []
+        user_params = []
+        
+        # Pour chaque champ utilisateur, utiliser la nouvelle valeur si fournie, sinon garder l'ancienne
+        new_nom = enseignant_data.get('nom')
+        if new_nom is not None and new_nom.strip() != "":
+            user_updates.append("nom = ?")
+            user_params.append(new_nom)
+        
+        new_prenom = enseignant_data.get('prenom')
+        if new_prenom is not None and new_prenom.strip() != "":
+            user_updates.append("prenom = ?")
+            user_params.append(new_prenom)
+        
+        new_email = enseignant_data.get('email')
+        if new_email is not None and new_email.strip() != "":
+            # Vérifier l'unicité de l'email si il change
+            if new_email != result['email']:
+                cursor.execute("SELECT id FROM users WHERE email = ? AND id != ?", (new_email, user_id))
+                if cursor.fetchone():
+                    raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
+            user_updates.append("email = ?")
+            user_params.append(new_email)
+        
+        new_telephone = enseignant_data.get('telephone')
+        if new_telephone is not None and new_telephone.strip() != "":
+            user_updates.append("telephone = ?")
+            user_params.append(new_telephone)
+        
+        new_adresse = enseignant_data.get('adresse')
+        if new_adresse is not None and new_adresse.strip() != "":
+            user_updates.append("adresse = ?")
+            user_params.append(new_adresse)
+        
+        new_cin = enseignant_data.get('cin')
+        if new_cin is not None and new_cin.strip() != "":
+            user_updates.append("cin = ?")
+            user_params.append(new_cin)
 
-        # Mettre à jour les données utilisateur
-        cursor.execute('''
-            UPDATE users
-            SET nom = ?, prenom = ?, telephone = ?, adresse = ?, cin = ?
-            WHERE id = ?
-        ''', (
-            enseignant_data.get('nom'),
-            enseignant_data.get('prenom'),
-            enseignant_data.get('telephone'),
-            enseignant_data.get('adresse'),
-            enseignant_data.get('cin'),
-            user_id
-        ))
+        # Mettre à jour les données utilisateur seulement si il y a des changements
+        if user_updates:
+            user_params.append(user_id)
+            cursor.execute(f'''
+                UPDATE users
+                SET {', '.join(user_updates)}
+                WHERE id = ?
+            ''', user_params)
 
-        # Mettre à jour les données enseignant
-        cursor.execute('''
-            UPDATE enseignants
-            SET specialite = ?, grade = ?
-            WHERE id = ?
-        ''', (
-            enseignant_data.get('specialite'),
-            enseignant_data.get('grade'),
-            enseignant_id
-        ))
+        # Préparer les données de mise à jour pour l'enseignant
+        enseignant_updates = []
+        enseignant_params = []
+        
+        new_specialite = enseignant_data.get('specialite')
+        if new_specialite is not None and new_specialite.strip() != "":
+            enseignant_updates.append("specialite = ?")
+            enseignant_params.append(new_specialite)
+        
+        new_grade = enseignant_data.get('grade')
+        if new_grade is not None and new_grade.strip() != "":
+            enseignant_updates.append("grade = ?")
+            enseignant_params.append(new_grade)
+
+        # Mettre à jour les données enseignant seulement si il y a des changements
+        if enseignant_updates:
+            enseignant_params.append(enseignant_id)
+            cursor.execute(f'''
+                UPDATE enseignants
+                SET {', '.join(enseignant_updates)}
+                WHERE id = ?
+            ''', enseignant_params)
 
         conn.commit()
 
