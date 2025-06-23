@@ -23,7 +23,7 @@ from models import Base, User, UserRole, Enseignant, Fonctionnaire, Demande, Dem
 from schemas import EnseignantComplete
 
 # Import des routeurs
-from routers import enseignant
+from routers import enseignant, demandes
 
 # Ajouter un routeur avec le nom singulier pour compatibilité
 from fastapi import APIRouter
@@ -61,6 +61,7 @@ app.add_middleware(
 
 # Inclure les routeurs
 app.include_router(enseignant.router)
+app.include_router(demandes.router)  # Réactivé pour les demandes
 app.include_router(router_enseignant_singular)
 
 # Créer le dossier pour les images
@@ -480,7 +481,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     }
 
 # Get current user info endpoint
-@app.get("/auth/me", response_model=User)
+@app.get("/auth/me")  # Retiré response_model=User temporairement
 async def read_users_me(authorization: str = Header(None)):
     # Extraire les informations du token
     if authorization and authorization.startswith("Bearer "):
@@ -514,7 +515,7 @@ async def read_users_me(authorization: str = Header(None)):
                             "role": user_data["role"].lower(),
                             "is_active": bool(user_data["is_active"]),
                             "created_at": user_data["created_at"] or "2025-01-01T00:00:00",
-                            "updated_at": user_data["updated_at"]
+                            "updated_at": user_data["updated_at"] or None
                         }
 
                 except Exception as e:
@@ -734,22 +735,22 @@ async def update_enseignant(
             raise HTTPException(status_code=404, detail="Enseignant non trouvé")
 
         user_id = result['user_id']
-        
+
         # Préparer les données de mise à jour en gardant les valeurs existantes si non fournies
         user_updates = []
         user_params = []
-        
+
         # Pour chaque champ utilisateur, utiliser la nouvelle valeur si fournie, sinon garder l'ancienne
         new_nom = enseignant_data.get('nom')
         if new_nom is not None and new_nom.strip() != "":
             user_updates.append("nom = ?")
             user_params.append(new_nom)
-        
+
         new_prenom = enseignant_data.get('prenom')
         if new_prenom is not None and new_prenom.strip() != "":
             user_updates.append("prenom = ?")
             user_params.append(new_prenom)
-        
+
         new_email = enseignant_data.get('email')
         if new_email is not None and new_email.strip() != "":
             # Vérifier l'unicité de l'email si il change
@@ -759,17 +760,17 @@ async def update_enseignant(
                     raise HTTPException(status_code=400, detail="Un utilisateur avec cet email existe déjà")
             user_updates.append("email = ?")
             user_params.append(new_email)
-        
+
         new_telephone = enseignant_data.get('telephone')
         if new_telephone is not None and new_telephone.strip() != "":
             user_updates.append("telephone = ?")
             user_params.append(new_telephone)
-        
+
         new_adresse = enseignant_data.get('adresse')
         if new_adresse is not None and new_adresse.strip() != "":
             user_updates.append("adresse = ?")
             user_params.append(new_adresse)
-        
+
         new_cin = enseignant_data.get('cin')
         if new_cin is not None and new_cin.strip() != "":
             user_updates.append("cin = ?")
@@ -787,12 +788,12 @@ async def update_enseignant(
         # Préparer les données de mise à jour pour l'enseignant
         enseignant_updates = []
         enseignant_params = []
-        
+
         new_specialite = enseignant_data.get('specialite')
         if new_specialite is not None and new_specialite.strip() != "":
             enseignant_updates.append("specialite = ?")
             enseignant_params.append(new_specialite)
-        
+
         new_grade = enseignant_data.get('grade')
         if new_grade is not None and new_grade.strip() != "":
             enseignant_updates.append("grade = ?")
@@ -1821,6 +1822,132 @@ async def upload_enseignant_photo(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
+# Endpoint pour créer une demande (solution directe)
+@app.post("/demandes-direct")
+async def create_demande_direct(
+    demande_data: dict,
+    authorization: str = Header(None)
+):
+    """Créer une nouvelle demande - endpoint direct avec authentification fonctionnelle"""
+    # Utiliser la même logique d'authentification que /auth/me
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Token manquant",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    token = authorization.replace("Bearer ", "")
+
+    # Le token a le format: test_token_{user_id}_{role}
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 3:
+            user_id = parts[2]
+            role = parts[3] if len(parts) > 3 else ""
+
+            # Vérifier d'abord dans la base de données SQLite
+            try:
+                conn = get_sqlite_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM users WHERE id = ? AND role = ? AND is_active = 1",
+                             (user_id, role.upper()))
+                user_data = cursor.fetchone()
+                conn.close()
+
+                if user_data:
+                    current_user = dict(user_data)
+                else:
+                    # Fallback vers les TEST_USERS pour la compatibilité
+                    current_user = None
+                    for email, test_user_data in TEST_USERS.items():
+                        if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
+                            current_user = test_user_data
+                            break
+
+                    if not current_user:
+                        raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
+
+            except Exception as e:
+                # Fallback vers les TEST_USERS
+                current_user = None
+                for email, test_user_data in TEST_USERS.items():
+                    if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
+                        current_user = test_user_data
+                        break
+
+                if not current_user:
+                    raise HTTPException(status_code=401, detail="Erreur d'authentification")
+
+            # Créer la demande
+            global demande_id_counter
+            from datetime import datetime
+
+            # Sauvegarder dans la base SQLite
+            try:
+                conn = get_sqlite_connection()
+                cursor = conn.cursor()
+
+                # Insérer la nouvelle demande dans SQLite
+                cursor.execute('''
+                    INSERT INTO demandes (user_id, type_demande, titre, description, date_debut, date_fin, statut, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 'EN_ATTENTE', datetime('now'))
+                ''', (
+                    current_user["id"],
+                    demande_data.get("type_demande", "ATTESTATION"),
+                    demande_data.get("titre", ""),
+                    demande_data.get("description", ""),
+                    demande_data.get("date_debut"),
+                    demande_data.get("date_fin")
+                ))
+
+                sqlite_demande_id = cursor.lastrowid
+                conn.commit()
+                conn.close()
+
+                print(f"✅ Demande sauvegardée dans SQLite avec l'ID: {sqlite_demande_id}")
+
+            except Exception as e:
+                print(f"❌ Erreur lors de la sauvegarde SQLite: {e}")
+                sqlite_demande_id = demande_id_counter
+
+            # Créer aussi dans DEMANDES_DB pour compatibilité
+            new_demande = {
+                "id": sqlite_demande_id,
+                "user_id": current_user["id"],
+                "type_demande": demande_data.get("type_demande", "ATTESTATION"),
+                "titre": demande_data.get("titre", ""),
+                "description": demande_data.get("description", ""),
+                "date_debut": demande_data.get("date_debut"),
+                "date_fin": demande_data.get("date_fin"),
+                "statut": "EN_ATTENTE",
+                "commentaire_admin": "",
+                "created_at": datetime.now().isoformat(),
+                "user": {
+                    "id": current_user["id"],
+                    "email": current_user.get("email", ""),
+                    "nom": current_user.get("nom", ""),
+                    "prenom": current_user.get("prenom", ""),
+                    "role": current_user.get("role", "").lower(),
+                    "is_active": True,
+                    "created_at": datetime.now().isoformat()
+                }
+            }
+
+            DEMANDES_DB[sqlite_demande_id] = new_demande
+            demande_id_counter = max(demande_id_counter, sqlite_demande_id + 1)
+
+            # Sauvegarder les données dans les fichiers
+            save_all_data()
+
+            return new_demande
+
+    raise HTTPException(
+        status_code=401,
+        detail="Token invalide",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
 # Fonction de connexion SQLite simple (fallback)
 def get_sqlite_connection():
     """Obtenir une connexion SQLite directe pour debug"""
@@ -1877,6 +2004,92 @@ async def get_enseignants_test():
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# Endpoint temporaire pour créer des demandes (contournement du problème d'auth dans router)
+@app.post("/demandes-temp")
+async def create_demande_temp(
+    demande_data: dict,
+    authorization: str = Header(None)
+):
+    # Extraire les informations du token (même logique que /auth/me)
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.replace("Bearer ", "")
+
+        # Le token a le format: test_token_{user_id}_{role}
+        if token.startswith("test_token_"):
+            parts = token.split("_")
+            if len(parts) >= 3:
+                user_id = parts[2]
+                role = parts[3] if len(parts) > 3 else ""
+
+                # Vérifier d'abord dans la base de données SQLite
+
+                try:
+                    conn = get_sqlite_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT * FROM users WHERE id = ? AND role = ? AND is_active = 1",
+                                 (user_id, role.upper()))
+                    user_data = cursor.fetchone()
+                    conn.close()
+
+                    if user_data:
+                        current_user = dict(user_data)
+                    else:
+                        # Fallback vers TEST_USERS pour la compatibilité
+                        current_user = None
+                        for email, user_info in TEST_USERS.items():
+                            if str(user_info["id"]) == user_id and user_info["role"].upper() == role.upper():
+                                current_user = user_info
+                                break
+
+                except Exception as e:
+                    print(f"Erreur lors de l'accès à la base de données: {e}")
+                    # Fallback vers TEST_USERS en cas d'erreur
+                    current_user = None
+                    for email, user_info in TEST_USERS.items():
+                        if str(user_info["id"]) == user_id and user_info["role"].upper() == role.upper():
+                            current_user = user_info
+                            break
+
+                if not current_user:
+                    raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
+
+                # Créer la demande
+                global demande_id_counter
+                from datetime import datetime
+
+                new_demande = {
+                    "id": demande_id_counter,
+                    "user_id": current_user["id"],
+                    "type_demande": demande_data.get("type_demande", "ATTESTATION"),
+                    "titre": demande_data.get("titre", ""),
+                    "description": demande_data.get("description", ""),
+                    "date_debut": demande_data.get("date_debut"),
+                    "date_fin": demande_data.get("date_fin"),
+                    "statut": "EN_ATTENTE",
+                    "commentaire_admin": None,
+                    "created_at": datetime.now().isoformat(),
+                    "user": {
+                        "id": current_user["id"],
+                        "email": current_user.get("email", ""),
+                        "nom": current_user.get("nom", ""),
+                        "prenom": current_user.get("prenom", ""),
+                        "role": current_user.get("role", "").lower(),
+                        "is_active": True,
+                        "created_at": datetime.now().isoformat()
+                    }
+                }
+
+                DEMANDES_DB[demande_id_counter] = new_demande
+                demande_id_counter += 1
+
+                # Sauvegarder les données dans les fichiers
+                save_all_data()
+
+                return new_demande
+
+    # Si le token n'est pas valide, retourner une erreur
+    raise HTTPException(
+        status_code=401,
+        detail="Token invalide ou manquant",
+        headers={"WWW-Authenticate": "Bearer"}
+    )

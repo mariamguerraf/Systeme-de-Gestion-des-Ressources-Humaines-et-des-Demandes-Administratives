@@ -54,15 +54,10 @@ const OrdreMissionPage = () => {
 	  if (formData.restauration) fraisInfo.push('Restauration');
 	  if (formData.transport) fraisInfo.push('Transport');
 
-	  const demandeData = {
-		type_demande: 'ORDRE_MISSION',
-		titre: `Ordre de mission - ${formData.objetMission}`,
-		description: `Objet: ${formData.objetMission}\nDestination: ${formData.destination}\nAdresse: ${formData.adresseDestination}\nMotif: ${formData.motif}\nMoyen de transport: ${formData.moyenTransport}\nFrais prévus: ${formData.fraisPrevus}\nFrais inclus: ${fraisInfo.join(', ') || 'Aucun'}\nObservations: ${formData.observations || 'Aucune'}`,
-		date_debut: formData.dateDepart,
-		date_fin: formData.dateRetour
-	  };
+	  const titre = `Ordre de mission - ${formData.objetMission}`;
+	  const description = `Objet: ${formData.objetMission}\nDestination: ${formData.destination}\nAdresse: ${formData.adresseDestination}\nMotif: ${formData.motif}\nMoyen de transport: ${formData.moyenTransport}\nFrais prévus: ${formData.fraisPrevus}\nFrais inclus: ${fraisInfo.join(', ') || 'Aucun'}\nObservations: ${formData.observations || 'Aucune'}`;
 
-	  await apiService.createDemande(demandeData);
+	  await apiService.createDemandeOrdreMission(titre, description, formData.dateDepart, formData.dateRetour);
 	  
 	  alert('Demande d\'ordre de mission soumise avec succès!');
 	  navigate('/enseignant/demandes');

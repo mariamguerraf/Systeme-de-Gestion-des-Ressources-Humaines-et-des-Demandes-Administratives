@@ -543,10 +543,10 @@ const CadminEnseignants = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Date d'embauche</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
+              </thead>              <tbody className="divide-y divide-gray-200">
                 {filteredEnseignants.map((enseignant) => (
-                  <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">                    <td className="px-6 py-4">
+                  <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">                        {enseignant.photo ? (
                           <img
                             src={`${getApiBaseUrl()}${enseignant.photo}`}

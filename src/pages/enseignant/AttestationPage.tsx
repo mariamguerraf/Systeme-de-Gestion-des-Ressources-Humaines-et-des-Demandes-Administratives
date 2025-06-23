@@ -7,7 +7,6 @@ import { apiService } from '../../services/api';
 const AttestationPage = () => {
   const [formData, setFormData] = useState({
     typeAttestation: '',
-    motif: '',
     dateDebut: '',
     dateFin: '',
     observations: ''
@@ -29,7 +28,7 @@ const AttestationPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.typeAttestation || !formData.motif) {
+    if (!formData.typeAttestation) {
       setError('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -38,15 +37,10 @@ const AttestationPage = () => {
       setLoading(true);
       setError(null);
 
-      const demandeData = {
-        type_demande: 'ATTESTATION',
-        titre: `Demande d'attestation - ${formData.typeAttestation}`,
-        description: `Motif: ${formData.motif}\nObservations: ${formData.observations || 'Aucune'}`,
-        date_debut: formData.dateDebut || undefined,
-        date_fin: formData.dateFin || undefined
-      };
+      const titre = `Demande d'attestation - ${formData.typeAttestation}`;
+      const description = `Type d'attestation: ${formData.typeAttestation}\nObservations: ${formData.observations || 'Aucune'}${formData.dateDebut ? `\nPériode: ${formData.dateDebut}${formData.dateFin ? ` au ${formData.dateFin}` : ''}` : ''}`;
 
-      await apiService.createDemande(demandeData);
+      await apiService.createDemandeAttestation(titre, description);
       
       alert('Demande d\'attestation soumise avec succès!');
       navigate('/enseignant/demandes');
@@ -168,21 +162,6 @@ const AttestationPage = () => {
                       <option value="salaire">Attestation de Salaire</option>
                       <option value="emploi">Attestation d'Emploi</option>
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Motif de la demande *
-                    </label>
-                    <textarea
-                      name="motif"
-                      value={formData.motif}
-                      onChange={handleInputChange}
-                      rows={3}
-                      placeholder="Précisez le motif de votre demande d'attestation..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none shadow-sm"
-                      required
-                    ></textarea>
                   </div>
 
                   <div>

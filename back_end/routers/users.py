@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
 from auth import get_current_active_user, get_password_hash
-from models import User, UserRole, Enseignant
-from schemas import User as UserSchema, UserUpdate, EnseignantCreateComplete, EnseignantUpdateComplete, EnseignantComplete, EnseignantUpdateComplete
+from models import User, UserRole, Enseignant, Demande
+from schemas import User as UserSchema, UserUpdate, EnseignantCreateComplete, EnseignantUpdateComplete, EnseignantComplete, EnseignantUpdateComplete, Demande as DemandeSchema
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -283,3 +283,25 @@ async def delete_enseignant(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
+
+@router.get("/{user_id}/demandes", response_model=List[DemandeSchema])
+async def get_user_demandes(
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Récupérer les demandes d'un utilisateur spécifique"""
+    # Vérifier les permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.SECRETAIRE] and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    # Vérifier que l'utilisateur existe
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+
+    # Récupérer les demandes de l'utilisateur
+    demandes = db.query(Demande).filter(Demande.user_id == user_id).offset(skip).limit(limit).all()
+    return demandes

@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 from models import UserRole, DemandeStatus, DemandeType
 
 # User Schemas
@@ -27,8 +27,26 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+    created_at: Union[datetime, str]
+    updated_at: Optional[Union[datetime, str]] = None
+
+    @validator('created_at', pre=True)
+    def parse_created_at(cls, v):
+        if isinstance(v, str):
+            try:
+                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            except:
+                return v
+        return v
+
+    @validator('updated_at', pre=True)
+    def parse_updated_at(cls, v):
+        if isinstance(v, str):
+            try:
+                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            except:
+                return v
+        return v
 
     class Config:
         from_attributes = True

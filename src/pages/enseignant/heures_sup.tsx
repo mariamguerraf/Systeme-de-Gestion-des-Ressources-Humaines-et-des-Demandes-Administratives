@@ -40,15 +40,10 @@ const HeuresSup = () => {
     setIsLoading(true);
 
     try {
-      const demandeData = {
-        type_demande: 'HEURES_SUP',
-        titre: `Demande d'heures supplémentaires - ${formData.heures}h`,
-        description: `${formData.description}\nNombre d'heures: ${formData.heures}h\nMotif: ${formData.motif}`,
-        date_debut: formData.dateDebut,
-        date_fin: formData.dateFin
-      };
+      const titre = `Demande d'heures supplémentaires - ${formData.heures}h`;
+      const description = `${formData.description}\nNombre d'heures: ${formData.heures}h\nMotif: ${formData.motif}`;
 
-      await apiService.createDemande(demandeData);
+      await apiService.createDemandeHeuresSup(titre, description, formData.dateDebut, formData.dateFin);
 
       toast({
         title: "Succès",

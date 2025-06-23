@@ -261,6 +261,11 @@ class ApiService {
     return this.request(`/demandes/?skip=${skip}&limit=${limit}`);
   }
 
+  async getMyDemandes(skip = 0, limit = 100) {
+    // Récupérer les demandes de l'utilisateur connecté
+    return this.request(`/demandes/user/me?skip=${skip}&limit=${limit}`);
+  }
+
   async getUserDemandes(userId: number) {
     return this.request(`/users/${userId}/demandes`);
   }
@@ -293,6 +298,44 @@ class ApiService {
     return this.request(`/demandes/${demandeId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ statut: status, commentaire_admin: commentaire }),
+    });
+  }
+
+  // Endpoints spécialisés pour les demandes
+  async createDemandeAttestation(titre: string, description?: string) {
+    return this.request('/demandes-direct', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        type_demande: 'ATTESTATION',
+        titre, 
+        description 
+      }),
+    });
+  }
+
+  async createDemandeOrdreMission(titre: string, description?: string, date_debut?: string, date_fin?: string) {
+    return this.request('/demandes', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        type_demande: 'ORDRE_MISSION',
+        titre, 
+        description, 
+        date_debut, 
+        date_fin 
+      }),
+    });
+  }
+
+  async createDemandeHeuresSup(titre: string, description?: string, date_debut?: string, date_fin?: string) {
+    return this.request('/demandes', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        type_demande: 'HEURES_SUP',
+        titre, 
+        description, 
+        date_debut, 
+        date_fin 
+      }),
     });
   }
 

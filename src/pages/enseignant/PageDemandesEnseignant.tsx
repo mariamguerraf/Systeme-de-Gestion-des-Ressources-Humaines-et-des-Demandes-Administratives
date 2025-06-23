@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Plus, CheckCircle, XCircle, Clock, UploadCloud, Trash2, User } from "lucide-react";
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
+import { Demande as DemandeType, DemandeStatus, DemandeType as DemandeTypeEnum } from '../../types/api';
 
-interface Demande {
+interface DemandeLocal {
   id: number;
   type: string;
   statut: "En attente" | "Validée" | "Rejetée";
@@ -10,13 +13,9 @@ interface Demande {
 }
 
 const PageDemandesEnseignant = () => {
-  const [demandes, setDemandes] = useState<Demande[]>([
-    { id: 1, type: "Attestation de Travail", statut: "En attente", dateDemande: "2025-06-01" },
-    { id: 2, type: "Ordre de Mission", statut: "Validée", dateDemande: "2025-05-29" },
-    { id: 3, type: "Congé", statut: "Rejetée", dateDemande: "2025-05-25" },
-    { id: 4, type: "Absence", statut: "En attente", dateDemande: "2025-05-20" },
-    { id: 5, type: "Autorisation d'Heures Supplémentaires", statut: "Validée", dateDemande: "2025-05-18" }
-  ]);
+  const [demandes, setDemandes] = useState<DemandeType[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [nouvelleDemande, setNouvelleDemande] = useState({
     type: "",
@@ -24,6 +23,45 @@ const PageDemandesEnseignant = () => {
   });
 
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Charger les demandes depuis l'API
+  useEffect(() => {
+    fetchDemandes();
+  }, []);
+
+  const fetchDemandes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Essayer d'abord avec getMyDemandes (toutes les demandes filtrées côté serveur)
+      const data = await apiService.getMyDemandes();
+
+      setDemandes(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des demandes:', err);
+
+      // Si erreur 403, essayer avec getUserDemandes si on a l'ID utilisateur
+      if (err.message.includes('403') || err.message.includes('Accès refusé')) {
+        try {
+          if (user?.id) {
+            const userData = await apiService.getUserDemandes(user.id);
+            setDemandes(Array.isArray(userData) ? userData : []);
+            setError(null);
+            return;
+          }
+        } catch (secondErr: any) {
+          console.error('Erreur avec getUserDemandes:', secondErr);
+        }
+      }
+
+      setError('Impossible de charger les demandes. Vérifiez vos droits d\'accès.');
+      setDemandes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNouvelleDemandeChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     setNouvelleDemande((prev) => ({
@@ -31,6 +69,7 @@ const PageDemandesEnseignant = () => {
       [e.target.name]: e.target.value,
     }));
   };
+
   // Logique de déconnexion
   const handleLogout = () => {
     navigate('/');
@@ -55,18 +94,63 @@ const PageDemandesEnseignant = () => {
           // Si aucun cas ne correspond, on ajoute la demande normalement
           break;
       }
-      setDemandes((prev) => [
-        ...prev,
-        { id: prev.length + 1, type: nouvelleDemande.type, statut: "En attente", dateDemande: nouvelleDemande.dateDemande },
-      ]);
+
+      // Reset le form
       setNouvelleDemande({ type: "", dateDemande: "" });
     }
   };
 
-  const handleSupprimerDemande = (demandeId: number) => {
+  const handleSupprimerDemande = async (demandeId: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
-      setDemandes(demandes.filter(demande => demande.id !== demandeId));
-      alert('Demande supprimée avec succès');
+      try {
+        await apiService.deleteDemande(demandeId);
+        alert('Demande supprimée avec succès');
+        // Recharger les demandes
+        fetchDemandes();
+      } catch (error: any) {
+        console.error('Erreur lors de la suppression:', error);
+        alert(`Erreur: ${error.message || 'Impossible de supprimer la demande'}`);
+      }
+    }
+  };
+
+  // Fonction pour mapper le statut de l'API vers l'affichage
+  const mapStatutToLocal = (statut: DemandeStatus | string): "En attente" | "Validée" | "Rejetée" => {
+    switch (statut) {
+      case DemandeStatus.EN_ATTENTE:
+      case 'EN_ATTENTE':
+        return "En attente";
+      case DemandeStatus.APPROUVEE:
+      case 'APPROUVEE':
+        return "Validée";
+      case DemandeStatus.REJETEE:
+      case 'REJETEE':
+        return "Rejetée";
+      default:
+        return "En attente";
+    }
+  };
+
+  // Fonction pour mapper le type de demande pour l'affichage
+  const mapTypeToDisplay = (type: DemandeTypeEnum | string): string => {
+    switch (type) {
+      case DemandeTypeEnum.ATTESTATION:
+      case 'ATTESTATION':
+        return "Attestation de Travail";
+      case DemandeTypeEnum.ORDRE_MISSION:
+      case 'ORDRE_MISSION':
+        return "Ordre de Mission";
+      case DemandeTypeEnum.CONGE:
+      case 'CONGE':
+        return "Congé";
+      case DemandeTypeEnum.ABSENCE:
+      case 'ABSENCE':
+        return "Absence";
+      case DemandeTypeEnum.HEURES_SUP:
+      case 'HEURES_SUP':
+        return "Autorisation d'Heures Supplémentaires";
+      default:
+        return type.toString();
     }
   };
 
@@ -105,6 +189,20 @@ const PageDemandesEnseignant = () => {
               <span>Demandes en cours</span>
             </h2>
           </div>
+
+          {/* Message d'erreur */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Message de chargement */}
+          {loading && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-600">Chargement des demandes...</p>
+            </div>
+          )}
 
           {/* Formulaire de demande */}
           <div className="mt-6 bg-gray-50 border border-gray-300 p-4 rounded-lg">
@@ -163,22 +261,47 @@ const PageDemandesEnseignant = () => {
               </tr>
             </thead>
             <tbody>
-              {demandes.map((demande) => (
-                <tr key={demande.id} className="border-b">
-                  <td className="px-4 py-2">{demande.type}</td>
-                  <td className="px-4 py-2">
-                    {demande.statut === "Validée" ? <CheckCircle className="w-5 h-5 text-green-600" /> :
-                     demande.statut === "Rejetée" ? <XCircle className="w-5 h-5 text-red-600" /> :
-                     <Clock className="w-5 h-5 text-orange-600" />}
-                  </td>
-                  <td className="px-4 py-2">{demande.dateDemande}</td>
-                  <td className="px-4 py-2 text-center">
-                    <button onClick={() => handleSupprimerDemande(demande.id)}>
-                      <Trash2 className="w-5 h-5 text-red-600 hover:text-red-800 cursor-pointer transition-colors" />
-                    </button>
+              {demandes.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    {loading ? "Chargement des demandes..." : "Aucune demande trouvée"}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                demandes.map((demande) => {
+                  const statutLocal = mapStatutToLocal(demande.statut);
+                  const typeDisplay = mapTypeToDisplay(demande.type_demande);
+                  const dateCreation = new Date(demande.created_at).toLocaleDateString('fr-FR');
+
+                  return (
+                    <tr key={demande.id} className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-2">{typeDisplay}</td>
+                      <td className="px-4 py-2 flex items-center space-x-2">
+                        {statutLocal === "Validée" ? <CheckCircle className="w-5 h-5 text-green-600" /> :
+                         statutLocal === "Rejetée" ? <XCircle className="w-5 h-5 text-red-600" /> :
+                         <Clock className="w-5 h-5 text-yellow-600" />}
+                        <span className={`font-medium ${
+                          statutLocal === "Validée" ? "text-green-600" :
+                          statutLocal === "Rejetée" ? "text-red-600" :
+                          "text-yellow-600"
+                        }`}>
+                          {statutLocal}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">{dateCreation}</td>
+                      <td className="px-4 py-2 text-center">
+                        <button
+                          onClick={() => handleSupprimerDemande(demande.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-50"
+                          title="Supprimer la demande"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
