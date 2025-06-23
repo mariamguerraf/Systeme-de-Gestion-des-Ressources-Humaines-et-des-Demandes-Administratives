@@ -1828,8 +1828,8 @@ async def create_demande_direct(
     demande_data: dict,
     authorization: str = Header(None)
 ):
-    """Créer une nouvelle demande - endpoint direct avec authentification fonctionnelle"""
-    # Utiliser la même logique d'authentification que /auth/me
+    """Créer une nouvelle demande - endpoint direct avec authentification JWT fonctionnelle"""
+    # Utiliser la même logique d'authentification que /auth/me mais avec support JWT
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
@@ -1838,9 +1838,29 @@ async def create_demande_direct(
         )
 
     token = authorization.replace("Bearer ", "")
+    current_user = None
 
-    # Le token a le format: test_token_{user_id}_{role}
-    if token.startswith("test_token_"):
+    # Essayer d'abord le JWT
+    try:
+        from jose import jwt, JWTError
+        SECRET_KEY = "your-secret-key-here-change-in-production"  # Même clé que dans .env
+        ALGORITHM = "HS256"
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+
+        if email:
+            # Chercher l'utilisateur par email dans TEST_USERS (fallback)
+            for test_email, test_user_data in TEST_USERS.items():
+                if test_user_data["email"] == email:
+                    current_user = test_user_data
+                    break
+    except (JWTError, ImportError) as e:
+        print(f"JWT decode failed: {e}, trying test token format")
+        pass
+
+    # Si JWT échoue, essayer le format test_token (pour compatibilité)
+    if not current_user and token.startswith("test_token_"):
         parts = token.split("_")
         if len(parts) >= 3:
             user_id = parts[2]
@@ -1859,94 +1879,84 @@ async def create_demande_direct(
                     current_user = dict(user_data)
                 else:
                     # Fallback vers les TEST_USERS pour la compatibilité
-                    current_user = None
                     for email, test_user_data in TEST_USERS.items():
                         if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
                             current_user = test_user_data
                             break
 
-                    if not current_user:
-                        raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
-
             except Exception as e:
                 # Fallback vers les TEST_USERS
-                current_user = None
                 for email, test_user_data in TEST_USERS.items():
                     if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
                         current_user = test_user_data
                         break
 
-                if not current_user:
-                    raise HTTPException(status_code=401, detail="Erreur d'authentification")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Token invalide - utilisateur non trouvé")
 
-            # Créer la demande
-            global demande_id_counter
-            from datetime import datetime
+    # Créer la demande
+    global demande_id_counter
+    from datetime import datetime
 
-            # Sauvegarder dans la base SQLite
-            try:
-                conn = get_sqlite_connection()
-                cursor = conn.cursor()
+    # Sauvegarder dans la base SQLite
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
 
-                # Insérer la nouvelle demande dans SQLite
-                cursor.execute('''
-                    INSERT INTO demandes (user_id, type_demande, titre, description, date_debut, date_fin, statut, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, 'EN_ATTENTE', datetime('now'))
-                ''', (
-                    current_user["id"],
-                    demande_data.get("type_demande", "ATTESTATION"),
-                    demande_data.get("titre", ""),
-                    demande_data.get("description", ""),
-                    demande_data.get("date_debut"),
-                    demande_data.get("date_fin")
-                ))
+        # Insérer la nouvelle demande dans SQLite
+        cursor.execute('''
+            INSERT INTO demandes (user_id, type_demande, titre, description, date_debut, date_fin, statut, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'EN_ATTENTE', datetime('now'))
+        ''', (
+            current_user["id"],
+            demande_data.get("type_demande", "ATTESTATION"),
+            demande_data.get("titre", ""),
+            demande_data.get("description", ""),
+            demande_data.get("date_debut"),
+            demande_data.get("date_fin")
+        ))
 
-                sqlite_demande_id = cursor.lastrowid
-                conn.commit()
-                conn.close()
+        sqlite_demande_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
 
-                print(f"✅ Demande sauvegardée dans SQLite avec l'ID: {sqlite_demande_id}")
+        print(f"✅ Demande sauvegardée dans SQLite avec l'ID: {sqlite_demande_id}")
 
-            except Exception as e:
-                print(f"❌ Erreur lors de la sauvegarde SQLite: {e}")
-                sqlite_demande_id = demande_id_counter
+    except Exception as e:
+        print(f"❌ Erreur lors de la sauvegarde SQLite: {e}")
+        sqlite_demande_id = demande_id_counter
 
-            # Créer aussi dans DEMANDES_DB pour compatibilité
-            new_demande = {
-                "id": sqlite_demande_id,
-                "user_id": current_user["id"],
-                "type_demande": demande_data.get("type_demande", "ATTESTATION"),
-                "titre": demande_data.get("titre", ""),
-                "description": demande_data.get("description", ""),
-                "date_debut": demande_data.get("date_debut"),
-                "date_fin": demande_data.get("date_fin"),
-                "statut": "EN_ATTENTE",
-                "commentaire_admin": "",
-                "created_at": datetime.now().isoformat(),
-                "user": {
-                    "id": current_user["id"],
-                    "email": current_user.get("email", ""),
-                    "nom": current_user.get("nom", ""),
-                    "prenom": current_user.get("prenom", ""),
-                    "role": current_user.get("role", "").lower(),
-                    "is_active": True,
-                    "created_at": datetime.now().isoformat()
-                }
-            }
+    # Créer aussi dans DEMANDES_DB pour compatibilité
+    new_demande = {
+        "id": sqlite_demande_id,
+        "user_id": current_user["id"],
+        "type_demande": demande_data.get("type_demande", "ATTESTATION"),
+        "titre": demande_data.get("titre", ""),
+        "description": demande_data.get("description", ""),
+        "date_debut": demande_data.get("date_debut"),
+        "date_fin": demande_data.get("date_fin"),
+        "statut": "EN_ATTENTE",
+        "commentaire_admin": "",
+        "created_at": datetime.now().isoformat(),
+        "user": {
+            "id": current_user["id"],
+            "email": current_user.get("email", ""),
+            "nom": current_user.get("nom", ""),
+            "prenom": current_user.get("prenom", ""),
+            "role": current_user.get("role", "").lower(),
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        }
+    }
 
-            DEMANDES_DB[sqlite_demande_id] = new_demande
-            demande_id_counter = max(demande_id_counter, sqlite_demande_id + 1)
+    DEMANDES_DB[sqlite_demande_id] = new_demande
+    demande_id_counter = max(demande_id_counter, sqlite_demande_id + 1)
 
-            # Sauvegarder les données dans les fichiers
-            save_all_data()
+    # Sauvegarder les données dans les fichiers
+    save_all_data()
 
-            return new_demande
+    return new_demande
 
-    raise HTTPException(
-        status_code=401,
-        detail="Token invalide",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
 
 # Fonction de connexion SQLite simple (fallback)
 def get_sqlite_connection():
@@ -2093,3 +2103,4 @@ async def create_demande_temp(
         detail="Token invalide ou manquant",
         headers={"WWW-Authenticate": "Bearer"}
     )
+

@@ -91,6 +91,37 @@ class Demande(DemandeBase):
     updated_at: Optional[datetime] = None
     user: User
 
+    @validator('date_debut', 'date_fin', pre=True, allow_reuse=True)
+    def parse_date(cls, v):
+        if isinstance(v, str):
+            try:
+                # Si c'est juste une date (YYYY-MM-DD), ajouter l'heure
+                if len(v) == 10 and '-' in v:
+                    return datetime.strptime(v + ' 00:00:00', "%Y-%m-%d %H:%M:%S")
+                # Si c'est déjà un datetime complet
+                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            except:
+                return v
+        return v
+
+    @validator('created_at', pre=True, allow_reuse=True)
+    def parse_created_at(cls, v):
+        if isinstance(v, str):
+            try:
+                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            except:
+                return v
+        return v
+
+    @validator('updated_at', pre=True, allow_reuse=True)
+    def parse_updated_at(cls, v):
+        if isinstance(v, str):
+            try:
+                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+            except:
+                return v
+        return v
+
     class Config:
         from_attributes = True
 

@@ -8,7 +8,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-23T09:30:59.318110",
+    "created_at": "2025-06-23T10:29:39.332471",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -27,7 +27,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-18T09:30:59.318121",
+    "created_at": "2025-06-18T10:29:39.332482",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -38,23 +38,21 @@
   },
   "3": {
     "id": 3,
-    "user_id": 41,
+    "user_id": 3,
     "type_demande": "ATTESTATION",
-    "titre": "Demande d'attestation - travail",
-    "description": "Type d'attestation: travail\nObservations: test",
+    "titre": "Attestation de travail",
+    "description": "Demande d'attestation de travail pour démarches administratives",
     "date_debut": null,
     "date_fin": null,
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": "",
-    "created_at": "2025-06-23T09:31:58.805726",
+    "statut": "REJETEE",
+    "commentaire_admin": "Documents insuffisants",
+    "created_at": "2025-06-13T10:29:39.332489",
     "user": {
-      "id": 41,
-      "email": "mariam@univ.ma",
-      "nom": "guerraf",
-      "prenom": "mariam",
-      "role": "enseignant",
-      "is_active": true,
-      "created_at": "2025-06-23T09:31:58.805741"
+      "id": 3,
+      "email": "enseignant@univ.ma",
+      "nom": "Tazi",
+      "prenom": "Ahmed",
+      "role": "enseignant"
     }
   },
   "4": {
@@ -67,7 +65,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-21T09:30:59.318131",
+    "created_at": "2025-06-21T10:29:39.332492",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -86,7 +84,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-08T09:30:59.318135",
+    "created_at": "2025-06-08T10:29:39.332494",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -97,59 +95,65 @@
   },
   "6": {
     "id": 6,
-    "user_id": 4,
-    "type_demande": "CONGE",
-    "titre": "Demande de annuel",
-    "description": "Motif: hjhjhskj\nNombre de jours: 3\nRemplaçant: Non spécifié\nContact d'urgence: Non spécifié",
-    "date_debut": "2025-06-12",
-    "date_fin": "2025-06-14",
+    "user_id": 41,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Ordre de mission - formation",
+    "description": "Objet: formation\nDestination: marrakech\nAdresse: rrr\nMotif: hit bghit\nMoyen de transport: \nFrais prévus: \nFrais inclus: Aucun\nObservations: Aucune",
+    "date_debut": "2025-06-23",
+    "date_fin": "2025-06-24",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-12T00:12:18.767866",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T10:12:26.725684",
     "user": {
-      "id": 4,
-      "email": "aicha.karam.modifie@univ.ma",
-      "nom": "KaramModifie",
-      "prenom": "AichaModifiee",
-      "role": "fonctionnaire"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T10:12:26.725756"
     }
   },
   "7": {
     "id": 7,
-    "user_id": 4,
-    "type_demande": "CONGE",
-    "titre": "Demande de annuel",
-    "description": "Motif: hjhjhskj\nNombre de jours: 3\nRemplaçant: Non spécifié\nContact d'urgence: Non spécifié",
-    "date_debut": "2025-06-12",
-    "date_fin": "2025-06-14",
+    "user_id": 41,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Mission Test Token",
+    "description": "Mission pour tester avec le bon format de token",
+    "date_debut": "2024-01-15",
+    "date_fin": "2024-01-20",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-12T00:12:20.474097",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T10:31:41.270566",
     "user": {
-      "id": 4,
-      "email": "aicha.karam.modifie@univ.ma",
-      "nom": "KaramModifie",
-      "prenom": "AichaModifiee",
-      "role": "fonctionnaire"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T10:31:41.270586"
     }
   },
   "8": {
     "id": 8,
-    "user_id": 4,
-    "type_demande": "CONGE",
-    "titre": "Demande de annuel",
-    "description": "Motif: hjhjhskj\nNombre de jours: 3\nRemplaçant: Non spécifié\nContact d'urgence: Non spécifié",
-    "date_debut": "2025-06-12",
-    "date_fin": "2025-06-14",
+    "user_id": 41,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Mission Test Simple",
+    "description": "Test",
+    "date_debut": "2024-01-15",
+    "date_fin": "2024-01-20",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-12T00:12:21.727504",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T10:32:26.649951",
     "user": {
-      "id": 4,
-      "email": "aicha.karam.modifie@univ.ma",
-      "nom": "KaramModifie",
-      "prenom": "AichaModifiee",
-      "role": "fonctionnaire"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T10:32:26.649967"
     }
   },
   "9": {
@@ -336,7 +340,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-23T09:34:46.720570",
+    "created_at": "2025-06-23T10:47:51.363148",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -355,7 +359,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-18T09:34:46.720586",
+    "created_at": "2025-06-18T10:47:51.363159",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -374,7 +378,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-13T09:34:46.720596",
+    "created_at": "2025-06-13T10:47:51.363166",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -385,23 +389,21 @@
   },
   "4": {
     "id": 4,
-    "user_id": 41,
-    "type_demande": "ATTESTATION",
-    "titre": "Demande d'attestation - travail",
-    "description": "Type d'attestation: travail\nObservations: Aucune",
-    "date_debut": null,
-    "date_fin": null,
+    "user_id": 4,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Mission à Casablanca",
+    "description": "Mission de formation à Casablanca",
+    "date_debut": "2024-07-10",
+    "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": "",
-    "created_at": "2025-06-23T09:34:53.819096",
+    "commentaire_admin": null,
+    "created_at": "2025-06-21T10:47:51.363169",
     "user": {
-      "id": 41,
-      "email": "mariam@univ.ma",
-      "nom": "guerraf",
-      "prenom": "mariam",
-      "role": "enseignant",
-      "is_active": true,
-      "created_at": "2025-06-23T09:34:53.819112"
+      "id": 4,
+      "email": "fonctionnaire@univ.ma",
+      "nom": "Karam",
+      "prenom": "Aicha",
+      "role": "fonctionnaire"
     }
   },
   "5": {
@@ -414,13 +416,55 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-08T09:34:46.720605",
+    "created_at": "2025-06-08T10:47:51.363171",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
       "nom": "Tazi",
       "prenom": "Ahmed",
       "role": "enseignant"
+    }
+  },
+  "9": {
+    "id": 9,
+    "user_id": 41,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Mission Test Final",
+    "description": "Test de la correction finale",
+    "date_debut": "2024-01-15",
+    "date_fin": "2024-01-20",
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T10:48:36.612990",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T10:48:36.613005"
+    }
+  },
+  "10": {
+    "id": 10,
+    "user_id": 41,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Ordre de mission - formation",
+    "description": "Objet: formation\nDestination: marrakech\nAdresse: \nMotif: slm\nMoyen de transport: \nFrais prévus: \nFrais inclus: Aucun\nObservations: Aucune",
+    "date_debut": "2025-06-23",
+    "date_fin": "2025-06-13",
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T10:50:30.762833",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T10:50:30.762850"
     }
   }
 }

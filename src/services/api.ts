@@ -275,7 +275,7 @@ class ApiService {
   }
 
   async createDemande(demandeData: any) {
-    return this.request('/demandes', {
+    return this.request('/demandes-direct', {
       method: 'POST',
       body: JSON.stringify(demandeData),
     });
@@ -314,7 +314,7 @@ class ApiService {
   }
 
   async createDemandeOrdreMission(titre: string, description?: string, date_debut?: string, date_fin?: string) {
-    return this.request('/demandes', {
+    return this.request('/demandes-direct', {
       method: 'POST',
       body: JSON.stringify({ 
         type_demande: 'ORDRE_MISSION',
@@ -327,7 +327,7 @@ class ApiService {
   }
 
   async createDemandeHeuresSup(titre: string, description?: string, date_debut?: string, date_fin?: string) {
-    return this.request('/demandes', {
+    return this.request('/demandes-direct', {
       method: 'POST',
       body: JSON.stringify({ 
         type_demande: 'HEURES_SUP',
