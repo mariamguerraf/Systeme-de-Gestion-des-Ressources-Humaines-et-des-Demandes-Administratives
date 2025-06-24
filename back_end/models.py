@@ -58,6 +58,22 @@ class Demande(Base):
 
     # Relations
     user = relationship("User", back_populates="demandes")
+    documents = relationship("DemandeDocument", back_populates="demande", cascade="all, delete-orphan")
+
+class DemandeDocument(Base):
+    __tablename__ = "demande_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    demande_id = Column(Integer, ForeignKey("demandes.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    original_filename = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    file_size = Column(Integer)
+    content_type = Column(String)
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relations
+    demande = relationship("Demande", back_populates="documents")
 
 class Enseignant(Base):
     __tablename__ = "enseignants"

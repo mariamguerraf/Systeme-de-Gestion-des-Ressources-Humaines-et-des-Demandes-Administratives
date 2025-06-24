@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Clock, User, AlertCircle, Send, X } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Clock, User, AlertCircle, Send, X, Upload, FileText, Trash2, Calendar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { apiService } from '../../services/api';
+import apiService from '../../services/api';
 
 const HeuresSup = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [formData, setFormData] = useState({
     dateDebut: '',
     dateFin: '',
@@ -13,17 +20,32 @@ const HeuresSup = () => {
     description: ''
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { logout, user } = useAuth();
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileSelect = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+    input.onchange = (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
+      if (validFiles.length !== files.length) {
+        setError('Certains fichiers sont trop volumineux (max 5MB)');
+      }
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+    };
+    input.click();
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +63,21 @@ const HeuresSup = () => {
       const titre = `Demande d'heures supplémentaires - ${formData.heures}h`;
       const description = `Période: ${formData.dateDebut} au ${formData.dateFin}\nNombre d'heures: ${formData.heures}h\nMotif: ${formData.motif}\nDescription: ${formData.description || 'Aucune description fournie'}`;
 
-      await apiService.createDemandeHeuresSup(titre, description);
+      // Créer la demande
+      const demande = await apiService.createDemandeHeuresSup(titre, description);
+      
+      // Upload des documents si des fichiers sont sélectionnés
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        try {
+          await apiService.uploadDemandeDocuments((demande as any).id, selectedFiles);
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload des documents:', uploadError);
+          // Ne pas bloquer la création de la demande si l'upload échoue
+          setError('Demande créée mais erreur lors de l\'upload des documents');
+        }
+        setIsUploading(false);
+      }
       
       alert('Demande d\'heures supplémentaires soumise avec succès!');
       navigate('/enseignant/demandes');
@@ -50,6 +86,7 @@ const HeuresSup = () => {
       setError('Erreur lors de la soumission de la demande');
     } finally {
       setLoading(false);
+      setIsUploading(false);
     }
   };
 
@@ -59,13 +96,13 @@ const HeuresSup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header avec dégradé moderne */}
-      <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+  <header className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white px-6 py-6 shadow-xl">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <Clock className="w-6 h-6" />
+              <Calendar className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
               Système de Gestion
@@ -232,6 +269,54 @@ const HeuresSup = () => {
               </div>
             </div>
 
+            {/* Upload de documents */}
+            <div className="mt-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Documents Justificatifs (Optionnel)</h3>
+              </div>
+
+              <div className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-purple-40 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-100 hover:to-purple-100 transition-all duration-200">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Upload className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-gray-700 font-medium mb-2">Glissez-déposez vos fichiers ici ou</p>
+                <button
+                  type="button"
+                  onClick={handleFileSelect}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
+                >
+                  Parcourir les fichiers
+                </button>
+                <p className="text-sm text-gray-500 mt-3">PDF, JPG, PNG, DOC, DOCX jusqu'à 5MB par fichier</p>
+              </div>
+
+              {/* Liste des fichiers sélectionnés */}
+              {selectedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h4 className="font-semibold text-gray-700">Fichiers sélectionnés :</h4>
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">{file.name}</span>
+                        <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Error display */}
             {error && (
               <div className="mt-6 bg-red-50 border border-red-300 rounded-lg p-4">
@@ -269,11 +354,15 @@ const HeuresSup = () => {
               </Link>
               <button
                 onClick={handleSubmit}
-                disabled={loading}
-                className={`px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={loading || isUploading}
+                className={`px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105 ${(loading || isUploading) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Send className="w-4 h-4" />
-                <span>{loading ? 'Envoi en cours...' : 'Soumettre la Demande'}</span>
+                <span>
+                  {loading ? 'Création en cours...' : 
+                   isUploading ? 'Upload des documents...' : 
+                   'Soumettre la Demande'}
+                </span>
               </button>
             </div>
           </div>

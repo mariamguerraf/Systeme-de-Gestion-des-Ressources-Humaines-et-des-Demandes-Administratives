@@ -63,6 +63,25 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# DemandeDocument Schemas
+class DemandeDocumentBase(BaseModel):
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: Optional[int] = None
+    content_type: Optional[str] = None
+
+class DemandeDocumentCreate(DemandeDocumentBase):
+    demande_id: int
+
+class DemandeDocument(DemandeDocumentBase):
+    id: int
+    demande_id: int
+    uploaded_at: datetime
+
+    class Config:
+        from_attributes = True
+
 # Demande Schemas
 class DemandeBase(BaseModel):
     type_demande: DemandeType
@@ -90,6 +109,7 @@ class Demande(DemandeBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     user: User
+    documents: Optional[List[DemandeDocument]] = []
 
     @validator('date_debut', 'date_fin', pre=True, allow_reuse=True)
     def parse_date(cls, v):
@@ -123,6 +143,25 @@ class Demande(DemandeBase):
             except:
                 return v
         return v
+
+    class Config:
+        from_attributes = True
+
+# DemandeDocument Schemas
+class DemandeDocumentBase(BaseModel):
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: Optional[int] = None
+    content_type: Optional[str] = None
+
+class DemandeDocumentCreate(DemandeDocumentBase):
+    demande_id: int
+
+class DemandeDocument(DemandeDocumentBase):
+    id: int
+    demande_id: int
+    uploaded_at: datetime
 
     class Config:
         from_attributes = True

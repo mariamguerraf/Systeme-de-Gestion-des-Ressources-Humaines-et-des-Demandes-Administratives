@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, User, AlertCircle, Calendar, Upload, FileText } from 'lucide-react';
+import { MapPin, User, AlertCircle, Calendar, Upload, FileText, Trash2, Send, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import apiService from '../../services/api';
 
 const OrdreMissionFonctionnaire = () => {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  
   const [formData, setFormData] = useState({
     objetMission: '',
     destination: '',
@@ -22,6 +26,9 @@ const OrdreMissionFonctionnaire = () => {
   });
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -31,36 +38,73 @@ const OrdreMissionFonctionnaire = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Demande d'ordre de mission soumise:", formData);
-    console.log('Fichiers attachés:', selectedFiles);
-    alert('Demande soumise avec succès !');
-  };
-
   const handleFileSelect = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.accept = '.pdf,.jpg,.jpeg,.png';
+    input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
     input.onchange = (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
       const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
       if (validFiles.length !== files.length) {
-        alert('Certains fichiers sont trop volumineux (max 5MB)');
+        setError('Certains fichiers sont trop volumineux (max 5MB)');
       }
       setSelectedFiles(prev => [...prev, ...validFiles]);
     };
     input.click();
   };
 
-  const handleCancel = () => {
-    navigate('/fonctionnaire/demandes');
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.objetMission || !formData.destination || !formData.dateDepart || !formData.dateRetour) {
+      setError('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const fraisInfo = [];
+      if (formData.hebergement) fraisInfo.push('Hébergement');
+      if (formData.restauration) fraisInfo.push('Restauration');
+      if (formData.transport) fraisInfo.push('Transport');
+
+      const titre = `Ordre de mission - ${formData.objetMission}`;
+      const description = `Objet: ${formData.objetMission}\nDestination: ${formData.destination}\nAdresse: ${formData.adresseDestination}\nMotif: ${formData.motif}\nMoyen de transport: ${formData.moyenTransport}\nFrais prévus: ${formData.fraisPrevus}\nFrais inclus: ${fraisInfo.join(', ') || 'Aucun'}\nObservations: ${formData.observations || 'Aucune'}`;
+
+      // Créer la demande
+      const demande = await apiService.createDemandeOrdreMission(titre, description, formData.dateDepart, formData.dateRetour);
+      
+      // Upload des documents si des fichiers sont sélectionnés
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        try {
+          await apiService.uploadDemandeDocuments((demande as any).id, selectedFiles);
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload des documents:', uploadError);
+          // Ne pas bloquer la création de la demande si l'upload échoue
+          setError('Demande créée mais erreur lors de l\'upload des documents');
+        }
+        setIsUploading(false);
+      }
+      
+      alert('Demande d\'ordre de mission soumise avec succès!');
+      navigate('/fonctionnaire/demandes');
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error);
+      setError('Erreur lors de la soumission de la demande');
+    } finally {
+      setLoading(false);
+      setIsUploading(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -291,8 +335,9 @@ const OrdreMissionFonctionnaire = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
                   <FileText className="w-4 h-4 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800">Documents Justificatifs</h3>
+                <h3 className="text-xl font-bold text-gray-800">Documents Justificatifs (Optionnel)</h3>
               </div>
+              
               <div className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-purple-40 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-100 hover:to-purple-100 transition-all duration-200">
                 <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Upload className="w-8 h-8 text-white" />
@@ -305,9 +350,34 @@ const OrdreMissionFonctionnaire = () => {
                 >
                   Parcourir les fichiers
                 </button>
-                <p className="text-sm text-gray-500 mt-3">PDF, JPG, PNG jusqu'à 5MB</p>
+                <p className="text-sm text-gray-500 mt-3">PDF, JPG, PNG, DOC, DOCX jusqu'à 5MB par fichier</p>
               </div>
+
+              {/* Liste des fichiers sélectionnés */}
+              {selectedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h4 className="font-semibold text-gray-700">Fichiers sélectionnés :</h4>
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">{file.name}</span>
+                        <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+
 
             {/* Note d'information colorée */}
             <div className="mt-8 bg-gradient-to-r from-purple-50 to-gray-50 border border-purple-200 rounded-xl p-6 shadow-sm">
@@ -344,9 +414,39 @@ const OrdreMissionFonctionnaire = () => {
                 type="submit"
                 className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105"
               >
-                Soumettre la Demande
+                {loading ? (
+                  <>
+                    <span className="animate-spin">
+                      <X className="w-5 h-5" />
+                    </span>
+                    <span>Chargement...</span>
+                  </>
+                ) : (
+                  'Soumettre la Demande'
+                )}
               </button>
             </div>
+
+            {/* Message d'erreur */}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-red-500 hover:text-red-600 transition-colors"
+                    type="button"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </main>

@@ -352,6 +352,48 @@ class ApiService {
     });
   }
 
+  // Documents methods for demandes
+  async uploadDemandeDocuments(demandeId: number, files: FileList | File[]) {
+    const formData = new FormData();
+    
+    // Ajouter les fichiers au FormData
+    Array.from(files).forEach((file) => {
+      formData.append('files', file);
+    });
+
+    return this.request(`/demandes/${demandeId}/upload-documents`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getDemandeDocuments(demandeId: number) {
+    return this.request(`/demandes/${demandeId}/documents`);
+  }
+
+  async deleteDemandeDocument(demandeId: number, documentId: number) {
+    return this.request(`/demandes/${demandeId}/documents/${documentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async downloadDemandeDocument(demandeId: number, documentId: number) {
+    const url = this.buildUrl(`/demandes/${demandeId}/documents/${documentId}/download`);
+    const token = this.token || localStorage.getItem('access_token');
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors du téléchargement du document');
+    }
+
+    return response.blob();
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/health');

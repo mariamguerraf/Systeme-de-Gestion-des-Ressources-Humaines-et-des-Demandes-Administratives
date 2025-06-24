@@ -1,18 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
-from sqlalchemy.orm import Session
-from typing import List
-import sqlite3
-from database import get_db
-from models import User, Demande
-from schemas import Demande as DemandeSchema, DemandeCreate, DemandeUpdate
-
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import sqlite3
+import os
+import shutil
+import uuid
+import time
+from pathlib import Path
 from database import get_db
 from models import User, Demande
-from schemas import Demande as DemandeSchema, DemandeCreate, DemandeUpdate
+from schemas import Demande as DemandeSchema, DemandeCreate, DemandeUpdate, DemandeDocument as DemandeDocumentSchema
 
 router = APIRouter(prefix="/demandes", tags=["Demandes"])
 
@@ -653,4 +650,206 @@ async def delete_demande(
         return {"message": "Demande supprimée avec succès"}
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
+
+# Endpoints pour l'upload de documents
+@router.post("/{demande_id}/upload-documents")
+async def upload_documents_to_demande(
+    demande_id: int,
+    files: List[UploadFile] = File(...),
+    authorization: str = Header(None)
+):
+    """Upload de documents pour une demande spécifique"""
+    
+    # Vérifier l'authentification
+    current_user = get_current_user_from_token(authorization)
+    
+    # Vérifier que la demande existe et appartient à l'utilisateur
+    conn = get_sqlite_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT * FROM demandes 
+        WHERE id = ? AND user_id = ?
+    """, (demande_id, current_user["id"]))
+    
+    demande = cursor.fetchone()
+    if not demande:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Demande non trouvée ou accès non autorisé")
+    
+    # Vérifier que la demande est du bon type (HEURES_SUP ou ORDRE_MISSION)
+    if demande["type_demande"] not in ["HEURES_SUP", "ORDRE_MISSION"]:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Upload de documents non autorisé pour ce type de demande")
+    
+    # Créer le dossier de destination
+    upload_dir = Path("uploads/demandes")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    uploaded_files = []
+    
+    try:
+        for file in files:
+            if not file.filename:
+                continue
+                
+            # Vérifier la taille du fichier (5MB max)
+            content = await file.read()
+            if len(content) > 5 * 1024 * 1024:  # 5MB
+                raise HTTPException(status_code=400, detail=f"Fichier {file.filename} trop volumineux (max 5MB)")
+            
+            # Vérifier le type de fichier
+            allowed_types = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']
+            file_extension = Path(file.filename).suffix.lower()
+            if file_extension not in allowed_types:
+                raise HTTPException(status_code=400, detail=f"Type de fichier non autorisé: {file.filename}")
+            
+            # Générer un nom de fichier unique
+            unique_filename = f"demande_{demande_id}_{int(time.time())}_{uuid.uuid4().hex[:8]}{file_extension}"
+            file_path = upload_dir / unique_filename
+            
+            # Sauvegarder le fichier
+            with open(file_path, "wb") as f:
+                f.write(content)
+            
+            # Enregistrer dans la base de données
+            cursor.execute("""
+                INSERT INTO demande_documents 
+                (demande_id, filename, original_filename, file_path, file_size, content_type)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                demande_id,
+                unique_filename,
+                file.filename,
+                str(file_path),
+                len(content),
+                file.content_type
+            ))
+            
+            uploaded_files.append({
+                "filename": unique_filename,
+                "original_filename": file.filename,
+                "file_size": len(content),
+                "content_type": file.content_type
+            })
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "message": f"{len(uploaded_files)} fichier(s) uploadé(s) avec succès",
+            "files": uploaded_files
+        }
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        # Nettoyer les fichiers uploadés en cas d'erreur
+        for file_info in uploaded_files:
+            try:
+                os.remove(upload_dir / file_info["filename"])
+            except:
+                pass
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'upload: {str(e)}")
+
+@router.get("/{demande_id}/documents")
+async def get_demande_documents(
+    demande_id: int,
+    authorization: str = Header(None)
+):
+    """Récupérer la liste des documents d'une demande"""
+    
+    current_user = get_current_user_from_token(authorization)
+    
+    conn = get_sqlite_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier l'accès à la demande
+    cursor.execute("""
+        SELECT * FROM demandes 
+        WHERE id = ? AND (user_id = ? OR ? IN ('ADMIN', 'SECRETAIRE'))
+    """, (demande_id, current_user["id"], current_user["role"]))
+    
+    demande = cursor.fetchone()
+    if not demande:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Demande non trouvée ou accès non autorisé")
+    
+    # Récupérer les documents
+    cursor.execute("""
+        SELECT * FROM demande_documents 
+        WHERE demande_id = ?
+        ORDER BY uploaded_at DESC
+    """, (demande_id,))
+    
+    documents = cursor.fetchall()
+    conn.close()
+    
+    return [
+        {
+            "id": doc["id"],
+            "filename": doc["filename"],
+            "original_filename": doc["original_filename"],
+            "file_size": doc["file_size"],
+            "content_type": doc["content_type"],
+            "uploaded_at": doc["uploaded_at"]
+        }
+        for doc in documents
+    ]
+
+@router.delete("/{demande_id}/documents/{document_id}")
+async def delete_demande_document(
+    demande_id: int,
+    document_id: int,
+    authorization: str = Header(None)
+):
+    """Supprimer un document d'une demande"""
+    
+    current_user = get_current_user_from_token(authorization)
+    
+    conn = get_sqlite_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier l'accès à la demande
+    cursor.execute("""
+        SELECT * FROM demandes 
+        WHERE id = ? AND user_id = ?
+    """, (demande_id, current_user["id"]))
+    
+    demande = cursor.fetchone()
+    if not demande:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Demande non trouvée ou accès non autorisé")
+    
+    # Récupérer le document
+    cursor.execute("""
+        SELECT * FROM demande_documents 
+        WHERE id = ? AND demande_id = ?
+    """, (document_id, demande_id))
+    
+    document = cursor.fetchone()
+    if not document:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    try:
+        # Supprimer le fichier physique
+        if os.path.exists(document["file_path"]):
+            os.remove(document["file_path"])
+        
+        # Supprimer l'enregistrement de la base de données
+        cursor.execute("""
+            DELETE FROM demande_documents 
+            WHERE id = ?
+        """, (document_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"message": "Document supprimé avec succès"}
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")

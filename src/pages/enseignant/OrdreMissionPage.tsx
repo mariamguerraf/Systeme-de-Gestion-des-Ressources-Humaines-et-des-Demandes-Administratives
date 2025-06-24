@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, User, AlertCircle, Calendar, Upload, FileText } from 'lucide-react';
+import { MapPin, User, AlertCircle, Calendar, Upload, FileText, Trash2, Send, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -27,6 +27,7 @@ const OrdreMissionPage = () => {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -35,6 +36,26 @@ const OrdreMissionPage = () => {
 	  ...prev,
 	  [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
 	}));
+  };
+
+  const handleFileSelect = () => {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.multiple = true;
+	input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+	input.onchange = (e) => {
+	  const files = Array.from((e.target as HTMLInputElement).files || []);
+	  const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
+	  if (validFiles.length !== files.length) {
+		setError('Certains fichiers sont trop volumineux (max 5MB)');
+	  }
+	  setSelectedFiles(prev => [...prev, ...validFiles]);
+	};
+	input.click();
+  };
+
+  const removeFile = (index: number) => {
+	setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +78,21 @@ const OrdreMissionPage = () => {
 	  const titre = `Ordre de mission - ${formData.objetMission}`;
 	  const description = `Objet: ${formData.objetMission}\nDestination: ${formData.destination}\nAdresse: ${formData.adresseDestination}\nMotif: ${formData.motif}\nMoyen de transport: ${formData.moyenTransport}\nFrais prévus: ${formData.fraisPrevus}\nFrais inclus: ${fraisInfo.join(', ') || 'Aucun'}\nObservations: ${formData.observations || 'Aucune'}`;
 
-	  await apiService.createDemandeOrdreMission(titre, description, formData.dateDepart, formData.dateRetour);
+	  // Créer la demande
+	  const demande = await apiService.createDemandeOrdreMission(titre, description, formData.dateDepart, formData.dateRetour);
+	  
+	  // Upload des documents si des fichiers sont sélectionnés
+	  if (selectedFiles.length > 0) {
+		setIsUploading(true);
+		try {
+		  await apiService.uploadDemandeDocuments((demande as any).id, selectedFiles);
+		} catch (uploadError) {
+		  console.error('Erreur lors de l\'upload des documents:', uploadError);
+		  // Ne pas bloquer la création de la demande si l'upload échoue
+		  setError('Demande créée mais erreur lors de l\'upload des documents');
+		}
+		setIsUploading(false);
+	  }
 	  
 	  alert('Demande d\'ordre de mission soumise avec succès!');
 	  navigate('/enseignant/demandes');
@@ -66,28 +101,13 @@ const OrdreMissionPage = () => {
 	  setError('Erreur lors de la soumission de la demande');
 	} finally {
 	  setLoading(false);
+	  setIsUploading(false);
 	}
   };
 
   const handleLogout = () => {
     logout();
     navigate('/');
-  };
-
-  const handleFileSelect = () => {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.multiple = true;
-	input.accept = '.pdf,.jpg,.jpeg,.png';
-	input.onchange = (e) => {
-	  const files = Array.from((e.target as HTMLInputElement).files || []);
-	  const validFiles = files.filter(file => file.size <= 5 * 1024 * 1024); // 5MB max
-	  if (validFiles.length !== files.length) {
-		alert('Certains fichiers sont trop volumineux (max 5MB)');
-	  }
-	  setSelectedFiles(prev => [...prev, ...validFiles]);
-	};
-	input.click();
   };
 
   const handleCancel = () => {
@@ -322,8 +342,9 @@ const OrdreMissionPage = () => {
 				<div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
 				  <FileText className="w-4 h-4 text-white" />
 				</div>
-				<h3 className="text-xl font-bold text-gray-800">Documents Justificatifs</h3>
+				<h3 className="text-xl font-bold text-gray-800">Documents Justificatifs (Optionnel)</h3>
 			  </div>
+			  
 			  <div className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-purple-40 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-100 hover:to-purple-100 transition-all duration-200">
 				<div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
 				  <Upload className="w-8 h-8 text-white" />
@@ -336,9 +357,42 @@ const OrdreMissionPage = () => {
 				>
 				  Parcourir les fichiers
 				</button>
-				<p className="text-sm text-gray-500 mt-3">PDF, JPG, PNG jusqu'à 5MB</p>
+				<p className="text-sm text-gray-500 mt-3">PDF, JPG, PNG, DOC, DOCX jusqu'à 5MB par fichier</p>
 			  </div>
+
+			  {/* Liste des fichiers sélectionnés */}
+			  {selectedFiles.length > 0 && (
+				<div className="mt-4 space-y-2">
+				  <h4 className="font-semibold text-gray-700">Fichiers sélectionnés :</h4>
+				  {selectedFiles.map((file, index) => (
+					<div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+					  <div className="flex items-center space-x-2">
+						<FileText className="w-4 h-4 text-gray-500" />
+						<span className="text-sm text-gray-700">{file.name}</span>
+						<span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+					  </div>
+					  <button
+						type="button"
+						onClick={() => removeFile(index)}
+						className="text-red-500 hover:text-red-700 transition-colors"
+					  >
+						<Trash2 className="w-4 h-4" />
+					  </button>
+					</div>
+				  ))}
+				</div>
+			  )}
 			</div>
+
+			{/* Error display */}
+			{error && (
+			  <div className="mt-6 bg-red-50 border border-red-300 rounded-lg p-4">
+				<div className="flex items-center">
+				  <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+				  <span className="text-red-700">{error}</span>
+				</div>
+			  </div>
+			)}
 
 
 			{/* Note d'information colorée */}
@@ -366,18 +420,24 @@ const OrdreMissionPage = () => {
 
 			{/* Boutons d'action */}
 			<div className="mt-8 flex justify-end space-x-4">
-			  <button
-				type="button"
-				onClick={handleCancel}
-				className="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+			  <Link
+				to="/enseignant/demandes"
+				className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium flex items-center space-x-2 shadow-sm"
 			  >
-				Annuler
-			  </button>
+				<X className="w-4 h-4" />
+				<span>Annuler</span>
+			  </Link>
 			  <button
 				type="submit"
-				className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105"
+				disabled={loading || isUploading}
+				className={`px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg transform hover:scale-105 ${(loading || isUploading) ? 'opacity-50 cursor-not-allowed' : ''}`}
 			  >
-				Soumettre la Demande
+				<Send className="w-4 h-4" />
+				<span>
+				  {loading ? 'Création en cours...' : 
+				   isUploading ? 'Upload des documents...' : 
+				   'Soumettre la Demande'}
+				</span>
 			  </button>
 			</div>
 		  </form>
