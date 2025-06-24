@@ -104,7 +104,7 @@ const CongePage = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="font-medium">Bienvenue, Fonctionnaire</span>
+              <span className="font-medium">Bienvenue, {user?.prenom} {user?.nom}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -174,15 +174,19 @@ const CongePage = () => {
 				  <div className="grid grid-cols-1 gap-3 text-sm">
 					<div className="flex justify-between">
 					  <span className="font-medium text-gray-600">Nom:</span>
-					  <span className="text-gray-800">Martin Jean</span>
+					  <span className="text-gray-800">{user?.nom} {user?.prenom}</span>
 					</div>
 					<div className="flex justify-between">
 					  <span className="font-medium text-gray-600">Type:</span>
-					  <span className="text-gray-800">Professeur</span>
+					  <span className="text-gray-800">Fonctionnaire</span>
 					</div>
 					<div className="flex justify-between">
-					  <span className="font-medium text-gray-600">Département:</span>
-					  <span className="text-gray-800">Informatique</span>
+					  <span className="font-medium text-gray-600">Email:</span>
+					  <span className="text-gray-800">{user?.email}</span>
+					</div>
+					<div className="flex justify-between">
+					  <span className="font-medium text-gray-600">Téléphone:</span>
+					  <span className="text-gray-800">{user?.telephone || 'Non renseigné'}</span>
 					</div>
 				  </div>
 				</div>

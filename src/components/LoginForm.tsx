@@ -119,20 +119,19 @@ const LoginForm = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <a href="#" className="text-xs text-blue-500 hover:text-blue-600">
-                  Forgot password?
-                </a>
-              </div>
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  className="pl-10 pr-10 border-slate-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="pl-10 pr-10 border-slate-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                  style={{ 
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'textfield'
+                  }}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);

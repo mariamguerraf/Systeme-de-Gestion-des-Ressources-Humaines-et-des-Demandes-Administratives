@@ -117,7 +117,7 @@ const HeuresSup = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="font-medium">Bienvenue, Enseignant</span>
+              <span className="font-medium">Bienvenue, {user?.prenom} {user?.nom}</span>
             </div>
             <button
               onClick={handleLogout}

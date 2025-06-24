@@ -170,7 +170,12 @@ const PageDemandesEnseignant = () => {
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="font-medium">Bienvenue, Enseignant</span>
+            <div className="flex items-center space-x-3 bg-white bg-opacity-10 px-4 py-2 rounded-full backdrop-blur-sm">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-medium">Bienvenue, {user?.prenom} {user?.nom}</span>
+            </div>
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-300 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200 backdrop-blur-sm"

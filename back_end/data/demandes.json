@@ -8,7 +8,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-24T09:57:28.205597",
+    "created_at": "2025-06-24T10:07:59.099467",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -27,7 +27,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-19T09:57:28.205608",
+    "created_at": "2025-06-19T10:07:59.099480",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -46,7 +46,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-14T09:57:28.205616",
+    "created_at": "2025-06-14T10:07:59.099490",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -65,7 +65,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-22T09:57:28.205618",
+    "created_at": "2025-06-22T10:07:59.099494",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -84,7 +84,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-09T09:57:28.205621",
+    "created_at": "2025-06-09T10:07:59.099498",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -284,161 +284,6 @@
   },
   "15": {
     "id": 15,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Test Attestation",
-    "description": "Test",
-    "date_debut": null,
-    "date_fin": null,
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-22T19:41:28.941607",
-    "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
-    }
-  },
-  "16": {
-    "id": 16,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Test Attestation",
-    "description": "Test",
-    "date_debut": null,
-    "date_fin": null,
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": "",
-    "created_at": "2025-06-23T09:18:35.956876",
-    "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant",
-      "is_active": true,
-      "created_at": "2025-06-23T09:18:35.956893"
-    }
-  },
-  "17": {
-    "id": 17,
-    "user_id": 41,
-    "type_demande": "ATTESTATION",
-    "titre": "Demande d'attestation - travail",
-    "description": "Type d'attestation: travail\nObservations: Aucune",
-    "date_debut": null,
-    "date_fin": null,
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": "",
-    "created_at": "2025-06-23T09:19:43.682622",
-    "user": {
-      "id": 41,
-      "email": "mariam@univ.ma",
-      "nom": "guerraf",
-      "prenom": "mariam",
-      "role": "enseignant",
-      "is_active": true,
-      "created_at": "2025-06-23T09:19:43.682636"
-    }
-  },
-  "1": {
-    "id": 1,
-    "user_id": 3,
-    "type_demande": "CONGE",
-    "titre": "Congé annuel",
-    "description": "Demande de congé annuel pour vacances d'été",
-    "date_fin": "2024-07-15",
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-24T10:07:59.099467",
-    "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
-    }
-  },
-  "2": {
-    "id": 2,
-    "user_id": 4,
-    "type_demande": "ABSENCE",
-    "titre": "Absence médicale",
-    "description": "Absence pour raisons médicales",
-    "date_debut": "2024-06-20",
-    "date_fin": "2024-06-22",
-    "statut": "APPROUVEE",
-    "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-19T10:07:59.099480",
-    "user": {
-      "id": 4,
-      "email": "fonctionnaire@univ.ma",
-      "nom": "Karam",
-      "prenom": "Aicha",
-      "role": "fonctionnaire"
-    }
-  },
-  "3": {
-    "id": 3,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Attestation de travail",
-    "description": "Demande d'attestation de travail pour démarches administratives",
-    "date_debut": null,
-    "date_fin": null,
-    "statut": "REJETEE",
-    "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-14T10:07:59.099490",
-    "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
-    }
-  },
-  "4": {
-    "id": 4,
-    "user_id": 4,
-    "type_demande": "ORDRE_MISSION",
-    "titre": "Mission à Casablanca",
-    "description": "Mission de formation à Casablanca",
-    "date_debut": "2024-07-10",
-    "date_fin": "2024-07-12",
-    "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-22T10:07:59.099494",
-    "user": {
-      "id": 4,
-      "email": "fonctionnaire@univ.ma",
-      "nom": "Karam",
-      "prenom": "Aicha",
-      "role": "fonctionnaire"
-    }
-  },
-  "5": {
-    "id": 5,
-    "user_id": 3,
-    "type_demande": "HEURES_SUP",
-    "titre": "Heures supplémentaires",
-    "description": "Demande d'heures supplémentaires pour cours du soir",
-    "date_debut": "2024-06-01",
-    "date_fin": "2024-06-30",
-    "statut": "APPROUVEE",
-    "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-09T10:07:59.099498",
-    "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
-    }
-  },
-  "15": {
-    "id": 15,
     "user_id": 41,
     "type_demande": "HEURES_SUP",
     "titre": "Test heures sup",
@@ -477,6 +322,205 @@
       "role": "enseignant",
       "is_active": true,
       "created_at": "2025-06-24T10:09:20.623451"
+    }
+  },
+  "17": {
+    "id": 17,
+    "user_id": 41,
+    "type_demande": "ATTESTATION",
+    "titre": "Demande d'attestation - travail",
+    "description": "Type d'attestation: travail\nObservations: Aucune",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-23T09:19:43.682622",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-23T09:19:43.682636"
+    }
+  },
+  "1": {
+    "id": 1,
+    "user_id": 3,
+    "type_demande": "CONGE",
+    "titre": "Congé annuel",
+    "description": "Demande de congé annuel pour vacances d'été",
+    "date_fin": "2024-07-15",
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": null,
+    "created_at": "2025-06-24T17:13:24.171471",
+    "user": {
+      "id": 3,
+      "email": "enseignant@univ.ma",
+      "nom": "Tazi",
+      "prenom": "Ahmed",
+      "role": "enseignant"
+    }
+  },
+  "2": {
+    "id": 2,
+    "user_id": 4,
+    "type_demande": "ABSENCE",
+    "titre": "Absence médicale",
+    "description": "Absence pour raisons médicales",
+    "date_debut": "2024-06-20",
+    "date_fin": "2024-06-22",
+    "statut": "APPROUVEE",
+    "commentaire_admin": "Demande approuvée avec justificatif médical",
+    "created_at": "2025-06-19T17:13:24.171497",
+    "user": {
+      "id": 4,
+      "email": "fonctionnaire@univ.ma",
+      "nom": "Karam",
+      "prenom": "Aicha",
+      "role": "fonctionnaire"
+    }
+  },
+  "3": {
+    "id": 3,
+    "user_id": 3,
+    "type_demande": "ATTESTATION",
+    "titre": "Attestation de travail",
+    "description": "Demande d'attestation de travail pour démarches administratives",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "REJETEE",
+    "commentaire_admin": "Documents insuffisants",
+    "created_at": "2025-06-14T17:13:24.171513",
+    "user": {
+      "id": 3,
+      "email": "enseignant@univ.ma",
+      "nom": "Tazi",
+      "prenom": "Ahmed",
+      "role": "enseignant"
+    }
+  },
+  "4": {
+    "id": 4,
+    "user_id": 4,
+    "type_demande": "ORDRE_MISSION",
+    "titre": "Mission à Casablanca",
+    "description": "Mission de formation à Casablanca",
+    "date_debut": "2024-07-10",
+    "date_fin": "2024-07-12",
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": null,
+    "created_at": "2025-06-22T17:13:24.171516",
+    "user": {
+      "id": 4,
+      "email": "fonctionnaire@univ.ma",
+      "nom": "Karam",
+      "prenom": "Aicha",
+      "role": "fonctionnaire"
+    }
+  },
+  "5": {
+    "id": 5,
+    "user_id": 3,
+    "type_demande": "HEURES_SUP",
+    "titre": "Heures supplémentaires",
+    "description": "Demande d'heures supplémentaires pour cours du soir",
+    "date_debut": "2024-06-01",
+    "date_fin": "2024-06-30",
+    "statut": "APPROUVEE",
+    "commentaire_admin": "Approuvé selon les besoins du département",
+    "created_at": "2025-06-09T17:13:24.171519",
+    "user": {
+      "id": 3,
+      "email": "enseignant@univ.ma",
+      "nom": "Tazi",
+      "prenom": "Ahmed",
+      "role": "enseignant"
+    }
+  },
+  "17": {
+    "id": 17,
+    "user_id": 41,
+    "type_demande": "ATTESTATION",
+    "titre": "Demande d'attestation - travail",
+    "description": "Type d'attestation: travail\nObservations: Aucune",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T17:26:24.333932",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T17:26:24.333950"
+    }
+  },
+  "18": {
+    "id": 18,
+    "user_id": 41,
+    "type_demande": "ATTESTATION",
+    "titre": "Demande d'attestation - travail",
+    "description": "Type d'attestation: travail\nObservations: Aucune",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T17:44:42.103868",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T17:44:42.103906"
+    }
+  },
+  "19": {
+    "id": 19,
+    "user_id": 41,
+    "type_demande": "ATTESTATION",
+    "titre": "Demande d'attestation - travail",
+    "description": "Type d'attestation: travail\nObservations: Aucune",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T18:18:33.665593",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T18:18:33.665691"
+    }
+  },
+  "20": {
+    "id": 20,
+    "user_id": 41,
+    "type_demande": "HEURES_SUP",
+    "titre": "Demande d'heures supplémentaires - 32h",
+    "description": "Période: 2025-06-24 au 2025-07-03\nNombre d'heures: 32h\nMotif: Formation\nDescription: Aucune description fournie",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T18:24:41.464724",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T18:24:41.464779"
     }
   }
 }

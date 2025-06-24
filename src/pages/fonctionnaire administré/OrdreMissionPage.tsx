@@ -136,7 +136,7 @@ const OrdreMissionFonctionnaire = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="font-medium">Bienvenue, Fonctionnaire</span>
+              <span className="font-medium">Bienvenue, {user?.prenom} {user?.nom}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -167,19 +167,19 @@ const OrdreMissionFonctionnaire = () => {
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                       <span className="font-semibold text-gray-600">Nom complet:</span>
-                      <span className="text-gray-800 font-medium">Dupont Marie</span>
+                      <span className="text-gray-800 font-medium">{user?.nom} {user?.prenom}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                       <span className="font-semibold text-gray-600">Type:</span>
                       <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Fonctionnaire</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-semibold text-gray-600">Département:</span>
-                      <span className="text-gray-800 font-medium">Administration</span>
+                      <span className="font-semibold text-gray-600">Email:</span>
+                      <span className="text-gray-800 font-medium">{user?.email}</span>
                     </div>
                     <div className="flex justify-between items-center py-2">
-                      <span className="font-semibold text-gray-600">Grade:</span>
-                      <span className="text-gray-800 font-medium">Attaché principal</span>
+                      <span className="font-semibold text-gray-600">Téléphone:</span>
+                      <span className="text-gray-800 font-medium">{user?.telephone || 'Non renseigné'}</span>
                     </div>
                   </div>
                 </div>
