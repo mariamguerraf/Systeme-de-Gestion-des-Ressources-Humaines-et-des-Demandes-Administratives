@@ -8,7 +8,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-23T15:51:08.076159",
+    "created_at": "2025-06-24T09:57:28.205597",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -27,7 +27,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-18T15:51:08.076170",
+    "created_at": "2025-06-19T09:57:28.205608",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -46,7 +46,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-13T15:51:08.076178",
+    "created_at": "2025-06-14T09:57:28.205616",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -65,7 +65,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-21T15:51:08.076180",
+    "created_at": "2025-06-22T09:57:28.205618",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -84,7 +84,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-08T15:51:08.076183",
+    "created_at": "2025-06-09T09:57:28.205621",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -221,59 +221,65 @@
   },
   "12": {
     "id": 12,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Test Attestation",
-    "description": "Test",
+    "user_id": 41,
+    "type_demande": "ABSENCE",
+    "titre": "Demande d'absence - maladie",
+    "description": "Période: 2025-06-24 au 2025-06-24\nMotif: maladie\nDescription: Aucune description fournie",
     "date_debut": null,
     "date_fin": null,
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-22T19:35:56.413803",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T09:55:07.396326",
     "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T09:55:07.396344"
     }
   },
   "13": {
     "id": 13,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Test Attestation",
-    "description": "Test",
-    "date_debut": null,
-    "date_fin": null,
+    "user_id": 41,
+    "type_demande": "HEURES_SUP",
+    "titre": "Demande d'heures supplémentaires - h",
+    "description": "\nNombre d'heures: h\nMotif: ",
+    "date_debut": "",
+    "date_fin": "",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-22T19:40:32.319571",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T09:58:23.301997",
     "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T09:58:23.302009"
     }
   },
   "14": {
     "id": 14,
-    "user_id": 3,
-    "type_demande": "ATTESTATION",
-    "titre": "Test Attestation",
-    "description": "Test",
-    "date_debut": null,
-    "date_fin": null,
+    "user_id": 41,
+    "type_demande": "HEURES_SUP",
+    "titre": "Demande d'heures supplémentaires - 40h",
+    "description": "\nNombre d'heures: 40h\nMotif: Formation",
+    "date_debut": "2025-06-09",
+    "date_fin": "2025-06-18",
     "statut": "EN_ATTENTE",
-    "commentaire_admin": null,
-    "created_at": "2025-06-22T19:40:50.634643",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T09:58:50.397833",
     "user": {
-      "id": 3,
-      "email": "enseignant@univ.ma",
-      "nom": "Tazi",
-      "prenom": "Ahmed",
-      "role": "enseignant"
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T09:58:50.397847"
     }
   },
   "15": {
@@ -346,7 +352,7 @@
     "date_fin": "2024-07-15",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-24T09:33:27.602892",
+    "created_at": "2025-06-24T10:07:59.099467",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -365,7 +371,7 @@
     "date_fin": "2024-06-22",
     "statut": "APPROUVEE",
     "commentaire_admin": "Demande approuvée avec justificatif médical",
-    "created_at": "2025-06-19T09:33:27.602905",
+    "created_at": "2025-06-19T10:07:59.099480",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -384,7 +390,7 @@
     "date_fin": null,
     "statut": "REJETEE",
     "commentaire_admin": "Documents insuffisants",
-    "created_at": "2025-06-14T09:33:27.602914",
+    "created_at": "2025-06-14T10:07:59.099490",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -403,7 +409,7 @@
     "date_fin": "2024-07-12",
     "statut": "EN_ATTENTE",
     "commentaire_admin": null,
-    "created_at": "2025-06-22T09:33:27.602917",
+    "created_at": "2025-06-22T10:07:59.099494",
     "user": {
       "id": 4,
       "email": "fonctionnaire@univ.ma",
@@ -422,7 +428,7 @@
     "date_fin": "2024-06-30",
     "statut": "APPROUVEE",
     "commentaire_admin": "Approuvé selon les besoins du département",
-    "created_at": "2025-06-09T09:33:27.602919",
+    "created_at": "2025-06-09T10:07:59.099498",
     "user": {
       "id": 3,
       "email": "enseignant@univ.ma",
@@ -431,17 +437,17 @@
       "role": "enseignant"
     }
   },
-  "12": {
-    "id": 12,
+  "15": {
+    "id": 15,
     "user_id": 41,
-    "type_demande": "ABSENCE",
-    "titre": "Demande d'absence - maladie",
-    "description": "Période: 2025-06-24 au 2025-06-24\nMotif: maladie\nDescription: Aucune description fournie",
-    "date_debut": null,
-    "date_fin": null,
+    "type_demande": "HEURES_SUP",
+    "titre": "Test heures sup",
+    "description": "Test description",
+    "date_debut": "2025-06-25",
+    "date_fin": "2025-06-30",
     "statut": "EN_ATTENTE",
     "commentaire_admin": "",
-    "created_at": "2025-06-24T09:55:07.396326",
+    "created_at": "2025-06-24T10:08:21.864399",
     "user": {
       "id": 41,
       "email": "mariam@univ.ma",
@@ -449,7 +455,28 @@
       "prenom": "mariam",
       "role": "enseignant",
       "is_active": true,
-      "created_at": "2025-06-24T09:55:07.396344"
+      "created_at": "2025-06-24T10:08:21.864412"
+    }
+  },
+  "16": {
+    "id": 16,
+    "user_id": 41,
+    "type_demande": "HEURES_SUP",
+    "titre": "Demande d'heures supplémentaires - 14h",
+    "description": "Période: 2025-06-24 au 2025-06-28\nNombre d'heures: 14h\nMotif: Cours de soutien\nDescription: Aucune description fournie",
+    "date_debut": null,
+    "date_fin": null,
+    "statut": "EN_ATTENTE",
+    "commentaire_admin": "",
+    "created_at": "2025-06-24T10:09:20.623436",
+    "user": {
+      "id": 41,
+      "email": "mariam@univ.ma",
+      "nom": "guerraf",
+      "prenom": "mariam",
+      "role": "enseignant",
+      "is_active": true,
+      "created_at": "2025-06-24T10:09:20.623451"
     }
   }
 }

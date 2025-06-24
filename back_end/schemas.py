@@ -93,6 +93,8 @@ class Demande(DemandeBase):
 
     @validator('date_debut', 'date_fin', pre=True, allow_reuse=True)
     def parse_date(cls, v):
+        if v is None or v == "":
+            return None
         if isinstance(v, str):
             try:
                 # Si c'est juste une date (YYYY-MM-DD), ajouter l'heure
