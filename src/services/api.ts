@@ -305,10 +305,10 @@ class ApiService {
   async createDemandeAttestation(titre: string, description?: string) {
     return this.request('/demandes-direct', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         type_demande: 'ATTESTATION',
-        titre, 
-        description 
+        titre,
+        description
       }),
     });
   }
@@ -316,12 +316,12 @@ class ApiService {
   async createDemandeOrdreMission(titre: string, description?: string, date_debut?: string, date_fin?: string) {
     return this.request('/demandes-direct', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         type_demande: 'ORDRE_MISSION',
-        titre, 
-        description, 
-        date_debut, 
-        date_fin 
+        titre,
+        description,
+        date_debut,
+        date_fin
       }),
     });
   }
@@ -329,12 +329,25 @@ class ApiService {
   async createDemandeHeuresSup(titre: string, description?: string, date_debut?: string, date_fin?: string) {
     return this.request('/demandes-direct', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         type_demande: 'HEURES_SUP',
-        titre, 
-        description, 
-        date_debut, 
-        date_fin 
+        titre,
+        description,
+        date_debut,
+        date_fin
+      }),
+    });
+  }
+
+  async createDemandeAbsence(titre: string, description?: string, date_debut?: string, date_fin?: string) {
+    return this.request('/demandes-direct', {
+      method: 'POST',
+      body: JSON.stringify({
+        type_demande: 'ABSENCE',
+        titre,
+        description,
+        date_debut,
+        date_fin
       }),
     });
   }

@@ -16,7 +16,7 @@ import CongePage from "./pages/fonctionnaire administré/CongePage";
 import OrdreMissionPage from "./pages/enseignant/OrdreMissionPage";
 import PageDemandesEnseignant from "./pages/enseignant/PageDemandesEnseignant";
 import Heures_sup from "./pages/enseignant/heures_sup";
-// import AbsencePage from "./pages/enseignant/AbsencePage";
+import AbsencePage from "./pages/enseignant/AbsencePage";
 import ProfilFonctionnaire from './pages/fonctionnaire administré/ProfilPage';
 import DemandesFonctionnaire from './pages/fonctionnaire administré/DemandesPage';
 import OrdreMissionFonctionnaire from './pages/fonctionnaire administré/OrdreMissionPage';
@@ -145,13 +145,11 @@ const App = () => {
                 <Heures_sup />
               </ProtectedRoute>
             } />
-            {/*
             <Route path="/enseignant/absence" element={
               <ProtectedRoute allowedRoles={['enseignant']}>
                 <AbsencePage />
               </ProtectedRoute>
             } />
-            */}
 
             {/* Routes Fonctionnaire */}
             <Route path="/fonctionnaire/profil" element={
