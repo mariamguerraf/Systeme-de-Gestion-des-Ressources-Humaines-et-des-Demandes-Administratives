@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, MapPin, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 import { getApiBaseUrl } from '../../utils/config';
@@ -11,7 +11,6 @@ interface EnseignantData {
   specialite: string;
   grade: string;
   photo?: string;
-  date_recrutement?: string;
   user?: {
     id: number;
     nom: string;
@@ -49,45 +48,7 @@ const ProfilPage = () => {
 
         console.log('🌐 [ProfilPage] Appel API getEnseignants...');
 
-        // NOUVEAU: Essayer d'abord l'endpoint profil dédié
-        try {
-          const profilResponse = await apiService.request<{
-            user: {
-              id: number;
-              nom: string;
-              prenom: string;
-              email: string;
-              telephone?: string;
-              adresse?: string;
-              cin?: string;
-              role: string;
-              is_active?: boolean;
-              created_at?: string;
-            };
-            enseignant: {
-              id?: number;
-              user_id: number;
-              specialite: string;
-              grade: string;
-            };
-          }>('/enseignant/profil', { method: 'GET' });
-
-          console.log('✅ [ProfilPage] Données profil récupérées:', profilResponse);
-
-          setEnseignantData({
-            id: profilResponse.enseignant.id || 0,
-            user_id: profilResponse.enseignant.user_id,
-            specialite: profilResponse.enseignant.specialite,
-            grade: profilResponse.enseignant.grade,
-            user: profilResponse.user
-          });
-
-          return; // Succès, on s'arrête ici
-        } catch (profilError) {
-          console.warn('⚠️ [ProfilPage] Endpoint profil non disponible, fallback vers liste enseignants');
-        }
-
-        // FALLBACK: Si l'endpoint profil ne marche pas, utiliser l'ancienne méthode
+        // Utiliser l'API publique pour récupérer les enseignants
 
         // Récupérer les données de l'enseignant connecté
         const enseignants = await apiService.getEnseignants();
@@ -178,8 +139,6 @@ const ProfilPage = () => {
   const adresse = (userData as any)?.adresse || 'Non renseigné';
   const specialite = enseignantData?.specialite || 'Non renseigné';
   const grade = enseignantData?.grade || 'Non renseigné';
-  const dateInscription = userData?.created_at ? formatDate(userData.created_at) : 'Non renseigné';
-  const dateRecrutement = enseignantData?.date_recrutement ? formatDate(enseignantData.date_recrutement) : 'Non renseigné';
 
   if (loading) {
     return (
@@ -322,10 +281,6 @@ const ProfilPage = () => {
 						  <MapPin className="w-5 h-5 text-orange-500" />
 						  <span className="text-gray-700 font-medium">Adresse: {adresse}</span>
 						</div>
-						<div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-						  <Calendar className="w-5 h-5 text-purple-500" />
-						  <span className="text-gray-700 font-medium">Inscrit le: {dateInscription}</span>
-						</div>
 					  </div>
 					</div>
 				  </div>
@@ -353,10 +308,6 @@ const ProfilPage = () => {
 						<div className="p-3 rounded-lg bg-purple-50 border-l-4 border-purple-500">
 						  <label className="block text-sm font-semibold text-purple-600 mb-1">Spécialité</label>
 						  <p className="text-gray-800 font-medium">{specialite}</p>
-						</div>
-						<div className="p-3 rounded-lg bg-indigo-50 border-l-4 border-indigo-500">
-						  <label className="block text-sm font-semibold text-indigo-600 mb-1">Date de recrutement</label>
-						  <p className="text-gray-800 font-medium">{dateRecrutement}</p>
 						</div>
 					  </div>
 					</div>
