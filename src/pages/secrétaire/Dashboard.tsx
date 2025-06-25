@@ -13,14 +13,6 @@ interface StatProps {
   demandesEnAttente: number;
 }
 
-interface DemandeProps {
-  id: number;
-  utilisateur: string;
-  type: string;
-  date: string;
-  statut: string;
-}
-
 const SecretaireDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -31,11 +23,7 @@ const SecretaireDashboard = () => {
     administres: 0,
     demandesEnAttente: 0
   });
-  const [recentesDemandes, setRecentesDemandes] = useState<DemandeProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchType, setSearchType] = useState<string>('');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   const handleLogout = () => {
@@ -60,23 +48,6 @@ const SecretaireDashboard = () => {
           demandesEnAttente: dashboardStats.demandesEnAttente || 0
         });
 
-        // Fetch real demandes data
-        const demandesData = await apiService.getDemandes(0, 5); // Get latest 5 demandes
-        console.log('📋 [DEBUG] Données des demandes reçues:', demandesData);
-        
-        const recentDemandes = Array.isArray(demandesData) ? demandesData.slice(0, 3).map((demande: any) => ({
-          id: demande.id,
-          utilisateur: demande.user ? `${demande.user.prenom} ${demande.user.nom}` : 'Utilisateur inconnu',
-          type: demande.titre,
-          date: new Date(demande.created_at).toLocaleDateString('fr-FR'),
-          statut: demande.statut === 'EN_ATTENTE' ? 'En attente' : 
-                  demande.statut === 'APPROUVEE' ? 'Approuvé' : 
-                  demande.statut === 'REJETEE' ? 'Rejeté' : demande.statut
-        })) : [];
-
-        console.log('📝 [DEBUG] Demandes formatées:', recentDemandes);
-        setRecentesDemandes(recentDemandes);
-
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
         // Keep default/mock values in case of error
@@ -94,55 +65,6 @@ const SecretaireDashboard = () => {
 
     fetchData();
   }, []);
-
-  const handleAccepterDemande = async (demandeId: number) => {
-    try {
-      await apiService.approuverDemande(demandeId, 'Demande approuvée par le secrétaire');
-      setRecentesDemandes(prevDemandes => 
-        prevDemandes.map(demande => 
-          demande.id === demandeId 
-            ? { ...demande, statut: 'Approuvé' }
-            : demande
-        )
-      );
-      setStats(prevStats => ({
-        ...prevStats,
-        demandesEnAttente: Math.max(0, prevStats.demandesEnAttente - 1)
-      }));
-      setNotification({type: 'success', message: `Demande ${demandeId} approuvée avec succès.`});
-    } catch (error) {
-      setNotification({type: 'error', message: `Erreur lors de l'approbation de la demande ${demandeId}.`});
-    }
-  };
-
-  const handleRefuserDemande = async (demandeId: number) => {
-    try {
-      await apiService.rejeterDemande(demandeId, 'Demande rejetée par le secrétaire');
-      setRecentesDemandes(prevDemandes => 
-        prevDemandes.map(demande => 
-          demande.id === demandeId 
-            ? { ...demande, statut: 'Rejeté' }
-            : demande
-        )
-      );
-      setStats(prevStats => ({
-        ...prevStats,
-        demandesEnAttente: Math.max(0, prevStats.demandesEnAttente - 1)
-      }));
-      setNotification({type: 'success', message: `Demande ${demandeId} rejetée avec succès.`});
-    } catch (error) {
-      setNotification({type: 'error', message: `Erreur lors du rejet de la demande ${demandeId}.`});
-    }
-  };
-
-  const handleRechercher = () => {
-    // Rediriger vers la page des utilisateurs avec les paramètres de recherche
-    const queryParams = new URLSearchParams();
-    if (searchTerm) queryParams.set('search', searchTerm);
-    if (searchType) queryParams.set('type', searchType);
-    
-    navigate(`/secretaire/users?${queryParams.toString()}`);
-  };
 
   if (loading) {
     return (
@@ -216,108 +138,45 @@ const SecretaireDashboard = () => {
             <h3 className="text-lg text-gray-500">Administrés</h3>
             <p className="text-3xl font-bold text-pink-700">{stats.administres}</p>
           </div>
-          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-2xl shadow-2xl border border-yellow-200 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-yellow-700">Demandes en attente</h3>
             <p className="text-3xl font-bold text-orange-500">{stats.demandesEnAttente}</p>
           </div>
         </div>
 
-        {/* Dernières demandes */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Demandes récentes</h3>
-            <a href="/secretaire/demandes" className="text-blue-600 hover:underline font-medium">Voir toutes</a>
+        {/* Boutons d'action principaux */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          {/* Bouton Voir Utilisateurs */}
+          <div 
+            onClick={() => navigate('/secretaire/users')}
+            className="bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-3xl shadow-2xl border border-blue-200 p-8 cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-3xl group"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-6 group-hover:bg-opacity-30 transition-all duration-300">
+                <Users className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Voir Utilisateurs</h3>
+              <p className="text-blue-100 text-lg mb-4">Gérer tous les utilisateurs du système</p>
+              <div className="bg-white bg-opacity-20 rounded-full px-6 py-2 text-white font-semibold">
+                {stats.totalUsers} utilisateurs
+              </div>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentesDemandes.map((demande) => (
-                  <tr key={demande.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.utilisateur}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        demande.statut === 'En attente' ? 'bg-yellow-100 text-yellow-800' :
-                        demande.statut === 'Approuvé' ? 'bg-green-100 text-green-800' :
-                        demande.statut === 'Rejeté' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {demande.statut}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
-                      {demande.statut === 'En attente' ? (
-                        <>
-                          <button 
-                            onClick={() => handleAccepterDemande(demande.id)}
-                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
-                          >
-                            Accepter
-                          </button>
-                          <button 
-                            onClick={() => handleRefuserDemande(demande.id)}
-                            className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
-                          >
-                            Refuser
-                          </button>
-                        </>
-                      ) : (
-                        <span className="px-4 py-2 text-gray-500 text-sm italic">
-                          {demande.statut === 'Approuvé' ? '✅ Approuvé' : '❌ Rejeté'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
-        {/* Recherche d'utilisateur */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Rechercher un utilisateur</h3>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-grow">
-              <input
-                type="text"
-                placeholder="Nom, prénom ou identifiant..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <select 
-                value={searchType}
-                onChange={(e) => setSearchType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Tous les types</option>
-                <option value="professeur">Professeur</option>
-                <option value="fonctionnaire">Fonctionnaire</option>
-                <option value="administre">Administré</option>
-              </select>
-            </div>
-            <div>
-              <button 
-                onClick={handleRechercher}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
-              >
-                Rechercher
-              </button>
+          {/* Bouton Voir Demandes */}
+          <div 
+            onClick={() => navigate('/secretaire/demandes')}
+            className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-3xl shadow-2xl border border-yellow-200 p-8 cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-3xl group"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-yellow-300 bg-opacity-30 rounded-full flex items-center justify-center mb-6 group-hover:bg-opacity-40 transition-all duration-300">
+                <FileText className="w-10 h-10 text-yellow-700" />
+              </div>
+              <h3 className="text-2xl font-bold text-yellow-700 mb-3">Voir Demandes</h3>
+              <p className="text-yellow-600 text-lg mb-4">Traiter toutes les demandes administratives</p>
+              <div className="bg-yellow-300 bg-opacity-30 rounded-full px-6 py-2 text-yellow-700 font-semibold">
+                {stats.demandesEnAttente} en attente
+              </div>
             </div>
           </div>
         </div>
