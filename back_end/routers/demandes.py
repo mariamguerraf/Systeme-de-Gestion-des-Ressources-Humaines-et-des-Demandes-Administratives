@@ -46,7 +46,16 @@ def get_current_user_from_token(authorization: str = Header(None)):
 
                 if user_data:
                     print(f"✅ [DEBUG] Utilisateur trouvé dans SQLite: {user_data['email']}")
-                    return dict(user_data)
+                    # Convertir la Row en dictionnaire
+                    user_dict = {
+                        'id': user_data['id'],
+                        'email': user_data['email'],
+                        'nom': user_data['nom'],
+                        'prenom': user_data['prenom'],
+                        'role': user_data['role'],
+                        'is_active': user_data['is_active']
+                    }
+                    return user_dict
                 else:
                     print(f"❌ [DEBUG] Utilisateur non trouvé dans SQLite avec id={user_id}, role={role.upper()}")
 
@@ -356,32 +365,61 @@ async def create_demande_heures_sup(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la création: {str(e)}")
 
-@router.get("/", response_model=List[DemandeSchema])
+@router.get("/test")
+async def test_demandes():
+    """Endpoint de test simple pour vérifier si le routeur fonctionne"""
+    return {"message": "Test réussi", "status": "OK"}
+
+@router.get("/test-auth")
+async def test_auth(authorization: str = Header(None)):
+    """Endpoint de test avec authentification"""
+    try:
+        user = get_current_user_from_token(authorization)
+        return {"message": "Auth réussie", "user": user}
+    except Exception as e:
+        return {"message": "Auth échouée", "error": str(e)}
+
+@router.get("/")
 async def get_demandes(
     skip: int = 0,
     limit: int = 100,
     authorization: str = Header(None)
 ):
     """Récupérer les demandes selon le rôle de l'utilisateur"""
-    current_user = get_current_user_from_token(authorization)
+    print(f"🔍 [DEBUG] get_demandes appelé avec authorization: {authorization}")
+    
+    try:
+        current_user = get_current_user_from_token(authorization)
+        print(f"🔍 [DEBUG] Utilisateur courant: {current_user}")
+    except Exception as e:
+        print(f"❌ [DEBUG] Erreur lors de l'authentification: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"Erreur d'authentification: {str(e)}")
 
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
 
         if current_user["role"] in ["ADMIN", "SECRETAIRE"]:
+            print(f"🔍 [DEBUG] Récupération de toutes les demandes pour {current_user['role']}")
             # Admin et secrétaire voient toutes les demandes
             cursor.execute('''
-                SELECT d.*, u.nom, u.prenom, u.email, u.role
+                SELECT d.id, d.user_id, d.type_demande, d.titre, d.description, 
+                       d.date_debut, d.date_fin, d.statut, d.commentaire_admin, 
+                       d.created_at, d.updated_at,
+                       u.nom, u.prenom, u.email, u.role
                 FROM demandes d
                 JOIN users u ON d.user_id = u.id
                 ORDER BY d.created_at DESC
                 LIMIT ? OFFSET ?
             ''', (limit, skip))
         else:
+            print(f"🔍 [DEBUG] Récupération des demandes pour l'utilisateur {current_user['id']}")
             # Utilisateurs normaux voient seulement leurs demandes
             cursor.execute('''
-                SELECT d.*, u.nom, u.prenom, u.email, u.role
+                SELECT d.id, d.user_id, d.type_demande, d.titre, d.description,
+                       d.date_debut, d.date_fin, d.statut, d.commentaire_admin,
+                       d.created_at, d.updated_at,
+                       u.nom, u.prenom, u.email, u.role
                 FROM demandes d
                 JOIN users u ON d.user_id = u.id
                 WHERE d.user_id = ?
@@ -390,34 +428,45 @@ async def get_demandes(
             ''', (current_user["id"], limit, skip))
 
         demandes_data = cursor.fetchall()
+        print(f"🔍 [DEBUG] Nombre de demandes trouvées: {len(demandes_data)}")
         conn.close()
 
         demandes_list = []
         for demande in demandes_data:
-            demandes_list.append({
-                "id": demande["id"],
-                "user_id": demande["user_id"],
-                "type_demande": demande["type_demande"],
-                "titre": demande["titre"],
-                "description": demande["description"],
-                "date_debut": demande["date_debut"],
-                "date_fin": demande["date_fin"],
-                "statut": demande["statut"],
-                "commentaire_admin": demande["commentaire_admin"],
-                "created_at": demande["created_at"],
-                "updated_at": demande["updated_at"],
-                "user": {
-                    "id": demande["user_id"],
-                    "nom": demande["nom"],
-                    "prenom": demande["prenom"],
-                    "email": demande["email"],
-                    "role": demande["role"]
+            try:
+                # Conversion simple sans validation Pydantic
+                demande_dict = {
+                    "id": int(demande["id"]) if demande["id"] else 0,
+                    "user_id": int(demande["user_id"]) if demande["user_id"] else 0,
+                    "type_demande": str(demande["type_demande"]) if demande["type_demande"] else "",
+                    "titre": str(demande["titre"]) if demande["titre"] else "",
+                    "description": str(demande["description"]) if demande["description"] else "",
+                    "date_debut": str(demande["date_debut"]) if demande["date_debut"] else None,
+                    "date_fin": str(demande["date_fin"]) if demande["date_fin"] else None,
+                    "statut": str(demande["statut"]) if demande["statut"] else "EN_ATTENTE",
+                    "commentaire_admin": str(demande["commentaire_admin"]) if demande["commentaire_admin"] else "",
+                    "created_at": str(demande["created_at"]) if demande["created_at"] else "",
+                    "updated_at": str(demande["updated_at"]) if demande["updated_at"] else "",
+                    "user": {
+                        "id": int(demande["user_id"]) if demande["user_id"] else 0,
+                        "nom": str(demande["nom"]) if demande["nom"] else "",
+                        "prenom": str(demande["prenom"]) if demande["prenom"] else "",
+                        "email": str(demande["email"]) if demande["email"] else "",
+                        "role": str(demande["role"]) if demande["role"] else ""
+                    }
                 }
-            })
+                demandes_list.append(demande_dict)
+            except Exception as e:
+                print(f"❌ [DEBUG] Erreur lors du traitement de la demande {demande.get('id', 'unknown')}: {str(e)}")
+                continue
 
+        print(f"🔍 [DEBUG] Liste des demandes formatée: {len(demandes_list)} demandes")
         return demandes_list
 
     except Exception as e:
+        print(f"❌ [DEBUG] Erreur dans get_demandes: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération: {str(e)}")
 
 @router.get("/user/me", response_model=List[DemandeSchema])
@@ -475,6 +524,54 @@ async def get_my_demandes(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération: {str(e)}")
+
+@router.get("/debug-sql")
+async def debug_sql_demandes(authorization: str = Header(None)):
+    """Debug de la requête SQL des demandes"""
+    try:
+        current_user = get_current_user_from_token(authorization)
+        print(f"🔍 [DEBUG] Utilisateur: {current_user}")
+        
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        # Test simple de la requête
+        cursor.execute("SELECT COUNT(*) as count FROM demandes")
+        count = cursor.fetchone()['count']
+        print(f"🔍 [DEBUG] Total demandes: {count}")
+        
+        # Requête complète
+        cursor.execute('''
+            SELECT d.id, d.titre, d.statut, u.nom, u.prenom 
+            FROM demandes d
+            JOIN users u ON d.user_id = u.id
+            ORDER BY d.created_at DESC
+            LIMIT 3
+        ''')
+        demandes = cursor.fetchall()
+        conn.close()
+        
+        result = []
+        for demande in demandes:
+            result.append({
+                "id": demande["id"],
+                "titre": demande["titre"],
+                "statut": demande["statut"],
+                "utilisateur": f"{demande['prenom']} {demande['nom']}"
+            })
+        
+        return {
+            "count": count,
+            "demandes": result,
+            "user": current_user
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 @router.get("/{demande_id}", response_model=DemandeSchema)
 async def get_demande(
@@ -853,3 +950,67 @@ async def delete_demande_document(
         conn.rollback()
         conn.close()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
+
+@router.get("/debug-sql")
+async def debug_sql_demandes(authorization: str = Header(None)):
+    """Debug de la requête SQL des demandes"""
+    try:
+        current_user = get_current_user_from_token(authorization)
+        print(f"🔍 [DEBUG] Utilisateur: {current_user}")
+        
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        # Test simple de la requête
+        cursor.execute("SELECT COUNT(*) as count FROM demandes")
+        count = cursor.fetchone()['count']
+        print(f"🔍 [DEBUG] Total demandes: {count}")
+        
+        # Requête complète
+        cursor.execute('''
+            SELECT d.id, d.titre, d.statut, u.nom, u.prenom 
+            FROM demandes d
+            JOIN users u ON d.user_id = u.id
+            ORDER BY d.created_at DESC
+            LIMIT 3
+        ''')
+        demandes = cursor.fetchall()
+        conn.close()
+        
+        result = []
+        for demande in demandes:
+            result.append({
+                "id": demande["id"],
+                "titre": demande["titre"],
+                "statut": demande["statut"],
+                "utilisateur": f"{demande['prenom']} {demande['nom']}"
+            })
+        
+        return {
+            "count": count,
+            "demandes": result,
+            "user": current_user
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@router.get("/count")
+async def count_demandes(authorization: str = Header(None)):
+    """Compter les demandes (endpoint simple pour debug)"""
+    try:
+        user = get_current_user_from_token(authorization)
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) as count FROM demandes")
+        count = cursor.fetchone()['count']
+        conn.close()
+        
+        return {"count": count, "user_role": user["role"]}
+    except Exception as e:
+        return {"error": str(e)}

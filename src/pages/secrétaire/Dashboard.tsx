@@ -36,6 +36,7 @@ const SecretaireDashboard = () => {
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchType, setSearchType] = useState<string>('');
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -47,27 +48,33 @@ const SecretaireDashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const dashboardStats = await apiService.getDashboardStats();
+        console.log('🔑 [DEBUG] Utilisateur connecté:', user);
+        console.log('🔑 [DEBUG] Token présent:', !!localStorage.getItem('access_token'));
         
+        const dashboardStats = await apiService.getDashboardStats() as any;
         setStats({
-          totalUsers: dashboardStats.totalUsers,
-          professeurs: dashboardStats.enseignants,
-          fonctionnaires: dashboardStats.fonctionnaires,
-          administres: dashboardStats.totalUsers - dashboardStats.enseignants - dashboardStats.fonctionnaires,
-          demandesEnAttente: dashboardStats.demandesEnAttente
+          totalUsers: dashboardStats.totalUsers || 0,
+          professeurs: dashboardStats.enseignants || 0,
+          fonctionnaires: dashboardStats.fonctionnaires || 0,
+          administres: (dashboardStats.totalUsers || 0) - (dashboardStats.enseignants || 0) - (dashboardStats.fonctionnaires || 0),
+          demandesEnAttente: dashboardStats.demandesEnAttente || 0
         });
 
         // Fetch real demandes data
         const demandesData = await apiService.getDemandes(0, 5); // Get latest 5 demandes
+        console.log('📋 [DEBUG] Données des demandes reçues:', demandesData);
+        
         const recentDemandes = Array.isArray(demandesData) ? demandesData.slice(0, 3).map((demande: any) => ({
           id: demande.id,
           utilisateur: demande.user ? `${demande.user.prenom} ${demande.user.nom}` : 'Utilisateur inconnu',
           type: demande.titre,
           date: new Date(demande.created_at).toLocaleDateString('fr-FR'),
           statut: demande.statut === 'EN_ATTENTE' ? 'En attente' : 
-                  demande.statut === 'APPROUVEE' ? 'Approuvé' : 'Rejeté'
+                  demande.statut === 'APPROUVEE' ? 'Approuvé' : 
+                  demande.statut === 'REJETEE' ? 'Rejeté' : demande.statut
         })) : [];
 
+        console.log('📝 [DEBUG] Demandes formatées:', recentDemandes);
         setRecentesDemandes(recentDemandes);
 
       } catch (error) {
@@ -88,28 +95,44 @@ const SecretaireDashboard = () => {
     fetchData();
   }, []);
 
-  const handleAccepterDemande = (demandeId: number) => {
-    setRecentesDemandes(prevDemandes => 
-      prevDemandes.map(demande => 
-        demande.id === demandeId 
-          ? { ...demande, statut: 'Acceptée' }
-          : demande
-      )
-    );
-    // Optionnel: afficher une notification de succès
-    console.log(`Demande ${demandeId} acceptée`);
+  const handleAccepterDemande = async (demandeId: number) => {
+    try {
+      await apiService.approuverDemande(demandeId, 'Demande approuvée par le secrétaire');
+      setRecentesDemandes(prevDemandes => 
+        prevDemandes.map(demande => 
+          demande.id === demandeId 
+            ? { ...demande, statut: 'Approuvé' }
+            : demande
+        )
+      );
+      setStats(prevStats => ({
+        ...prevStats,
+        demandesEnAttente: Math.max(0, prevStats.demandesEnAttente - 1)
+      }));
+      setNotification({type: 'success', message: `Demande ${demandeId} approuvée avec succès.`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Erreur lors de l'approbation de la demande ${demandeId}.`});
+    }
   };
 
-  const handleRefuserDemande = (demandeId: number) => {
-    setRecentesDemandes(prevDemandes => 
-      prevDemandes.map(demande => 
-        demande.id === demandeId 
-          ? { ...demande, statut: 'Refusée' }
-          : demande
-      )
-    );
-    // Optionnel: afficher une notification de succès
-    console.log(`Demande ${demandeId} refusée`);
+  const handleRefuserDemande = async (demandeId: number) => {
+    try {
+      await apiService.rejeterDemande(demandeId, 'Demande rejetée par le secrétaire');
+      setRecentesDemandes(prevDemandes => 
+        prevDemandes.map(demande => 
+          demande.id === demandeId 
+            ? { ...demande, statut: 'Rejeté' }
+            : demande
+        )
+      );
+      setStats(prevStats => ({
+        ...prevStats,
+        demandesEnAttente: Math.max(0, prevStats.demandesEnAttente - 1)
+      }));
+      setNotification({type: 'success', message: `Demande ${demandeId} rejetée avec succès.`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Erreur lors du rejet de la demande ${demandeId}.`});
+    }
   };
 
   const handleRechercher = () => {
@@ -131,6 +154,15 @@ const SecretaireDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 ${
+          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          {notification.message}
+          <button className="ml-4 text-white font-bold" onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
       {/* Navigation */}
       <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white shadow-xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -216,23 +248,36 @@ const SecretaireDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.type}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.date}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        demande.statut === 'En attente' ? 'bg-yellow-100 text-yellow-800' :
+                        demande.statut === 'Approuvé' ? 'bg-green-100 text-green-800' :
+                        demande.statut === 'Rejeté' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
                         {demande.statut}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
-                      <button 
-                        onClick={() => handleAccepterDemande(demande.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
-                      >
-                        Accepter
-                      </button>
-                      <button 
-                        onClick={() => handleRefuserDemande(demande.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
-                      >
-                        Refuser
-                      </button>
+                      {demande.statut === 'En attente' ? (
+                        <>
+                          <button 
+                            onClick={() => handleAccepterDemande(demande.id)}
+                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+                          >
+                            Accepter
+                          </button>
+                          <button 
+                            onClick={() => handleRefuserDemande(demande.id)}
+                            className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
+                          >
+                            Refuser
+                          </button>
+                        </>
+                      ) : (
+                        <span className="px-4 py-2 text-gray-500 text-sm italic">
+                          {demande.statut === 'Approuvé' ? '✅ Approuvé' : '❌ Rejeté'}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

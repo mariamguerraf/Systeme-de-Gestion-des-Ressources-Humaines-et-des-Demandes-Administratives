@@ -294,11 +294,22 @@ class ApiService {
     });
   }
 
-  async updateDemandeStatus(demandeId: number, status: string, commentaire?: string) {
+  async updateDemandeStatus(demandeId: number, statut: string, commentaire?: string) {
     return this.request(`/demandes/${demandeId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ statut: status, commentaire_admin: commentaire }),
+      body: JSON.stringify({
+        statut,
+        commentaire_admin: commentaire
+      }),
     });
+  }
+
+  async approuverDemande(demandeId: number, commentaire?: string) {
+    return this.updateDemandeStatus(demandeId, 'APPROUVEE', commentaire);
+  }
+
+  async rejeterDemande(demandeId: number, commentaire?: string) {
+    return this.updateDemandeStatus(demandeId, 'REJETEE', commentaire);
   }
 
   // Endpoints spécialisés pour les demandes
