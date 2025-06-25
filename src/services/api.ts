@@ -117,7 +117,11 @@ class ApiService {
 
   // Users methods
   async getUsers(skip = 0, limit = 100) {
-    return this.request(`/users/?skip=${skip}&limit=${limit}`);
+    return this.request(`/users?skip=${skip}&limit=${limit}`);
+  }
+
+  async getAllUsers() {
+    return this.request('/users');
   }
 
   async getUser(userId: number) {

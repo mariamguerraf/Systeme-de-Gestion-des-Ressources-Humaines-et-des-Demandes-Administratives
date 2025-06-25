@@ -138,7 +138,7 @@ const SecretaireDashboard = () => {
             <h3 className="text-lg text-gray-500">Administrés</h3>
             <p className="text-3xl font-bold text-pink-700">{stats.administres}</p>
           </div>
-          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-2xl shadow-2xl border border-yellow-200 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4">
             <h3 className="text-lg text-yellow-700">Demandes en attente</h3>
             <p className="text-3xl font-bold text-orange-500">{stats.demandesEnAttente}</p>
           </div>

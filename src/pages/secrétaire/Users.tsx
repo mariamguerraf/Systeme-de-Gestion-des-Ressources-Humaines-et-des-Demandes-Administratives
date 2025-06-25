@@ -12,7 +12,15 @@ interface UserProps {
   type: string;
   email: string;
   telephone: string;
-  dateInscription: string;
+  adresse?: string;
+  cin?: string;
+  role: string;
+  is_active: boolean;
+  created_at?: string;
+  specialite?: string;
+  grade?: string;
+  service?: string;
+  poste?: string;
 }
 
 const UsersPage = () => {
@@ -21,6 +29,8 @@ const UsersPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [searchParams] = useSearchParams();
@@ -39,12 +49,17 @@ const UsersPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Get test users data which includes all users with different roles
-        const testUsersData = await apiService.getTestUsers() as any;
-        const usersArray = Array.isArray(testUsersData?.users) ? testUsersData.users : [];
+        // Récupérer tous les utilisateurs depuis la base de données
+        const response = await apiService.getAllUsers() as any;
+        console.log('📊 [DEBUG] Données utilisateurs reçues:', response);
         
-        // Transform API data to match interface
+        // Extraire les utilisateurs de la réponse
+        const usersArray = Array.isArray(response?.users) ? response.users : 
+                           Array.isArray(response) ? response : [];
+        
+        // Transformer les données pour correspondre à l'interface
         const transformedUsers = usersArray.map((user: any) => ({
           id: user.id || Math.random(),
           nom: user.nom || 'N/A',
@@ -55,13 +70,24 @@ const UsersPage = () => {
                 user.role === 'secretaire' ? 'secrétaire' : 'administré',
           email: user.email || '',
           telephone: user.telephone || 'Non renseigné',
-          dateInscription: new Date().toLocaleDateString('fr-FR')
+          adresse: user.adresse || 'Non renseigné',
+          cin: user.cin || 'Non renseigné',
+          role: user.role || 'user',
+          is_active: user.is_active !== false,
+          created_at: user.created_at,
+          specialite: user.specialite,
+          grade: user.grade,
+          service: user.service,
+          poste: user.poste
         }));
 
+        console.log('📝 [DEBUG] Utilisateurs transformés:', transformedUsers);
         setUsers(transformedUsers);
+        setTotalUsers(response?.total || transformedUsers.length);
+
       } catch (error) {
         console.error('Erreur lors du chargement des utilisateurs:', error);
-        // Fallback to empty array on error
+        setError('Impossible de charger les utilisateurs');
         setUsers([]);
       } finally {
         setLoading(false);
@@ -103,27 +129,27 @@ const UsersPage = () => {
     navigate('/');
   };
 
-
-
-  const handlePaginationPrevious = () => {
-    console.log('Page précédente');
-    // Logique de pagination - à implémenter avec state de page actuelle
-  };
-
-  const handlePaginationNext = () => {
-    console.log('Page suivante');
-    // Logique de pagination - à implémenter avec state de page actuelle
-  };
-
-  const handlePageNumber = (pageNumber: number) => {
-    console.log(`Aller à la page ${pageNumber}`);
-    // Logique de pagination - à implémenter avec state de page actuelle
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="text-2xl text-gray-600">Chargement...</div>
+        <div className="text-2xl text-gray-600">Chargement des utilisateurs...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="text-2xl text-red-600 mb-4">❌ Erreur</div>
+          <div className="text-lg text-gray-600 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Recharger
+          </button>
+        </div>
       </div>
     );
   }
@@ -196,6 +222,7 @@ const UsersPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Téléphone</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inscription</th>
                 </tr>
               </thead>
@@ -216,7 +243,26 @@ const UsersPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telephone}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.dateInscription}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.type === 'professeur' && user.specialite && (
+                        <span className="text-purple-600">Spécialité: {user.specialite}</span>
+                      )}
+                      {user.type === 'fonctionnaire' && user.service && (
+                        <span className="text-blue-600">Service: {user.service}</span>
+                      )}
+                      {user.type === 'fonctionnaire' && user.poste && (
+                        <span className="text-blue-600 block">Poste: {user.poste}</span>
+                      )}
+                      {user.grade && (
+                        <span className="text-indigo-600 block">Grade: {user.grade}</span>
+                      )}
+                      {!user.specialite && !user.service && !user.poste && !user.grade && (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -228,65 +274,6 @@ const UsersPage = () => {
               Aucun utilisateur trouvé avec ces critères de recherche.
             </div>
           )}
-
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button 
-                onClick={handlePaginationPrevious}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Précédent
-              </button>
-              <button 
-                onClick={handlePaginationNext}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Suivant
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Affichage de <span className="font-medium">1</span> à <span className="font-medium">{filteredUsers.length}</span> sur <span className="font-medium">{users.length}</span> résultats
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button 
-                    onClick={handlePaginationPrevious}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    &laquo; Précédent
-                  </button>
-                  <button 
-                    onClick={() => handlePageNumber(1)}
-                    className="bg-blue-50 border-blue-500 z-10 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-blue-600 hover:bg-blue-100"
-                  >
-                    1
-                  </button>
-                  <button 
-                    onClick={() => handlePageNumber(2)}
-                    className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    2
-                  </button>
-                  <button 
-                    onClick={() => handlePageNumber(3)}
-                    className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    3
-                  </button>
-                  <button 
-                    onClick={handlePaginationNext}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    Suivant &raquo;
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>

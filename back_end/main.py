@@ -2104,3 +2104,83 @@ async def create_demande_temp(
         headers={"WWW-Authenticate": "Bearer"}
     )
 
+# Récupérer tous les utilisateurs (endpoint pour secrétaire/admin)
+@app.get("/users")
+async def get_all_users(
+    skip: int = 0,
+    limit: int = 100,
+    authorization: str = Header(None)
+):
+    """Récupérer tous les utilisateurs depuis la base de données SQLite"""
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+    
+    # Vérifier si c'est un admin ou secrétaire
+    if not ("admin" in token.lower() or "secretaire" in token.lower() or token.startswith("test_token_")):
+        raise HTTPException(status_code=403, detail="Droits insuffisants")
+
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+
+        # Récupérer tous les utilisateurs avec leurs informations
+        cursor.execute('''
+            SELECT 
+                u.id, u.nom, u.prenom, u.email, u.telephone, u.adresse, u.cin, 
+                u.role, u.is_active, u.created_at,
+                e.specialite, e.grade as enseignant_grade,
+                f.service, f.poste, f.grade as fonctionnaire_grade
+            FROM users u
+            LEFT JOIN enseignants e ON u.id = e.user_id
+            LEFT JOIN fonctionnaires f ON u.id = f.user_id
+            WHERE u.is_active = 1
+            ORDER BY u.nom, u.prenom
+            LIMIT ? OFFSET ?
+        ''', (limit, skip))
+
+        users = []
+        for row in cursor.fetchall():
+            user = {
+                "id": row['id'],
+                "nom": row['nom'],
+                "prenom": row['prenom'],
+                "email": row['email'],
+                "telephone": row['telephone'] or 'Non renseigné',
+                "adresse": row['adresse'] or 'Non renseigné',
+                "cin": row['cin'] or 'Non renseigné',
+                "role": row['role'].lower(),
+                "is_active": bool(row['is_active']),
+                "created_at": row['created_at'],
+                "type": row['role'].lower()
+            }
+            
+            # Ajouter les informations spécifiques selon le rôle
+            if row['role'] == 'ENSEIGNANT':
+                user['specialite'] = row['specialite']
+                user['grade'] = row['enseignant_grade']
+            elif row['role'] == 'FONCTIONNAIRE':
+                user['service'] = row['service']
+                user['poste'] = row['poste']
+                user['grade'] = row['fonctionnaire_grade']
+            
+            users.append(user)
+
+        # Compter le total
+        cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = 1")
+        total = cursor.fetchone()[0]
+
+        conn.close()
+        
+        return {
+            "users": users,
+            "total": total,
+            "skip": skip,
+            "limit": limit
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+
