@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { User, FileText, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -36,11 +36,11 @@ const DemandesFonctionnaire = () => {
     const fetchDemandes = async () => {
       try {
         setLoading(true);
-        const data = await apiService.getDemandes();
+        // Utiliser getMyDemandes au lieu de getDemandes pour récupérer uniquement les demandes de l'utilisateur connecté
+        const data = await apiService.getMyDemandes();
         
-        // Filter demandes for current user
-        const userDemandes = Array.isArray(data) ? 
-          data.filter((demande: any) => demande.user_id === user?.id) : [];
+        // Les données sont déjà filtrées côté serveur, pas besoin de filtrer ici
+        const userDemandes = Array.isArray(data) ? data : [];
         
         setDemandes(userDemandes);
       } catch (error) {
@@ -52,7 +52,7 @@ const DemandesFonctionnaire = () => {
       }
     };
 
-    if (user?.id) {
+    if (user) {
       fetchDemandes();
     }
   }, [user]);
@@ -60,6 +60,23 @@ const DemandesFonctionnaire = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  // Fonction pour supprimer une demande
+  const handleSupprimerDemande = async (demandeId: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+      try {
+        await apiService.deleteDemande(demandeId);
+        alert('Demande supprimée avec succès');
+        // Recharger les demandes après suppression
+        const data = await apiService.getMyDemandes();
+        const userDemandes = Array.isArray(data) ? data : [];
+        setDemandes(userDemandes);
+      } catch (error: any) {
+        console.error('Erreur lors de la suppression:', error);
+        alert(`Erreur: ${error.message || 'Impossible de supprimer la demande'}`);
+      }
+    }
   };
   
   // Exemples de demandes déjà faites (à remplacer par API plus tard)
@@ -132,6 +149,7 @@ const DemandesFonctionnaire = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -149,7 +167,7 @@ const DemandesFonctionnaire = () => {
                     </tr>
                   ) : demandes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                         Aucune demande trouvée.
                       </td>
                     </tr>
@@ -176,6 +194,15 @@ const DemandesFonctionnaire = () => {
                               <XCircle className="w-4 h-4 mr-1 inline" /> Rejetée
                             </span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleSupprimerDemande(demande.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            title="Supprimer la demande"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     ))

@@ -4,35 +4,42 @@
 export const TEST_CREDENTIALS = {
   // Administrateur
   admin: {
-    email: "admin@gestion.com",
-    password: "password123",
+    email: "admin@univ.ma",
+    password: "admin2024",
     role: "admin"
   },
 
   // Secrétaire
   secretaire: {
-    email: "secretaire@gestion.com",
-    password: "password123",
+    email: "secretaire@univ.ma",
+    password: "secretaire2024",
     role: "secretaire"
   },
 
   // Enseignant
   enseignant: {
-    email: "enseignant@gestion.com",
-    password: "password123",
+    email: "enseignant@univ.ma",
+    password: "enseignant2024",
     role: "enseignant"
   },
 
   // Fonctionnaire
   fonctionnaire: {
-    email: "fonctionnaire@gestion.com",
-    password: "password123",
+    email: "fonctionnaire@univ.ma",
+    password: "fonction2024",
     role: "fonctionnaire"
+  },
+
+  // Test rapide
+  test: {
+    email: "test@test.com",
+    password: "123",
+    role: "admin"
   }
 };
 
 // Fonction utilitaire pour obtenir des credentials de test
-export const getTestCredentials = (role: 'admin' | 'secretaire' | 'enseignant' | 'fonctionnaire') => {
+export const getTestCredentials = (role: 'admin' | 'secretaire' | 'enseignant' | 'fonctionnaire' | 'test') => {
   return TEST_CREDENTIALS[role];
 };
 
