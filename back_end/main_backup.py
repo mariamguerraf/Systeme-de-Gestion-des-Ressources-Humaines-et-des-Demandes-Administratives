@@ -1467,9 +1467,186 @@ async def upload_fonctionnaire_photo(
 # Récupérer toutes les demandes (endpoint pour secrétaire/admin) - Utilise SQLite et inclut les documents
 # DÉSACTIVÉ - Utilise maintenant le router demandes
 # @app.get("/demandes/", response_model=List[DemandeResponse])
-# ===== ENDPOINTS POUR LES DEMANDES =====
-# Note: Les endpoints principaux sont maintenant gérés par le router demandes.py
-# Les endpoints ci-dessous sont conservés pour compatibilité
+"""
+async def get_all_demandes(
+    skip: int = 0,
+    limit: int = 100,
+    authorization: str = Header(None)
+):
+    # FONCTION DÉSACTIVÉE - Utilise le router demandes
+    pass
+"""
+    # Vérifier l'autorisation (secrétaire ou admin)
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Vérifier si c'est un admin ou secrétaire
+    authorized_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
+            authorized_user = {"role": parts[3]}
+
+    if not authorized_user:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
+
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+
+        # Récupérer toutes les demandes depuis SQLite
+        cursor.execute('''
+            SELECT d.id, d.user_id, d.type_demande, d.titre, d.description, 
+                   d.date_debut, d.date_fin, d.statut, d.commentaire_admin, 
+                   d.created_at, d.updated_at,
+                   u.nom, u.prenom, u.email, u.role
+            FROM demandes d
+            JOIN users u ON d.user_id = u.id
+            ORDER BY d.created_at DESC
+            LIMIT ? OFFSET ?
+        ''', (limit, skip))
+
+        demandes_data = cursor.fetchall()
+
+        demandes_list = []
+        for demande in demandes_data:
+            # Récupérer les documents associés à cette demande
+            cursor.execute('''
+                SELECT id, filename, original_filename, file_size, content_type, uploaded_at
+                FROM demande_documents 
+                WHERE demande_id = ?
+                ORDER BY uploaded_at DESC
+            ''', (demande["id"],))
+            
+            documents_data = cursor.fetchall()
+            documents_list = []
+            for doc in documents_data:
+                documents_list.append({
+                    "id": doc["id"],
+                    "filename": doc["filename"],
+                    "original_filename": doc["original_filename"],
+                    "file_size": doc["file_size"],
+                    "content_type": doc["content_type"],
+                    "uploaded_at": doc["uploaded_at"]
+                })
+
+            demande_dict = {
+                "id": demande["id"],
+                "user_id": demande["user_id"],
+                "type_demande": demande["type_demande"],
+                "titre": demande["titre"],
+                "description": demande["description"] or "",
+                "date_debut": demande["date_debut"],
+                "date_fin": demande["date_fin"],
+                "statut": demande["statut"],
+                "commentaire_admin": demande["commentaire_admin"] or "",
+                "created_at": demande["created_at"],
+                "updated_at": demande["updated_at"],
+                "documents": documents_list,  # Inclure les documents
+                "user": {
+                    "id": demande["user_id"],
+                    "nom": demande["nom"],
+                    "prenom": demande["prenom"],
+                    "email": demande["email"],
+                    "role": demande["role"]
+                }
+            }
+            demandes_list.append(demande_dict)
+
+        conn.close()
+        return demandes_list
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+
+# Récupérer une demande spécifique (endpoint pour secrétaire/admin) - Utilise SQLite et inclut les documents
+# DÉSACTIVÉ - Utilise maintenant le router demandes
+# @app.get("/demandes/{demande_id}", response_model=DemandeResponse)
+async def get_demande(
+    demande_id: int,
+    authorization: str = Header(None)
+):
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Vérifier si c'est un admin ou secrétaire
+    authorized_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
+            authorized_user = {"role": parts[3]}
+
+    if not authorized_user:
+        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
+
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+
+        # Récupérer la demande depuis SQLite
+        cursor.execute('''
+            SELECT d.*, u.nom, u.prenom, u.email, u.role
+            FROM demandes d
+            JOIN users u ON d.user_id = u.id
+            WHERE d.id = ?
+        ''', (demande_id,))
+
+        demande_data = cursor.fetchone()
+        if not demande_data:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Demande non trouvée")
+
+        # Récupérer les documents associés
+        cursor.execute('''
+            SELECT id, filename, original_filename, file_size, content_type, uploaded_at
+            FROM demande_documents 
+            WHERE demande_id = ?
+            ORDER BY uploaded_at DESC
+        ''', (demande_id,))
+        
+        documents_data = cursor.fetchall()
+        conn.close()
+        
+        documents_list = []
+        for doc in documents_data:
+            documents_list.append({
+                "id": doc["id"],
+                "filename": doc["filename"],
+                "original_filename": doc["original_filename"],
+                "file_size": doc["file_size"],
+                "content_type": doc["content_type"],
+                "uploaded_at": doc["uploaded_at"]
+            })
+
+        return {
+            "id": demande_data["id"],
+            "user_id": demande_data["user_id"],
+            "type_demande": demande_data["type_demande"],
+            "titre": demande_data["titre"],
+            "description": demande_data["description"] or "",
+            "date_debut": demande_data["date_debut"],
+            "date_fin": demande_data["date_fin"],
+            "statut": demande_data["statut"],
+            "commentaire_admin": demande_data["commentaire_admin"] or "",
+            "created_at": demande_data["created_at"],
+            "updated_at": demande_data["updated_at"],
+            "documents": documents_list,  # Inclure les documents
+            "user": {
+                "id": demande_data["user_id"],
+                "nom": demande_data["nom"],
+                "prenom": demande_data["prenom"],
+                "email": demande_data["email"],
+                "role": demande_data["role"]
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
 
 # Créer une nouvelle demande (endpoint pour tous les utilisateurs connectés)
 @app.post("/demandes", response_model=DemandeResponse)
@@ -2277,6 +2454,86 @@ async def get_test_demande(demande_id: int):
         demande["documents"] = []
     
     return demande
+
+# Endpoint pour télécharger un document d'une demande
+# DÉSACTIVÉ - Utilise maintenant le router demandes
+# @app.get("/demandes/{demande_id}/documents/{document_id}/download")
+async def download_demande_document(
+    demande_id: int,
+    document_id: int,
+    authorization: str = Header(None)
+):
+    """Télécharger un document d'une demande"""
+    
+    # Vérifier l'autorisation
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token manquant")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Vérifier les permissions (admin, secrétaire ou propriétaire de la demande)
+    current_user = None
+    if token.startswith("test_token_"):
+        parts = token.split("_")
+        if len(parts) >= 4:
+            user_id = parts[2]
+            role = parts[3]
+            current_user = {"id": int(user_id), "role": role.upper()}
+
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Token invalide")
+
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+
+        # Vérifier l'accès à la demande
+        cursor.execute("""
+            SELECT user_id FROM demandes 
+            WHERE id = ?
+        """, (demande_id,))
+        
+        demande = cursor.fetchone()
+        if not demande:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Demande non trouvée")
+
+        # Vérifier les permissions
+        if (current_user["role"] not in ["ADMIN", "SECRETAIRE"] and 
+            demande["user_id"] != current_user["id"]):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Accès non autorisé")
+
+        # Récupérer le document
+        cursor.execute("""
+            SELECT * FROM demande_documents 
+            WHERE id = ? AND demande_id = ?
+        """, (document_id, demande_id))
+        
+        document = cursor.fetchone()
+        conn.close()
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Document non trouvé")
+
+        file_path = Path(document["file_path"])
+        
+        # Vérifier que le fichier existe
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Fichier non trouvé sur le serveur")
+
+        # Import ici pour éviter les erreurs si FastAPI n'est pas complètement chargé
+        from fastapi.responses import FileResponse
+        
+        # Retourner le fichier
+        return FileResponse(
+            path=str(file_path),
+            filename=document["original_filename"],
+            media_type=document["content_type"] or "application/octet-stream"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors du téléchargement: {str(e)}")
 
 # Endpoint temporaire pour tester les demandes (sans authentification)
 

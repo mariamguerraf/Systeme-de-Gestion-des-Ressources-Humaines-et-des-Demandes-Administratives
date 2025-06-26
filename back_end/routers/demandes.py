@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, File, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import sqlite3
@@ -429,11 +430,32 @@ async def get_demandes(
 
         demandes_data = cursor.fetchall()
         print(f"🔍 [DEBUG] Nombre de demandes trouvées: {len(demandes_data)}")
-        conn.close()
 
         demandes_list = []
         for demande in demandes_data:
             try:
+                # Récupérer les documents associés à cette demande
+                cursor.execute('''
+                    SELECT id, demande_id, filename, original_filename, file_path, file_size, content_type, uploaded_at
+                    FROM demande_documents 
+                    WHERE demande_id = ?
+                    ORDER BY uploaded_at DESC
+                ''', (demande["id"],))
+                
+                documents_data = cursor.fetchall()
+                documents_list = []
+                for doc in documents_data:
+                    documents_list.append({
+                        "id": doc["id"],
+                        "demande_id": doc["demande_id"],
+                        "filename": doc["filename"],
+                        "original_filename": doc["original_filename"],
+                        "file_path": doc["file_path"],
+                        "file_size": doc["file_size"],
+                        "content_type": doc["content_type"],
+                        "uploaded_at": doc["uploaded_at"]
+                    })
+
                 # Conversion simple sans validation Pydantic
                 demande_dict = {
                     "id": int(demande["id"]) if demande["id"] else 0,
@@ -447,6 +469,7 @@ async def get_demandes(
                     "commentaire_admin": str(demande["commentaire_admin"]) if demande["commentaire_admin"] else "",
                     "created_at": str(demande["created_at"]) if demande["created_at"] else "",
                     "updated_at": str(demande["updated_at"]) if demande["updated_at"] else "",
+                    "documents": documents_list,  # Ajouter la liste des documents
                     "user": {
                         "id": int(demande["user_id"]) if demande["user_id"] else 0,
                         "nom": str(demande["nom"]) if demande["nom"] else "",
@@ -459,6 +482,8 @@ async def get_demandes(
             except Exception as e:
                 print(f"❌ [DEBUG] Erreur lors du traitement de la demande {demande.get('id', 'unknown')}: {str(e)}")
                 continue
+
+        conn.close()
 
         print(f"🔍 [DEBUG] Liste des demandes formatée: {len(demandes_list)} demandes")
         return demandes_list
@@ -586,21 +611,46 @@ async def get_demande(
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT d.*, u.nom, u.prenom, u.email, u.role
+            SELECT d.*, u.nom, u.prenom, u.email, u.role, u.is_active, u.created_at, u.updated_at
             FROM demandes d
             JOIN users u ON d.user_id = u.id
             WHERE d.id = ?
         ''', (demande_id,))
 
         demande_data = cursor.fetchone()
-        conn.close()
 
         if not demande_data:
+            conn.close()
             raise HTTPException(status_code=404, detail="Demande non trouvée")
 
         # Vérifier les permissions
         if current_user["role"] not in ["ADMIN", "SECRETAIRE"] and demande_data["user_id"] != current_user["id"]:
+            conn.close()
             raise HTTPException(status_code=403, detail="Accès refusé")
+
+        # Récupérer les documents associés à cette demande
+        cursor.execute('''
+            SELECT id, demande_id, filename, original_filename, file_path, file_size, content_type, uploaded_at
+            FROM demande_documents 
+            WHERE demande_id = ?
+            ORDER BY uploaded_at DESC
+        ''', (demande_id,))
+        
+        documents_data = cursor.fetchall()
+        conn.close()
+        
+        documents_list = []
+        for doc in documents_data:
+            documents_list.append({
+                "id": doc["id"],
+                "demande_id": doc["demande_id"],
+                "filename": doc["filename"],
+                "original_filename": doc["original_filename"],
+                "file_path": doc["file_path"],
+                "file_size": doc["file_size"],
+                "content_type": doc["content_type"],
+                "uploaded_at": doc["uploaded_at"]
+            })
 
         return {
             "id": demande_data["id"],
@@ -614,12 +664,16 @@ async def get_demande(
             "commentaire_admin": demande_data["commentaire_admin"],
             "created_at": demande_data["created_at"],
             "updated_at": demande_data["updated_at"],
+            "documents": documents_list,  # Ajouter la liste des documents
             "user": {
                 "id": demande_data["user_id"],
                 "nom": demande_data["nom"],
                 "prenom": demande_data["prenom"],
                 "email": demande_data["email"],
-                "role": demande_data["role"]
+                "role": demande_data["role"],
+                "is_active": demande_data["is_active"],
+                "created_at": demande_data["created_at"],
+                "updated_at": demande_data["updated_at"]
             }
         }
 
@@ -951,66 +1005,51 @@ async def delete_demande_document(
         conn.close()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
 
-@router.get("/debug-sql")
-async def debug_sql_demandes(authorization: str = Header(None)):
-    """Debug de la requête SQL des demandes"""
-    try:
-        current_user = get_current_user_from_token(authorization)
-        print(f"🔍 [DEBUG] Utilisateur: {current_user}")
-        
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Test simple de la requête
-        cursor.execute("SELECT COUNT(*) as count FROM demandes")
-        count = cursor.fetchone()['count']
-        print(f"🔍 [DEBUG] Total demandes: {count}")
-        
-        # Requête complète
-        cursor.execute('''
-            SELECT d.id, d.titre, d.statut, u.nom, u.prenom 
-            FROM demandes d
-            JOIN users u ON d.user_id = u.id
-            ORDER BY d.created_at DESC
-            LIMIT 3
-        ''')
-        demandes = cursor.fetchall()
+@router.get("/{demande_id}/documents/{document_id}/download")
+async def download_demande_document(
+    demande_id: int,
+    document_id: int,
+    authorization: str = Header(None)
+):
+    """Télécharger un document d'une demande"""
+    
+    current_user = get_current_user_from_token(authorization)
+    
+    conn = get_sqlite_connection()
+    cursor = conn.cursor()
+    
+    # Vérifier l'accès à la demande (propriétaire ou admin/secrétaire)
+    cursor.execute("""
+        SELECT * FROM demandes 
+        WHERE id = ? AND (user_id = ? OR ? IN ('ADMIN', 'SECRETAIRE'))
+    """, (demande_id, current_user["id"], current_user["role"]))
+    
+    demande = cursor.fetchone()
+    if not demande:
         conn.close()
-        
-        result = []
-        for demande in demandes:
-            result.append({
-                "id": demande["id"],
-                "titre": demande["titre"],
-                "statut": demande["statut"],
-                "utilisateur": f"{demande['prenom']} {demande['nom']}"
-            })
-        
-        return {
-            "count": count,
-            "demandes": result,
-            "user": current_user
-        }
-        
-    except Exception as e:
-        import traceback
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-@router.get("/count")
-async def count_demandes(authorization: str = Header(None)):
-    """Compter les demandes (endpoint simple pour debug)"""
-    try:
-        user = get_current_user_from_token(authorization)
-        conn = get_sqlite_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT COUNT(*) as count FROM demandes")
-        count = cursor.fetchone()['count']
-        conn.close()
-        
-        return {"count": count, "user_role": user["role"]}
-    except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=404, detail="Demande non trouvée ou accès non autorisé")
+    
+    # Récupérer le document
+    cursor.execute("""
+        SELECT * FROM demande_documents 
+        WHERE id = ? AND demande_id = ?
+    """, (document_id, demande_id))
+    
+    document = cursor.fetchone()
+    conn.close()
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    file_path = Path(document["file_path"])
+    
+    # Vérifier que le fichier existe
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Fichier non trouvé sur le serveur")
+    
+    # Retourner le fichier
+    return FileResponse(
+        path=str(file_path),
+        filename=document["original_filename"],
+        media_type=document["content_type"] or "application/octet-stream"
+    )

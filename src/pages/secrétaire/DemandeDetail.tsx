@@ -1,9 +1,20 @@
 // src/pages/secretaire/DemandeDetail.tsx
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, FileText, Download, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, User, Calendar, FileText, Download, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+
+interface DemandeDocument {
+  id: number;
+  demande_id: number;
+  filename: string;
+  original_filename: string;
+  file_path: string;
+  file_size: number;
+  content_type: string;
+  uploaded_at: string;
+}
 
 interface DemandeDetailProps {
   id: number;
@@ -17,7 +28,7 @@ interface DemandeDetailProps {
   commentaire_admin?: string;
   created_at: string;
   updated_at?: string;
-  documents?: string[];
+  documents?: DemandeDocument[];
   user?: {
     id: number;
     nom: string;
@@ -158,12 +169,36 @@ const DemandeDetailPage = () => {
     }
   };
 
-  const handleDownloadDocument = (filename: string) => {
-    const baseUrl = 'http://localhost:8000';
-    const downloadUrl = `${baseUrl}/uploads/${filename}`;
+  const handleDownloadDocument = async (doc: DemandeDocument) => {
+    if (!demande) return;
     
-    // Ouvrir le document dans un nouvel onglet
-    window.open(downloadUrl, '_blank');
+    try {
+      console.log('🔄 [DEBUG] Téléchargement du document:', doc.original_filename);
+      console.log('🔄 [DEBUG] Demande ID:', demande.id, 'Document ID:', doc.id);
+      
+      // Utiliser le service API qui gère automatiquement l'authentification
+      const blob = await apiService.downloadDemandeDocument(demande.id, doc.id);
+      
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.original_filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ [DEBUG] Document téléchargé avec succès');
+      setNotification({ type: 'success', message: `Document "${doc.original_filename}" téléchargé avec succès!` });
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erreur téléchargement:', error);
+      setNotification({ 
+        type: 'error', 
+        message: `Erreur lors du téléchargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}` 
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -413,16 +448,12 @@ const DemandeDetailPage = () => {
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center space-x-3">
                           <FileText className="w-5 h-5 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-700">{doc}</span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-700">{doc.original_filename}</span>
+                            <span className="text-xs text-gray-500">{(doc.file_size / 1024).toFixed(1)} KB • {doc.content_type}</span>
+                          </div>
                         </div>
                         <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleDownloadDocument(doc)}
-                            className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
-                          >
-                            <Eye className="w-4 h-4" />
-                            <span>Voir</span>
-                          </button>
                           <button
                             onClick={() => handleDownloadDocument(doc)}
                             className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
