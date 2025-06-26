@@ -1538,40 +1538,79 @@ async def update_demande_status(
     status_update: DemandeStatusUpdate,
     authorization: str = Header(None)
 ):
-    # Vérifier l'autorisation (secrétaire ou admin)
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Token manquant")
-
-    token = authorization.replace("Bearer ", "")
-
-    # Vérifier si c'est un admin ou secrétaire
-    authorized_user = None
-    if token.startswith("test_token_"):
-        parts = token.split("_")
-        if len(parts) >= 4 and parts[3] in ["admin", "secretaire"]:
-            authorized_user = {"role": parts[3]}
-
-    if not authorized_user:
+    """Mettre à jour le statut d'une demande (admin/secrétaire seulement)"""
+    # Utiliser la fonction d'authentification du router
+    from routers.demandes import get_current_user_from_token
+    
+    try:
+        current_user = get_current_user_from_token(authorization)
+        
+        # Vérifier les permissions (admin ou secrétaire)
+        if current_user["role"].upper() not in ["ADMIN", "SECRETAIRE"]:
+            raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
+        
+        print(f"✅ [DEBUG] Utilisateur autorisé: {current_user['email']} (rôle: {current_user['role']})")
+        
+    except HTTPException as e:
+        print(f"❌ [DEBUG] Erreur authentification: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"❌ [DEBUG] Erreur authentification: {e}")
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin ou secrétaire requis.")
 
-    # Vérifier si la demande existe
-    if demande_id not in DEMANDES_DB:
-        raise HTTPException(status_code=404, detail="Demande non trouvée")
-
-    # Vérifier que le statut est valide
-    valid_statuses = ["EN_ATTENTE", "APPROUVEE", "REJETEE"]
-    if status_update.statut not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"Statut invalide. Valeurs autorisées: {valid_statuses}")
-      # Mettre à jour la demande
-    demande = DEMANDES_DB[demande_id]
-    demande["statut"] = status_update.statut
-    if status_update.commentaire_admin:
-        demande["commentaire_admin"] = status_update.commentaire_admin
-
-    # Sauvegarder les données dans les fichiers
-    save_all_data()
-
-    return demande
+    # Vérifier si la demande existe dans la base SQLite
+    import sqlite3
+    try:
+        conn = sqlite3.connect('gestion_db.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM demandes WHERE id = ?", (demande_id,))
+        demande_data = cursor.fetchone()
+        
+        if not demande_data:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Demande non trouvée")
+        
+        # Vérifier que le statut est valide
+        valid_statuses = ["EN_ATTENTE", "APPROUVEE", "REJETEE"]
+        if status_update.statut not in valid_statuses:
+            conn.close()
+            raise HTTPException(status_code=400, detail=f"Statut invalide. Valeurs autorisées: {valid_statuses}")
+        
+        # Mettre à jour la demande dans SQLite
+        cursor.execute("""
+            UPDATE demandes 
+            SET statut = ?, commentaire_admin = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (status_update.statut, status_update.commentaire_admin or "", demande_id))
+        
+        conn.commit()
+        
+        # Récupérer la demande mise à jour
+        cursor.execute("SELECT * FROM demandes WHERE id = ?", (demande_id,))
+        updated_demande = cursor.fetchone()
+        conn.close()
+        
+        print(f"✅ [DEBUG] Demande {demande_id} mise à jour: {status_update.statut}")
+        
+        # Retourner la demande mise à jour au format attendu
+        return {
+            "id": updated_demande[0],
+            "user_id": updated_demande[1],
+            "type_demande": updated_demande[2],
+            "titre": updated_demande[3],
+            "description": updated_demande[4],
+            "date_debut": updated_demande[5],
+            "date_fin": updated_demande[6],
+            "statut": updated_demande[7],
+            "commentaire_admin": updated_demande[8],
+            "created_at": updated_demande[9],
+            "updated_at": updated_demande[10]
+        }
+        
+    except sqlite3.Error as e:
+        print(f"❌ [DEBUG] Erreur SQLite: {e}")
+        raise HTTPException(status_code=500, detail="Erreur base de données")
 
 # Supprimer une demande (endpoint pour admin)
 @app.delete("/demandes/{demande_id}")
