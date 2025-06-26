@@ -36,6 +36,10 @@ class ApiService {
     const token = this.token || localStorage.getItem('token') || localStorage.getItem('access_token');
     if (token) {
       baseHeaders['Authorization'] = `Bearer ${token}`;
+      console.log(`🔑 [API DEBUG] Token envoyé: ${token.substring(0, 30)}...`);
+      console.log(`🔑 [API DEBUG] Token complet: ${token}`);
+    } else {
+      console.log(`❌ [API DEBUG] Aucun token trouvé !`);
     }
 
     const config: RequestInit = {
@@ -280,6 +284,7 @@ class ApiService {
   }
 
   async getUserDemandes(userId: number) {
+    console.log(`🔍 [API DEBUG] Récupération des demandes pour user_id: ${userId}`);
     return this.request(`/users/${userId}/demandes`);
   }
 

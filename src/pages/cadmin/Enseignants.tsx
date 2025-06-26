@@ -540,14 +540,15 @@ const CadminEnseignants = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Contact</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Matière</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Statut</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Date d'embauche</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
-              </thead>              <tbody className="divide-y divide-gray-200">
+              </thead>
+              <tbody className="divide-y divide-gray-200">
                 {filteredEnseignants.map((enseignant) => (
                   <tr key={enseignant.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">                        {enseignant.photo ? (
+                      <div className="flex items-center space-x-3">
+                        {enseignant.photo ? (
                           <img
                             src={`${getApiBaseUrl()}${enseignant.photo}`}
                             alt={`${enseignant.prenom} ${enseignant.nom}`}
@@ -556,7 +557,7 @@ const CadminEnseignants = () => {
                         ) : (
                           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
-                              {enseignant.prenom[0]}{enseignant.nom[0]}
+                              {(enseignant.prenom?.[0] || '').toUpperCase()}{(enseignant.nom?.[0] || '').toUpperCase()}
                             </span>
                           </div>
                         )}
@@ -584,9 +585,8 @@ const CadminEnseignants = () => {
                         {enseignant.statut}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-900">
-                      {enseignant.user?.created_at ? new Date(enseignant.user.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                    </td>                    <td className="px-6 py-4">                      <div className="flex items-center justify-center space-x-2">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleView(enseignant)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"

@@ -23,7 +23,7 @@ from models import Base, User, UserRole, Enseignant, Fonctionnaire, Demande, Dem
 from schemas import EnseignantComplete
 
 # Import des routeurs
-from routers import enseignant, demandes
+from routers import enseignant, demandes, users
 
 # Ajouter un routeur avec le nom singulier pour compatibilité
 from fastapi import APIRouter
@@ -62,6 +62,7 @@ app.add_middleware(
 # Inclure les routeurs
 app.include_router(enseignant.router)
 app.include_router(demandes.router)  # Réactivé pour les demandes
+# app.include_router(users.router, prefix="/api/users", tags=["users"])  # Désactivé pour éviter conflit
 app.include_router(router_enseignant_singular)
 
 # Créer le dossier pour les images
@@ -557,6 +558,9 @@ async def test():
 # Login endpoint for authentication
 @app.post("/auth/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    # Import hashlib pour vérifier les mots de passe
+    import hashlib
+    
     # Vérifier d'abord dans la base de données SQLite
     try:
         conn = get_sqlite_connection()
@@ -565,15 +569,24 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         # Chercher l'utilisateur par email
         cursor.execute("SELECT * FROM users WHERE email = ? AND is_active = 1", (form_data.username,))
         user_data = cursor.fetchone()
-        conn.close()
-
+        
         if user_data:
-            # Pour simplifier, on ne vérifie pas le mot de passe hashé en production
-            # En production, il faudrait vérifier le hash du mot de passe
-            return {
-                "access_token": f"test_token_{user_data['id']}_{user_data['role']}",
-                "token_type": "bearer"
-            }
+            # Vérifier le mot de passe hashé
+            password_hash = hashlib.sha256(form_data.password.encode()).hexdigest()
+            
+            if user_data['hashed_password'] == password_hash:
+                conn.close()
+                print(f"✅ Authentification réussie pour {form_data.username} (ID: {user_data['id']}, Role: {user_data['role']})")
+                return {
+                    "access_token": f"test_token_{user_data['id']}_{user_data['role']}",
+                    "token_type": "bearer"
+                }
+            else:
+                print(f"❌ Mot de passe incorrect pour {form_data.username}")
+        else:
+            print(f"❌ Utilisateur {form_data.username} non trouvé ou inactif")
+        
+        conn.close()
 
     except Exception as e:
         print(f"Erreur lors de la vérification dans la base de données: {e}")
@@ -772,6 +785,7 @@ async def get_all_enseignants(
     # Récupérer tous les enseignants depuis SQLite directement
     try:
         conn = get_sqlite_connection()
+        conn.row_factory = sqlite3.Row  # Pour accéder aux colonnes par nom
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -789,10 +803,14 @@ async def get_all_enseignants(
             enseignant = {
                 "id": row['id'],
                 "user_id": row['user_id'],
+                "nom": row['nom'],  # Ajouter directement depuis user
+                "prenom": row['prenom'],  # Ajouter directement depuis user
+                "email": row['email'],  # Ajouter directement depuis user
+                "telephone": row['telephone'] or '',  # Ajouter directement depuis user
                 "specialite": row['specialite'],
                 "grade": row['grade'],
-
                 "photo": row['photo'],
+                "statut": "Actif" if row['is_active'] else "Inactif",  # Calculé depuis is_active
                 "user": {
                     "id": row['user_id'],
                     "nom": row['nom'],
@@ -2281,41 +2299,114 @@ async def get_all_users(
         raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
 
 # Endpoint temporaire pour tester les demandes (sans authentification)
-@app.get("/test/demandes")
-async def get_test_demandes():
-    """Endpoint de test pour récupérer les demandes sans authentification"""
-    # Initialiser les demandes de test si elles n'existent pas
-    if not DEMANDES_DB:
-        initialize_test_demandes()
-    
-    # Retourner toutes les demandes
-    demandes_list = list(DEMANDES_DB.values())
-    demandes_list.sort(key=lambda x: x["created_at"], reverse=True)
-    
-    return {
-        "demandes": demandes_list,
-        "total": len(demandes_list),
-        "message": "Données de test des demandes"
-    }
 
-@app.get("/test/demandes/{demande_id}")
-async def get_test_demande(demande_id: int):
-    """Endpoint de test pour récupérer une demande spécifique sans authentification"""
-    # Initialiser les demandes de test si elles n'existent pas
-    if not DEMANDES_DB:
-        initialize_test_demandes()
+# Endpoint pour récupérer les demandes d'un utilisateur
+@app.get("/users/{user_id}/demandes")
+async def get_user_demandes_direct(
+    user_id: int,
+    authorization: str = Header(None),
+    skip: int = 0,
+    limit: int = 100
+):
+    """Récupérer les demandes d'un utilisateur spécifique"""
     
-    # Vérifier que la demande existe
-    if demande_id not in DEMANDES_DB:
-        raise HTTPException(status_code=404, detail="Demande non trouvée")
+    # Debug: log du token reçu
+    print(f"🔍 [DEBUG] User {user_id} demandes - Authorization header: {authorization}")
+    print(f"🔍 [DEBUG] User {user_id} demandes - Request URL appelée")
     
-    demande = DEMANDES_DB[demande_id]
+    # Vérification d'authentification basique
+    if not authorization or not authorization.startswith("Bearer "):
+        print(f"❌ [DEBUG] Token manquant ou format incorrect")
+        raise HTTPException(status_code=401, detail="Token manquant")
     
-    # Ajouter la liste des documents si elle n'existe pas
-    if "documents" not in demande:
-        demande["documents"] = []
+    token = authorization.split(" ")[1]
+    print(f"🔍 [DEBUG] Token extrait: {token[:50]}...")
+    print(f"🔍 [DEBUG] Token complet: {token}")
     
-    return demande
-
-# Endpoint temporaire pour tester les demandes (sans authentification)
+    # Support pour test_token (temporaire)
+    if token.startswith("test_token_"):
+        # Parse test_token format: test_token_{user_id}_{role}
+        parts = token.split("_")
+        print(f"🔍 [DEBUG] Token parts: {parts}")
+        if len(parts) >= 3:
+            try:
+                token_user_id = int(parts[2])
+                role = parts[3] if len(parts) > 3 else "USER"
+                print(f"🔍 [DEBUG] Token user_id: {token_user_id}, role: {role}")
+            except (ValueError, IndexError):
+                # Si le format est test_token_1_ADMIN, extraire différemment
+                if "ADMIN" in token:
+                    token_user_id = 1
+                    role = "ADMIN"
+                    print(f"🔍 [DEBUG] Token ADMIN détecté: user_id={token_user_id}, role={role}")
+                elif "SECRETAIRE" in token:
+                    token_user_id = 1  
+                    role = "SECRETAIRE"
+                    print(f"🔍 [DEBUG] Token SECRETAIRE détecté: user_id={token_user_id}, role={role}")
+                else:
+                    print(f"❌ [DEBUG] Token format invalide")
+                    raise HTTPException(status_code=401, detail="Token invalide")
+            
+            # Vérifier les permissions - Admin et Secrétaire ont accès à tout
+            if role not in ["ADMIN", "SECRETAIRE"] and token_user_id != user_id:
+                print(f"❌ [DEBUG] Accès refusé - role:{role}, token_user_id:{token_user_id}, requested_user_id:{user_id}")
+                raise HTTPException(status_code=403, detail="Accès refusé")
+            else:
+                print(f"✅ [DEBUG] Accès autorisé - role:{role}, token_user_id:{token_user_id}, requested_user_id:{user_id}")
+        else:
+            print(f"❌ [DEBUG] Token format invalide - pas assez de parties")
+            raise HTTPException(status_code=401, detail="Token invalide")
+    else:
+        # TODO: Ajouter validation JWT réelle si nécessaire
+        print(f"🔍 [DEBUG] Token non-test détecté, passage sans validation")
+    
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        
+        # Vérifier que l'utilisateur existe
+        cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+        # Récupérer les demandes de l'utilisateur
+        cursor.execute("""
+            SELECT id, user_id, type_demande, titre, description, statut, 
+                   date_debut, date_fin, created_at, updated_at
+            FROM demandes 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """, (user_id, limit, skip))
+        
+        demandes = cursor.fetchall()
+        conn.close()
+        
+        print(f"🔍 [DEBUG] Demandes trouvées pour user_id {user_id}: {len(demandes)}")
+        for demande in demandes:
+            print(f"   - Demande ID: {demande[0]}, Titre: {demande[3]}, Statut: {demande[5]}")
+        
+        # Formater les résultats
+        result = []
+        for demande in demandes:
+            result.append({
+                "id": demande[0],
+                "user_id": demande[1],
+                "type_demande": demande[2],
+                "titre": demande[3],
+                "description": demande[4],
+                "statut": demande[5],
+                "date_debut": demande[6],
+                "date_fin": demande[7],
+                "created_at": demande[8],
+                "updated_at": demande[9]
+            })
+        
+        return result
+        
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 

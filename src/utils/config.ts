@@ -25,7 +25,7 @@ export const getApiBaseUrl = (): string => {
 
   // En développement local
   if (window.location.hostname === 'localhost') {
-    return 'http://localhost:8000';
+    return 'http://localhost:8000';  // Port de production
   }
 
   // Fallback par défaut
