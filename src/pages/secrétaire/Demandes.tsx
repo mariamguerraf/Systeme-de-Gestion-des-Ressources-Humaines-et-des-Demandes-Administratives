@@ -32,8 +32,8 @@ const DemandesPage = () => {
   const [filterStatut, setFilterStatut] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(10);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [totalDemandes, setTotalDemandes] = useState<number>(0);
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
@@ -42,13 +42,57 @@ const DemandesPage = () => {
     const fetchDemandes = async () => {
       try {
         setLoading(true);
-        const data = await apiService.getDemandes();
+        setError(null);
+        console.log('🔄 [DEBUG] Chargement des demandes...');
+        
+        // Récupérer toutes les demandes depuis la base de données
+        let data;
+        try {
+          // Essayer d'abord l'endpoint principal
+          data = await apiService.getDemandes();
+        } catch (error) {
+          console.log('📋 [DEBUG] Endpoint principal échoué, utilisation de l\'endpoint de test');
+          // En cas d'échec, utiliser l'endpoint de test
+          const testData = await apiService.getTestDemandes() as any;
+          data = testData?.demandes || testData || [];
+        }
+        console.log('📋 [DEBUG] Données des demandes reçues:', data);
         
         // Transform data to match interface
         const transformedData = Array.isArray(data) ? data : [];
         
-        setDemandes(transformedData);
-        setFilteredDemandes(transformedData);
+        // Assurer que chaque demande a les bonnes propriétés
+        const normalizedDemandes = transformedData.map((demande: any) => ({
+          id: demande.id || 0,
+          user_id: demande.user_id || 0,
+          type_demande: demande.type_demande || 'ATTESTATION',
+          titre: demande.titre || 'Sans titre',
+          description: demande.description || '',
+          date_debut: demande.date_debut || null,
+          date_fin: demande.date_fin || null,
+          statut: demande.statut || 'EN_ATTENTE',
+          commentaire_admin: demande.commentaire_admin || '',
+          created_at: demande.created_at || new Date().toISOString(),
+          user: demande.user ? {
+            id: demande.user.id || 0,
+            nom: demande.user.nom || 'Inconnu',
+            prenom: demande.user.prenom || 'Inconnu',
+            email: demande.user.email || '',
+            role: demande.user.role || 'user'
+          } : {
+            id: 0,
+            nom: 'Utilisateur',
+            prenom: 'Inconnu',
+            email: '',
+            role: 'user'
+          }
+        }));
+        
+        console.log('📝 [DEBUG] Demandes normalisées:', normalizedDemandes);
+        setDemandes(normalizedDemandes);
+        setFilteredDemandes(normalizedDemandes);
+        setTotalDemandes(normalizedDemandes.length);
+        
       } catch (error) {
         console.error('Erreur lors du chargement des demandes:', error);
         setError('Impossible de charger les demandes');
@@ -99,62 +143,91 @@ const DemandesPage = () => {
 
   const handleTraiterDemande = async (id: number) => {
     try {
-      await apiService.updateDemandeStatus(id, 'APPROUVEE');
+      console.log(`🔄 [DEBUG] Traitement de la demande ${id}`);
+      await apiService.approuverDemande(id, 'Demande approuvée par le secrétaire');
+      
       // Update local state
       setDemandes(demandes.map(demande =>
         demande.id === id
-          ? { ...demande, statut: 'APPROUVEE' as const }
+          ? { ...demande, statut: 'APPROUVEE' as const, commentaire_admin: 'Demande approuvée par le secrétaire' }
           : demande
       ));
-      console.log(`Demande ${id} approuvée`);
+      
+      setNotification({type: 'success', message: `Demande ${id} approuvée avec succès.`});
+      console.log(`✅ [DEBUG] Demande ${id} approuvée avec succès`);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
+      setNotification({type: 'error', message: `Erreur lors de l'approbation de la demande ${id}.`});
     }
   };
 
   const handleArchiverDemande = async (id: number) => {
     try {
-      await apiService.updateDemandeStatus(id, 'REJETEE');
+      console.log(`🔄 [DEBUG] Rejet de la demande ${id}`);
+      await apiService.rejeterDemande(id, 'Demande rejetée par le secrétaire');
+      
       // Update local state
       setDemandes(demandes.map(demande =>
         demande.id === id
-          ? { ...demande, statut: 'REJETEE' as const }
+          ? { ...demande, statut: 'REJETEE' as const, commentaire_admin: 'Demande rejetée par le secrétaire' }
           : demande
       ));
-      console.log(`Demande ${id} rejetée`);
+      
+      setNotification({type: 'success', message: `Demande ${id} rejetée avec succès.`});
+      console.log(`❌ [DEBUG] Demande ${id} rejetée avec succès`);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
+      setNotification({type: 'error', message: `Erreur lors du rejet de la demande ${id}.`});
     }
   };
 
-  // Fonctions de pagination
-  const totalPages = Math.ceil(filteredDemandes.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentDemandes = filteredDemandes.slice(indexOfFirstItem, indexOfLastItem);
-
-  const handlePaginationPrevious = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
-
-  const handlePaginationNext = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const handlePageNumber = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="text-2xl text-gray-600">Chargement...</div>
+        <div className="text-2xl text-gray-600">Chargement des demandes...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="text-2xl text-red-600 mb-4">❌ Erreur</div>
+          <div className="text-lg text-gray-600 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Recharger
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 ${
+          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          {notification.message}
+          <button className="ml-4 text-white font-bold" onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
+      
       {/* Navigation */}
       <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white shadow-xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -225,7 +298,7 @@ const DemandesPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentDemandes.map((demande) => (
+                {filteredDemandes.map((demande) => (
                   <tr key={demande.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{demande.titre}</td>
@@ -256,25 +329,44 @@ const DemandesPage = () => {
                          demande.statut === 'APPROUVEE' ? 'Approuvée' : 'Rejetée'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
-                      <button
-                        onClick={() => handleViewDemande(demande.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      >
-                        Voir
-                      </button>
-                      <button
-                        onClick={() => handleTraiterDemande(demande.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
-                      >
-                        Traiter
-                      </button>
-                      <button
-                        onClick={() => handleArchiverDemande(demande.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
-                      >
-                        Archiver
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-0 md:space-x-2">
+                        <button
+                          onClick={() => handleViewDemande(demande.id)}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          Voir
+                        </button>
+                        
+                        {demande.statut === 'EN_ATTENTE' && (
+                          <>
+                            <button
+                              onClick={() => handleTraiterDemande(demande.id)}
+                              className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg shadow hover:from-green-600 hover:to-blue-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400"
+                            >
+                              Approuver
+                            </button>
+                            <button
+                              onClick={() => handleArchiverDemande(demande.id)}
+                              className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
+                            >
+                              Rejeter
+                            </button>
+                          </>
+                        )}
+                        
+                        {demande.statut === 'APPROUVEE' && (
+                          <span className="px-4 py-2 text-green-600 text-sm font-medium">
+                            ✅ Approuvée
+                          </span>
+                        )}
+                        
+                        {demande.statut === 'REJETEE' && (
+                          <span className="px-4 py-2 text-red-600 text-sm font-medium">
+                            ❌ Rejetée
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -287,44 +379,6 @@ const DemandesPage = () => {
               Aucune demande trouvée avec ces critères de recherche.
             </div>
           )}
-
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Précédent
-              </button>
-              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Suivant
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Affichage de <span className="font-medium">1</span> à <span className="font-medium">{filteredDemandes.length}</span> sur <span className="font-medium">{demandes.length}</span> résultats
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    &laquo; Précédent
-                  </button>
-                  <button className="bg-blue-50 border-blue-500 z-10 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-blue-600 hover:bg-blue-100">
-                    1
-                  </button>
-                  <button className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    2
-                  </button>
-                  <button className="bg-white border-gray-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    3
-                  </button>
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    Suivant &raquo;
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>

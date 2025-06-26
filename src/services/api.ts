@@ -207,6 +207,15 @@ class ApiService {
     return this.request('/test/users');
   }
 
+  // Test demandes method
+  async getTestDemandes() {
+    return this.request('/test/demandes');
+  }
+
+  async getTestDemande(demandeId: number) {
+    return this.request(`/test/demandes/${demandeId}`);
+  }
+
   // Dashboard statistics methods
   async getDashboardStats() {
     try {

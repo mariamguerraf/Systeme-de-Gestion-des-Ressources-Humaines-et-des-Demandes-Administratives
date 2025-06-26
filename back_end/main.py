@@ -259,11 +259,11 @@ def initialize_test_demandes():
             "type_demande": "CONGE",
             "titre": "Congé annuel",
             "description": "Demande de congé annuel pour vacances d'été",
-
             "date_fin": "2024-07-15",
             "statut": "EN_ATTENTE",
             "commentaire_admin": None,
             "created_at": datetime.now().isoformat(),
+            "documents": ["fonctionnaire_1_1750440929.png", "fonctionnaire_1_1750440939.jpg"],
             "user": {
                 "id": 3,
                 "email": "enseignant@univ.ma",
@@ -283,6 +283,7 @@ def initialize_test_demandes():
             "statut": "APPROUVEE",
             "commentaire_admin": "Demande approuvée avec justificatif médical",
             "created_at": (datetime.now() - timedelta(days=5)).isoformat(),
+            "documents": ["fonctionnaire_11_1750442234.png"],
             "user": {
                 "id": 4,
                 "email": "fonctionnaire@univ.ma",
@@ -321,6 +322,7 @@ def initialize_test_demandes():
             "statut": "EN_ATTENTE",
             "commentaire_admin": None,
             "created_at": (datetime.now() - timedelta(days=2)).isoformat(),
+            "documents": ["fonctionnaire_14_1750596345.jpg", "fonctionnaire_14_1750596791.jpg"],
             "user": {
                 "id": 4,
                 "email": "fonctionnaire@univ.ma",
@@ -346,6 +348,107 @@ def initialize_test_demandes():
                 "nom": "Tazi",
                 "prenom": "Ahmed",
                 "role": "enseignant"
+            }
+        },
+        # Nouvelles demandes pour couvrir plus d'IDs
+        {
+            "id": 6,
+            "user_id": 4,
+            "type_demande": "ATTESTATION",
+            "titre": "Attestation de salaire",
+            "description": "Demande d'attestation de salaire pour prêt bancaire",
+            "date_debut": None,
+            "date_fin": None,
+            "statut": "EN_ATTENTE",
+            "commentaire_admin": None,
+            "created_at": (datetime.now() - timedelta(days=1)).isoformat(),
+            "documents": ["fonctionnaire_14_1750596854.jpg"],
+            "user": {
+                "id": 4,
+                "email": "fonctionnaire@univ.ma",
+                "nom": "Karam",
+                "prenom": "Aicha",
+                "role": "fonctionnaire"
+            }
+        },
+        {
+            "id": 7,
+            "user_id": 3,
+            "type_demande": "ABSENCE",
+            "titre": "Absence formation",
+            "description": "Absence pour formation continue",
+            "date_debut": "2024-07-20",
+            "date_fin": "2024-07-22",
+            "statut": "APPROUVEE",
+            "commentaire_admin": "Formation approuvée par le département",
+            "created_at": (datetime.now() - timedelta(days=3)).isoformat(),
+            "documents": [],
+            "user": {
+                "id": 3,
+                "email": "enseignant@univ.ma",
+                "nom": "Tazi",
+                "prenom": "Ahmed",
+                "role": "enseignant"
+            }
+        },
+        {
+            "id": 15,
+            "user_id": 4,
+            "type_demande": "CONGE",
+            "titre": "Congé maternité",
+            "description": "Demande de congé maternité",
+            "date_debut": "2024-08-01",
+            "date_fin": "2024-10-01",
+            "statut": "EN_ATTENTE",
+            "commentaire_admin": None,
+            "created_at": datetime.now().isoformat(),
+            "documents": ["fonctionnaire_17_1750597472.jpg"],
+            "user": {
+                "id": 4,
+                "email": "fonctionnaire@univ.ma",
+                "nom": "Karam",
+                "prenom": "Aicha",
+                "role": "fonctionnaire"
+            }
+        },
+        {
+            "id": 20,
+            "user_id": 3,
+            "type_demande": "ORDRE_MISSION",
+            "titre": "Mission Rabat",
+            "description": "Mission administrative à Rabat",
+            "date_debut": "2024-07-25",
+            "date_fin": "2024-07-26",
+            "statut": "REJETEE",
+            "commentaire_admin": "Budget insuffisant pour cette mission",
+            "created_at": (datetime.now() - timedelta(days=7)).isoformat(),
+            "documents": [],
+            "user": {
+                "id": 3,
+                "email": "enseignant@univ.ma",
+                "nom": "Tazi",
+                "prenom": "Ahmed",
+                "role": "enseignant"
+            }
+        },
+        {
+            "id": 23,
+            "user_id": 4,
+            "type_demande": "ATTESTATION",
+            "titre": "Attestation de fonction",
+            "description": "Attestation de fonction pour démarches consulaires",
+            "date_debut": None,
+            "date_fin": None,
+            "statut": "EN_ATTENTE",
+            "commentaire_admin": None,
+            "created_at": datetime.now().isoformat(),
+            "documents": ["fonctionnaire_1_test.svg"],
+            "user": {
+                "id": 4,
+                "email": "fonctionnaire@univ.ma",
+                "nom": "Karam",
+                "prenom": "Aicha",
+                "role": "fonctionnaire"
             }
         }
     ]
@@ -1879,16 +1982,16 @@ async def create_demande_direct(
                     current_user = dict(user_data)
                 else:
                     # Fallback vers les TEST_USERS pour la compatibilité
-                    for email, test_user_data in TEST_USERS.items():
-                        if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
-                            current_user = test_user_data
+                    for email, user_data in TEST_USERS.items():
+                        if str(user_data["id"]) == user_id and user_data["role"].upper() == role.upper():
+                            current_user = user_data
                             break
 
             except Exception as e:
                 # Fallback vers les TEST_USERS
-                for email, test_user_data in TEST_USERS.items():
-                    if str(test_user_data["id"]) == user_id and test_user_data["role"].upper() == role.upper():
-                        current_user = test_user_data
+                for email, user_data in TEST_USERS.items():
+                    if str(user_data["id"]) == user_id and user_data["role"].upper() == role.upper():
+                        current_user = user_data
                         break
 
     if not current_user:
@@ -2183,4 +2286,41 @@ async def get_all_users(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+
+# Endpoint temporaire pour tester les demandes (sans authentification)
+@app.get("/test/demandes")
+async def get_test_demandes():
+    """Endpoint de test pour récupérer les demandes sans authentification"""
+    # Initialiser les demandes de test si elles n'existent pas
+    if not DEMANDES_DB:
+        initialize_test_demandes()
+    
+    # Retourner toutes les demandes
+    demandes_list = list(DEMANDES_DB.values())
+    demandes_list.sort(key=lambda x: x["created_at"], reverse=True)
+    
+    return {
+        "demandes": demandes_list,
+        "total": len(demandes_list),
+        "message": "Données de test des demandes"
+    }
+
+@app.get("/test/demandes/{demande_id}")
+async def get_test_demande(demande_id: int):
+    """Endpoint de test pour récupérer une demande spécifique sans authentification"""
+    # Initialiser les demandes de test si elles n'existent pas
+    if not DEMANDES_DB:
+        initialize_test_demandes()
+    
+    # Vérifier que la demande existe
+    if demande_id not in DEMANDES_DB:
+        raise HTTPException(status_code=404, detail="Demande non trouvée")
+    
+    demande = DEMANDES_DB[demande_id]
+    
+    # Ajouter la liste des documents si elle n'existe pas
+    if "documents" not in demande:
+        demande["documents"] = []
+    
+    return demande
 

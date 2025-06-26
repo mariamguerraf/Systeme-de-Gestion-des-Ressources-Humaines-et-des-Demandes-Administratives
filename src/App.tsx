@@ -10,6 +10,7 @@ import UsersPage from './pages/secrétaire/Users';
 import Dashboard from "./pages/secrétaire/Dashboard";
 import NotFound from "./pages/NotFound";
 import Demandes from "./pages/secrétaire/Demandes";
+import DemandeDetail from "./pages/secrétaire/DemandeDetail";
 import ProfilPage from "./pages/enseignant/ProfilPage";
 import AttestationPage from "./pages/enseignant/AttestationPage";
 import CongePage from "./pages/fonctionnaire administré/CongePage";
@@ -99,6 +100,11 @@ const App = () => {
             <Route path="/secretaire/demandes" element={
               <ProtectedRoute allowedRoles={['secretaire', 'admin']}>
                 <Demandes />
+              </ProtectedRoute>
+            } />
+            <Route path="/secretaire/demandes/:id" element={
+              <ProtectedRoute allowedRoles={['secretaire', 'admin']}>
+                <DemandeDetail />
               </ProtectedRoute>
             } />
 
