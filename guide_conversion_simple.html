@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide Simple - Conversion PDF</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .step {
+            background: #ecf0f1;
+            margin: 20px 0;
+            padding: 20px;
+            border-left: 5px solid #3498db;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        .button.green {
+            background: #27ae60;
+        }
+        .button.green:hover {
+            background: #219a52;
+        }
+        .shortcut {
+            background: #34495e;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Guide Simple : Créer un PDF</h1>
+        
+        <div class="highlight">
+            <strong>🎓 Objectif :</strong> Convertir votre présentation HTML en PDF professionnel pour votre soutenance de fin d'études.
+        </div>
+
+        <div class="step">
+            <div style="display: flex; align-items: center;">
+                <span class="step-number">1</span>
+                <div>
+                    <div class="step-title">Ouvrir le fichier HTML</div>
+                    <p>Double-cliquez sur <strong>"presentation_projet_fin_etudes.html"</strong></p>
+                    <p><em>Ou utilisez le bouton ci-dessous :</em></p>
+                    <button class="button" onclick="window.open('presentation_projet_fin_etudes.html', '_blank')">
+                        📄 Ouvrir la Présentation
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div style="display: flex; align-items: center;">
+                <span class="step-number">2</span>
+                <div>
+                    <div class="step-title">Imprimer en PDF</div>
+                    <p>Dans votre navigateur, appuyez sur <span class="shortcut">Ctrl + P</span></p>
+                    <p><em>Ou clic droit → "Imprimer"</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div style="display: flex; align-items: center;">
+                <span class="step-number">3</span>
+                <div>
+                    <div class="step-title">Choisir "Enregistrer au format PDF"</div>
+                    <p>Dans la section <strong>"Destination"</strong>, sélectionnez :</p>
+                    <ul>
+                        <li><strong>"Enregistrer au format PDF"</strong> (Chrome/Edge)</li>
+                        <li>ou <strong>"Microsoft Print to PDF"</strong> (Windows)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div style="display: flex; align-items: center;">
+                <span class="step-number">4</span>
+                <div>
+                    <div class="step-title">Configurer les paramètres</div>
+                    <div class="warning">
+                        <strong>⚠️ IMPORTANT :</strong> Activez obligatoirement les couleurs !
+                    </div>
+                    <ul>
+                        <li><strong>Format :</strong> A4</li>
+                        <li><strong>Marges :</strong> Standard</li>
+                        <li><strong>✅ Couleurs de fond et images :</strong> ACTIVÉ</li>
+                        <li><strong>Échelle :</strong> 100%</li>
+                        <li><strong>Pages :</strong> Toutes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div style="display: flex; align-items: center;">
+                <span class="step-number">5</span>
+                <div>
+                    <div class="step-title">Enregistrer le PDF</div>
+                    <p>Cliquez sur <strong>"Enregistrer"</strong> ou <strong>"Imprimer"</strong></p>
+                    <p><strong>Nom suggéré :</strong> <code>Presentation_Projet_Fin_Etudes.pdf</code></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="success">
+            <h3>🎉 Félicitations !</h3>
+            <p>Votre présentation PDF est maintenant prête pour votre soutenance de fin d'études !</p>
+            <p><strong>Le PDF contient :</strong></p>
+            <ul>
+                <li>✅ 10 pages professionnelles</li>
+                <li>✅ Design moderne avec couleurs</li>
+                <li>✅ Contenu complet de votre projet</li>
+                <li>✅ Mise en page optimisée</li>
+            </ul>
+        </div>
+
+        <div class="highlight">
+            <h4>🆘 Problèmes courants :</h4>
+            <ul>
+                <li><strong>Les couleurs n'apparaissent pas :</strong> Vérifiez que "Couleurs de fond" est activé</li>
+                <li><strong>Le texte est coupé :</strong> Réduisez l'échelle à 95%</li>
+                <li><strong>Qualité faible :</strong> Utilisez Chrome ou Edge (plus récents)</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="button green" onclick="window.open('presentation_projet_fin_etudes.html', '_blank')">
+                🚀 Commencer la Conversion
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Auto-open dans 3 secondes si on veut
+        setTimeout(() => {
+            if (confirm("Voulez-vous ouvrir automatiquement la présentation ?")) {
+                window.open('presentation_projet_fin_etudes.html', '_blank');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

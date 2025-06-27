@@ -74,3 +74,15 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+def decode_jwt_token(token: str):
+    """Décode un token JWT et retourne le payload"""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        return payload
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token JWT invalide: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

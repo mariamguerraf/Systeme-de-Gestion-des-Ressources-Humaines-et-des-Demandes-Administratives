@@ -778,9 +778,42 @@ async def get_all_enseignants(
         raise HTTPException(status_code=401, detail="Token manquant")
 
     token = authorization.replace("Bearer ", "")
+    print(f"🔍 [GET ENSEIGNANTS] Token reçu: {token[:30]}...")
 
-    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
+    # Vérifier si c'est un admin
+    admin_user = None
+    
+    if token.startswith("test_token_"):
+        # Logique pour les tokens de test
+        parts = token.split("_")
+        print(f"🔍 [GET ENSEIGNANTS] Token test parts: {parts}")
+        if len(parts) >= 4 and (parts[3].lower() == "admin" or (len(parts) >= 5 and parts[4].lower() == "admin")):
+            admin_user = {"role": "admin"}
+            print(f"✅ [GET ENSEIGNANTS] Token admin test validé")
+        elif any("admin" in part.lower() for part in parts):
+            admin_user = {"role": "admin"}
+            print(f"✅ [GET ENSEIGNANTS] Token admin test validé (fallback)")
+    else:
+        # Logique pour les vrais tokens JWT
+        try:
+            from auth import decode_jwt_token
+            payload = decode_jwt_token(token)
+            user_role = payload.get("role")
+            user_id = payload.get("user_id")
+            
+            print(f"🔍 [GET ENSEIGNANTS] JWT décodé - Role: {user_role}, User ID: {user_id}")
+            
+            if user_role == "ADMIN":
+                admin_user = {"role": "admin", "user_id": user_id}
+                print(f"✅ [GET ENSEIGNANTS] Token JWT admin validé")
+            else:
+                print(f"❌ [GET ENSEIGNANTS] Role insuffisant: {user_role}")
+                
+        except Exception as jwt_error:
+            print(f"❌ [GET ENSEIGNANTS] Erreur décodage JWT: {jwt_error}")
+
+    if not admin_user:
+        print(f"❌ [GET ENSEIGNANTS] Accès refusé pour token: {token[:30]}")
         raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
 
     # Récupérer tous les enseignants depuis SQLite directement
@@ -1420,19 +1453,54 @@ async def upload_fonctionnaire_photo(
     print(f"🔄 [UPLOAD] Fichier reçu: {file.filename if file else 'None'}")
 
     try:
-        # Vérifier l'authentification admin
+        # Vérifier l'authentification
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Token manquant")
 
         token = authorization.replace("Bearer ", "")
+        print(f"🔍 [UPLOAD] Token reçu: {token[:30]}...")
 
-        # Vérifier si c'est un admin
-        if not ("admin" in token.lower() or token.startswith("test_token_")):
-            raise HTTPException(status_code=403, detail="Droits admin requis")
+        # Vérifier si c'est un token de test ou un vrai JWT
+        admin_user = None
+        
+        if token.startswith("test_token_"):
+            # Logique pour les tokens de test
+            parts = token.split("_")
+            print(f"🔍 [UPLOAD] Token test parts: {parts}")
+            if len(parts) >= 4 and (parts[3].lower() == "admin" or (len(parts) >= 5 and parts[4].lower() == "admin")):
+                admin_user = {"role": "admin"}
+                print(f"✅ [UPLOAD] Token admin test validé")
+            elif any("admin" in part.lower() for part in parts):
+                admin_user = {"role": "admin"}
+                print(f"✅ [UPLOAD] Token admin test validé (fallback)")
+        else:
+            # Logique pour les vrais tokens JWT
+            try:
+                from auth import decode_jwt_token
+                payload = decode_jwt_token(token)
+                user_role = payload.get("role")
+                user_id = payload.get("user_id")
+                
+                print(f"🔍 [UPLOAD] JWT décodé - Role: {user_role}, User ID: {user_id}")
+                
+                if user_role == "ADMIN":
+                    admin_user = {"role": "admin", "user_id": user_id}
+                    print(f"✅ [UPLOAD] Token JWT admin validé")
+                else:
+                    print(f"❌ [UPLOAD] Role insuffisant: {user_role}")
+                    
+            except Exception as jwt_error:
+                print(f"❌ [UPLOAD] Erreur décodage JWT: {jwt_error}")
+
+        if not admin_user:
+            print(f"❌ [UPLOAD] Accès refusé pour token: {token[:30]}")
+            raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
 
         # Vérifier taille (5MB max)
         if hasattr(file, 'size') and file.size and file.size > 5 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")        # Vérifier que le fonctionnaire existe dans SQLite
+            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")
+        
+        # Vérifier que le fonctionnaire existe dans SQLite
         conn = get_sqlite_connection()
         cursor = conn.cursor()
 
@@ -1878,26 +1946,45 @@ async def upload_enseignant_photo(
     print(f"🔄 [UPLOAD] Fichier reçu: {file.filename if file else 'None'}")
     print(f"🔄 [UPLOAD] Token reçu: {authorization[:50] if authorization else 'None'}...")
 
-    try:        # Vérifier l'authentification
+    try:
+        # Vérifier l'authentification
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Token manquant")
 
         token = authorization.replace("Bearer ", "")
+        print(f"🔍 [UPLOAD] Token reçu: {token[:30]}...")
 
-        # Vérifier si c'est un admin
+        # Vérifier si c'est un token de test ou un vrai JWT
         admin_user = None
+        
         if token.startswith("test_token_"):
+            # Logique pour les tokens de test
             parts = token.split("_")
-            print(f"🔍 [UPLOAD] Token parts: {parts}")
-            # Le token peut être test_token_user_X_admin ou test_token_admin
-            if len(parts) >=  4 and (parts[3] == "admin" or (len(parts) >= 5 and parts[4] == "admin")):
+            print(f"🔍 [UPLOAD] Token test parts: {parts}")
+            if len(parts) >= 4 and (parts[3].lower() == "admin" or (len(parts) >= 5 and parts[4].lower() == "admin")):
                 admin_user = {"role": "admin"}
-                print(f"✅ [UPLOAD] Token admin validé")
-            elif "admin" in parts:  # Fallback plus permissif
+                print(f"✅ [UPLOAD] Token admin test validé")
+            elif any("admin" in part.lower() for part in parts):
                 admin_user = {"role": "admin"}
-                print(f"✅ [UPLOAD] Token admin validé (fallback)")
-            else:
-                print(f"❌ [UPLOAD] Token non admin: {parts}")
+                print(f"✅ [UPLOAD] Token admin test validé (fallback)")
+        else:
+            # Logique pour les vrais tokens JWT
+            try:
+                from auth import decode_jwt_token
+                payload = decode_jwt_token(token)
+                user_role = payload.get("role")
+                user_id = payload.get("user_id")
+                
+                print(f"🔍 [UPLOAD] JWT décodé - Role: {user_role}, User ID: {user_id}")
+                
+                if user_role == "ADMIN":
+                    admin_user = {"role": "admin", "user_id": user_id}
+                    print(f"✅ [UPLOAD] Token JWT admin validé")
+                else:
+                    print(f"❌ [UPLOAD] Role insuffisant: {user_role}")
+                    
+            except Exception as jwt_error:
+                print(f"❌ [UPLOAD] Erreur décodage JWT: {jwt_error}")
 
         if not admin_user:
             print(f"❌ [UPLOAD] Accès refusé pour token: {token[:30]}")
@@ -1905,7 +1992,9 @@ async def upload_enseignant_photo(
 
         # Vérifier taille (5MB max)
         if hasattr(file, 'size') and file.size and file.size > 5 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")        # Vérifier que l'enseignant existe dans la base de données
+            raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5MB)")
+        
+        # Vérifier que l'enseignant existe dans la base de données
         from database import SessionLocal
         from models import Enseignant
 
