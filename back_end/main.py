@@ -13,6 +13,7 @@ import os
 import shutil
 import uuid
 import time
+import hashlib
 from pathlib import Path
 import sqlite3
 
@@ -906,6 +907,15 @@ async def update_enseignant(
         if new_cin is not None and new_cin.strip() != "":
             user_updates.append("cin = ?")
             user_params.append(new_cin)
+
+        # Gestion du mot de passe (nouveau - cohérent avec l'endpoint login)
+        new_password = enseignant_data.get('password')
+        if new_password is not None and new_password.strip() != "" and new_password != 'unchanged':
+            # Utiliser SHA256 pour être cohérent avec l'endpoint login
+            password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            user_updates.append("hashed_password = ?")
+            user_params.append(password_hash)
+            print(f"🔑 Mot de passe mis à jour pour {enseignant_data.get('email', 'enseignant')}")
 
         # Mettre à jour les données utilisateur seulement si il y a des changements
         if user_updates:

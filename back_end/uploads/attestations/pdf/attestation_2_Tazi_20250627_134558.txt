@@ -1,0 +1,28 @@
+
+ATTESTATION OFFICIELLE
+======================
+
+Je soussigné(e), Secrétaire de l'Université, atteste que :
+
+BÉNÉFICIAIRE:
+- Nom complet : Ahmed Tazi
+- Email : enseignant@univ.ma
+- Fonction : Enseignant
+
+DEMANDE:
+- Type : ATTESTATION
+- Titre : Test Historique
+- Description : Test pour vérifier apparition dans historique
+- Date début : None
+- Date fin : None
+
+STATUT : APPROUVÉE
+
+Cette attestation est délivrée pour servir et valoir ce que de droit.
+
+Fait le 27/06/2025 à 13:45
+Le Secrétaire
+Université
+
+Référence : ATT-2-20250627
+            
