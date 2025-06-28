@@ -780,16 +780,26 @@ async def get_all_enseignants(
     token = authorization.replace("Bearer ", "")
     print(f"🔍 [GET ENSEIGNANTS] Token reçu: {token[:30]}...")
 
-    # Vérifier si c'est un admin
+    # Vérifier si c'est un admin ou un enseignant connecté
     admin_user = None
+    current_user_id = None
+    user_role = None
     
     if token.startswith("test_token_"):
         # Logique pour les tokens de test
         parts = token.split("_")
         print(f"🔍 [GET ENSEIGNANTS] Token test parts: {parts}")
-        if len(parts) >= 4 and (parts[3].lower() == "admin" or (len(parts) >= 5 and parts[4].lower() == "admin")):
+        if len(parts) >= 3:
+            current_user_id = parts[2] if parts[2].isdigit() else None
+        if len(parts) >= 4:
+            user_role = parts[3].upper()
+            
+        if user_role == "ADMIN":
             admin_user = {"role": "admin"}
             print(f"✅ [GET ENSEIGNANTS] Token admin test validé")
+        elif user_role == "ENSEIGNANT":
+            admin_user = {"role": "enseignant", "user_id": current_user_id}
+            print(f"✅ [GET ENSEIGNANTS] Token enseignant test validé")
         elif any("admin" in part.lower() for part in parts):
             admin_user = {"role": "admin"}
             print(f"✅ [GET ENSEIGNANTS] Token admin test validé (fallback)")
@@ -799,13 +809,16 @@ async def get_all_enseignants(
             from auth import decode_jwt_token
             payload = decode_jwt_token(token)
             user_role = payload.get("role")
-            user_id = payload.get("user_id")
+            current_user_id = payload.get("user_id")
             
-            print(f"🔍 [GET ENSEIGNANTS] JWT décodé - Role: {user_role}, User ID: {user_id}")
+            print(f"🔍 [GET ENSEIGNANTS] JWT décodé - Role: {user_role}, User ID: {current_user_id}")
             
             if user_role == "ADMIN":
-                admin_user = {"role": "admin", "user_id": user_id}
+                admin_user = {"role": "admin", "user_id": current_user_id}
                 print(f"✅ [GET ENSEIGNANTS] Token JWT admin validé")
+            elif user_role == "ENSEIGNANT":
+                admin_user = {"role": "enseignant", "user_id": current_user_id}
+                print(f"✅ [GET ENSEIGNANTS] Token JWT enseignant validé")
             else:
                 print(f"❌ [GET ENSEIGNANTS] Role insuffisant: {user_role}")
                 
@@ -814,7 +827,7 @@ async def get_all_enseignants(
 
     if not admin_user:
         print(f"❌ [GET ENSEIGNANTS] Accès refusé pour token: {token[:30]}")
-        raise HTTPException(status_code=403, detail="Accès refusé. Droits admin requis.")
+        raise HTTPException(status_code=403, detail="Accès refusé. Connexion requise.")
 
     # Récupérer tous les enseignants depuis SQLite directement
     try:
@@ -858,6 +871,11 @@ async def get_all_enseignants(
                 }
             }
             enseignants.append(enseignant)
+
+        # Si c'est un enseignant, ne retourner que ses propres données
+        if admin_user.get("role") == "enseignant" and current_user_id:
+            enseignants = [ens for ens in enseignants if str(ens["user_id"]) == str(current_user_id)]
+            print(f"🔍 [GET ENSEIGNANTS] Filtrage pour enseignant {current_user_id}: {len(enseignants)} résultats")
 
         conn.close()
         return enseignants
@@ -1225,9 +1243,57 @@ async def get_all_fonctionnaires(
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
 
-    token = authorization.replace("Bearer ", "")    # Vérifier si c'est un admin (simplifié)
-    if not ("admin" in token.lower() or token.startswith("test_token_")):
-        raise HTTPException(status_code=403, detail="Droits admin requis")
+    token = authorization.replace("Bearer ", "")
+    print(f"🔍 [GET FONCTIONNAIRES] Token reçu: {token[:30]}...")
+
+    # Vérifier si c'est un admin ou un fonctionnaire connecté
+    admin_user = None
+    current_user_id = None
+    user_role = None
+    
+    if token.startswith("test_token_"):
+        # Logique pour les tokens de test
+        parts = token.split("_")
+        print(f"🔍 [GET FONCTIONNAIRES] Token test parts: {parts}")
+        if len(parts) >= 3:
+            current_user_id = parts[2] if parts[2].isdigit() else None
+        if len(parts) >= 4:
+            user_role = parts[3].upper()
+            
+        if user_role == "ADMIN":
+            admin_user = {"role": "admin"}
+            print(f"✅ [GET FONCTIONNAIRES] Token admin test validé")
+        elif user_role == "FONCTIONNAIRE":
+            admin_user = {"role": "fonctionnaire", "user_id": current_user_id}
+            print(f"✅ [GET FONCTIONNAIRES] Token fonctionnaire test validé")
+        elif any("admin" in part.lower() for part in parts):
+            admin_user = {"role": "admin"}
+            print(f"✅ [GET FONCTIONNAIRES] Token admin test validé (fallback)")
+    else:
+        # Logique pour les vrais tokens JWT
+        try:
+            from auth import decode_jwt_token
+            payload = decode_jwt_token(token)
+            user_role = payload.get("role")
+            current_user_id = payload.get("user_id")
+            
+            print(f"🔍 [GET FONCTIONNAIRES] JWT décodé - Role: {user_role}, User ID: {current_user_id}")
+            
+            if user_role == "ADMIN":
+                admin_user = {"role": "admin", "user_id": current_user_id}
+                print(f"✅ [GET FONCTIONNAIRES] Token JWT admin validé")
+            elif user_role == "FONCTIONNAIRE":
+                admin_user = {"role": "fonctionnaire", "user_id": current_user_id}
+                print(f"✅ [GET FONCTIONNAIRES] Token JWT fonctionnaire validé")
+            else:
+                print(f"❌ [GET FONCTIONNAIRES] Role insuffisant: {user_role}")
+                
+        except Exception as jwt_error:
+            print(f"❌ [GET FONCTIONNAIRES] Erreur décodage JWT: {jwt_error}")
+
+    if not admin_user:
+        print(f"❌ [GET FONCTIONNAIRES] Accès refusé pour token: {token[:30]}")
+        raise HTTPException(status_code=403, detail="Accès refusé. Connexion requise.")
 
     try:
         conn = get_sqlite_connection()
@@ -1265,6 +1331,11 @@ async def get_all_fonctionnaires(
                 }
             }
             fonctionnaires.append(fonctionnaire)
+
+        # Si c'est un fonctionnaire, ne retourner que ses propres données
+        if admin_user.get("role") == "fonctionnaire" and current_user_id:
+            fonctionnaires = [fonc for fonc in fonctionnaires if str(fonc["user_id"]) == str(current_user_id)]
+            print(f"🔍 [GET FONCTIONNAIRES] Filtrage pour fonctionnaire {current_user_id}: {len(fonctionnaires)} résultats")
 
         conn.close()
         return fonctionnaires
@@ -1329,20 +1400,59 @@ async def update_fonctionnaire(
                     conn.close()
                     raise HTTPException(status_code=400, detail=f"Un utilisateur avec le CIN '{cin_value}' existe déjà")
 
-        # Mettre à jour les données utilisateur (incluant email si modifié)
-        cursor.execute('''
-            UPDATE users
-            SET nom = ?, prenom = ?, email = ?, telephone = ?, adresse = ?, cin = ?
-            WHERE id = ?
-        ''', (
-            fonctionnaire_data.get('nom'),
-            fonctionnaire_data.get('prenom'),
-            fonctionnaire_data.get('email'),
-            fonctionnaire_data.get('telephone'),
-            fonctionnaire_data.get('adresse'),
-            fonctionnaire_data.get('cin'),
-            user_id
-        ))
+        # Préparer les données de mise à jour en gardant les valeurs existantes si non fournies
+        user_updates = []
+        user_params = []
+
+        # Pour chaque champ utilisateur, utiliser la nouvelle valeur si fournie, sinon garder l'ancienne
+        new_nom = fonctionnaire_data.get('nom')
+        if new_nom is not None and new_nom.strip() != "":
+            user_updates.append("nom = ?")
+            user_params.append(new_nom)
+
+        new_prenom = fonctionnaire_data.get('prenom')
+        if new_prenom is not None and new_prenom.strip() != "":
+            user_updates.append("prenom = ?")
+            user_params.append(new_prenom)
+
+        new_email = fonctionnaire_data.get('email')
+        if new_email is not None and new_email.strip() != "":
+            user_updates.append("email = ?")
+            user_params.append(new_email)
+
+        new_telephone = fonctionnaire_data.get('telephone')
+        if new_telephone is not None and new_telephone.strip() != "":
+            user_updates.append("telephone = ?")
+            user_params.append(new_telephone)
+
+        new_adresse = fonctionnaire_data.get('adresse')
+        if new_adresse is not None and new_adresse.strip() != "":
+            user_updates.append("adresse = ?")
+            user_params.append(new_adresse)
+
+        new_cin = fonctionnaire_data.get('cin')
+        if new_cin is not None and new_cin.strip() != "":
+            user_updates.append("cin = ?")
+            user_params.append(new_cin)
+
+        # Gestion du mot de passe (nouveau - cohérent avec l'endpoint login)
+        new_password = fonctionnaire_data.get('password')
+        if new_password is not None and new_password.strip() != "" and new_password != 'unchanged':
+            # Utiliser SHA256 pour être cohérent avec l'endpoint login
+            import hashlib
+            password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            user_updates.append("hashed_password = ?")
+            user_params.append(password_hash)
+            print(f"🔑 Mot de passe mis à jour pour {fonctionnaire_data.get('email', 'fonctionnaire')}")
+
+        # Mettre à jour les données utilisateur seulement si il y a des changements
+        if user_updates:
+            user_params.append(user_id)
+            cursor.execute(f'''
+                UPDATE users
+                SET {', '.join(user_updates)}
+                WHERE id = ?
+            ''', user_params)
           # Mettre à jour les données fonctionnaire
         cursor.execute('''
             UPDATE fonctionnaires

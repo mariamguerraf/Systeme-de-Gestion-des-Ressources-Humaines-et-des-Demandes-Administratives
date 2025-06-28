@@ -772,6 +772,94 @@ async def update_demande(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la mise à jour: {str(e)}")
 
+@router.patch("/{demande_id}/status")
+async def update_demande_status(
+    demande_id: int,
+    status_data: dict,
+    authorization: str = Header(None)
+):
+    """Mettre à jour le statut d'une demande (pour ADMIN et SECRETAIRE)"""
+    try:
+        # Vérifier l'authentification
+        current_user = get_current_user_from_token(authorization)
+
+        # Vérifier que l'utilisateur est admin ou secrétaire
+        if current_user["role"] not in ["ADMIN", "SECRETAIRE"]:
+            raise HTTPException(status_code=403, detail="Seuls les administrateurs et secrétaires peuvent changer le statut")
+
+        # Récupérer les données du statut
+        statut = status_data.get("statut")
+        commentaire_admin = status_data.get("commentaire_admin", "")
+
+        if not statut:
+            raise HTTPException(status_code=400, detail="Le statut est requis")
+
+        # Valider le statut
+        valid_statuts = ["EN_ATTENTE", "APPROUVEE", "REJETEE"]
+        if statut not in valid_statuts:
+            raise HTTPException(status_code=400, detail=f"Statut invalide. Statuts valides: {valid_statuts}")
+
+        print(f"🔄 [UPDATE STATUS] Demande {demande_id}: {statut} par {current_user['email']}")
+
+        # Se connecter à la base de données
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+
+        # Vérifier que la demande existe
+        cursor.execute("SELECT * FROM demandes WHERE id = ?", (demande_id,))
+        demande = cursor.fetchone()
+        
+        if not demande:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Demande non trouvée")
+
+        # Mettre à jour le statut et le commentaire
+        cursor.execute("""
+            UPDATE demandes 
+            SET statut = ?, commentaire_admin = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (statut, commentaire_admin, demande_id))
+
+        conn.commit()
+
+        # Récupérer la demande mise à jour
+        cursor.execute("""
+            SELECT d.*, u.nom, u.prenom, u.email
+            FROM demandes d
+            JOIN users u ON d.user_id = u.id
+            WHERE d.id = ?
+        """, (demande_id,))
+        
+        updated_demande = cursor.fetchone()
+        conn.close()
+
+        if not updated_demande:
+            raise HTTPException(status_code=404, detail="Erreur lors de la récupération de la demande mise à jour")
+
+        print(f"✅ [UPDATE STATUS] Demande {demande_id} mise à jour: {statut}")
+
+        # Retourner la demande mise à jour
+        return {
+            "id": updated_demande["id"],
+            "user_id": updated_demande["user_id"],
+            "nom_utilisateur": f"{updated_demande['nom']} {updated_demande['prenom']}",
+            "email_utilisateur": updated_demande["email"],
+            "type_demande": updated_demande["type_demande"],
+            "titre": updated_demande["titre"],
+            "description": updated_demande["description"],
+            "statut": updated_demande["statut"],
+            "date_creation": updated_demande["created_at"],
+            "date_traitement": updated_demande["updated_at"],
+            "commentaire_admin": updated_demande["commentaire_admin"],
+            "documents": updated_demande["date_debut"] or "",  # Utiliser les champs existants
+            "urgence": "NORMALE",  # Valeur par défaut
+            "priorite": 1  # Valeur par défaut
+        }
+
+    except Exception as e:
+        print(f"❌ Erreur mise à jour statut demande {demande_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la mise à jour du statut: {str(e)}")
+
 @router.delete("/{demande_id}")
 async def delete_demande(
     demande_id: int,
