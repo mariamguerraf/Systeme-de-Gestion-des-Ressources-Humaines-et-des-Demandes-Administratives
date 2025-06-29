@@ -152,17 +152,6 @@ python main.py
 npm run dev
 ```
 
-## 👤 Comptes par Défaut
-
-Après l'initialisation de la base de données, vous pouvez vous connecter avec :
-
-| Rôle | Email | Mot de passe |
-|------|-------|--------------|
-| **Admin** | admin@gestion.com | admin123 |
-| **Secrétaire** | secretaire@gestion.com | secretaire123 |
-| **Enseignant** | enseignant@gestion.com | enseignant123 |
-| **Fonctionnaire** | fonctionnaire@gestion.com | fonctionnaire123 |
-
 ## 📁 Structure du Projet
 
 ```
