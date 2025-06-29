@@ -334,38 +334,4 @@ pip install -r requirements.txt
 npm install
 ```
 
-### Problème : Base de données corrompue
-```bash
-cd back_end
-rm gestion_db.db
-python init_db.py
-```
-
-## 🤝 Contribution
-
-1. Forker le projet
-2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Commiter les changements (`git commit -m 'Add some AmazingFeature'`)
-4. Pusher vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
-
-## 📝 Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 👨‍💻 Auteur
-
-**Votre Nom**
-- GitHub: [@votre-username](https://github.com/votre-username)
-- Email: votre.email@example.com
-
-## 🙏 Remerciements
-
-- [FastAPI](https://fastapi.tiangolo.com/) pour l'excellent framework backend
-- [React](https://reactjs.org/) pour la bibliothèque frontend
-- [Shadcn/ui](https://ui.shadcn.com/) pour les composants UI magnifiques
-- [Tailwind CSS](https://tailwindcss.com/) pour le framework CSS
-
----
-
 ⭐ **N'hésitez pas à donner une étoile si ce projet vous a aidé !** ⭐
