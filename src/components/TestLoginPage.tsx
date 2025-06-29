@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TEST_CREDENTIALS } from '../test-credentials';
 
 const TestLoginPage: React.FC = () => {
   const { login, user, logout, isLoading } = useAuth();
@@ -23,7 +22,14 @@ const TestLoginPage: React.FC = () => {
   };
 
   const useTestCredentials = (role: 'admin' | 'secretaire' | 'enseignant' | 'fonctionnaire') => {
-    const creds = TEST_CREDENTIALS[role];
+    const testCredentials = {
+      admin: { email: 'admin@gestion.com', password: 'admin123' },
+      secretaire: { email: 'secretaire@gestion.com', password: 'secretaire123' },
+      enseignant: { email: 'enseignant@gestion.com', password: 'enseignant123' },
+      fonctionnaire: { email: 'fonctionnaire@gestion.com', password: 'fonctionnaire123' }
+    };
+    
+    const creds = testCredentials[role];
     setEmail(creds.email);
     setPassword(creds.password);
   };

@@ -1,7 +1,3 @@
-"""
-Minimal FastAPI application - main_minimal.py
-This is a simplified version to test basic FastAPI functionality
-"""
 from fastapi import FastAPI, HTTPException, Depends, Header, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm

@@ -26,8 +26,6 @@ import CadminEnseignants from './pages/cadmin/Enseignants';
 import CadminFonctionnaires from './pages/cadmin/Fonctionnaires';
 import DashboardRedirectTest from './components/DashboardRedirectTest';
 import DashboardRouter from './components/DashboardRouter';
-import TestLoginSuccess from './components/TestLoginSuccess';
-import TestLoginPage from './components/TestLoginPage';
 
 const queryClient = new QueryClient();
 
@@ -45,20 +43,10 @@ const App = () => {
             <Routes>
             <Route path="/" element={<Index />} />
 
-            {/* Route de test pour la connexion API */}
-            <Route path="/test-login" element={<TestLoginPage />} />
-
             {/* Route pour la redirection automatique basée sur le rôle */}
             <Route path="/dashboard-router" element={
               <ProtectedRoute>
                 <DashboardRouter />
-              </ProtectedRoute>
-            } />
-
-            {/* Route de test pour la connexion réussie */}
-            <Route path="/test-login-success" element={
-              <ProtectedRoute>
-                <TestLoginSuccess />
               </ProtectedRoute>
             } />
 
