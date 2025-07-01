@@ -184,7 +184,7 @@ class FonctionnaireCreateComplete(BaseModel):
     grade: str = None
 
 # Modèle pour la réponse fonctionnaire
-class FonctionnaireComplete(BaseModel):
+class FonctionnaireComplete(BaseModel): 
     id: int
     user_id: int
     service: str = None
@@ -672,7 +672,6 @@ async def get_test_users():
             {"email": "secretaire@univ.ma", "password": "secretaire2024", "role": "secretaire"},
             {"email": "enseignant@univ.ma", "password": "enseignant2024", "role": "enseignant"},
             {"email": "fonctionnaire@univ.ma", "password": "fonction2024", "role": "fonctionnaire"},
-            {"email": "test@test.com", "password": "123", "role": "admin", "note": "Compte simple pour tests rapides"}
         ]
     }
 
